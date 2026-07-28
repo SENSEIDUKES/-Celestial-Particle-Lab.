@@ -1,0 +1,57 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #000;
+}
+
+.preview-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+}
+
+.ambient-glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 999px;
+  filter: blur(120px);
+  opacity: 0.1;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.ambient-glow-gold {
+  top: 8%;
+  left: 8%;
+  background: #f59e0b;
+}
+
+.ambient-glow-blue {
+  right: 8%;
+  bottom: 8%;
+  background: #04acff;
+  animation-delay: 1.4s;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.95); opacity: 0.07; }
+  50% { transform: scale(1.05); opacity: 0.13; }
+}
