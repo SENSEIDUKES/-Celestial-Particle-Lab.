@@ -45,9 +45,27 @@ function ManifestationVisual() {
   );
 }
 
+function IdleCultivationVisual() {
+  return (
+    <svg viewBox="0 0 400 240" role="img" aria-label="Closed-door cultivation preview" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="cdc-aura" cx="50%" cy="60%" r="50%">
+          <stop offset="0%" stopColor="#04acff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#04acff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="200" cy="140" r="80" fill="url(#cdc-aura)" />
+      <path d="M200 80 C185 85 175 105 170 125 C165 145 150 160 130 165 C145 175 175 180 200 180 C225 180 255 175 270 165 C250 160 235 145 230 125 C225 105 215 85 200 80 Z" fill="#101a30" stroke="#8ce9ff" strokeWidth="2" strokeOpacity="0.5" />
+      <circle cx="200" cy="65" r="14" fill="#04060d" stroke="#8ce9ff" strokeWidth="2" strokeOpacity="0.5" />
+      <ellipse cx="200" cy="180" rx="90" ry="10" fill="none" stroke="#04acff" strokeWidth="1.5" strokeOpacity="0.3" />
+    </svg>
+  );
+}
+
 function CardVisual({ id }: { id: string }) {
   if (id === 'celestial-backdrop') return <CelestialVisual />;
   if (id === 'chapter-generation-manifestation') return <ManifestationVisual />;
+  if (id === 'idle-cultivation') return <IdleCultivationVisual />;
   return null;
 }
 

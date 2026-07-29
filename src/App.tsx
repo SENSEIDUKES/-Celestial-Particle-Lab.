@@ -1,5 +1,6 @@
 import { CelestialBackdropPreview } from './workshop/CelestialBackdropPreview';
 import AILoadingVeilPreview from './workshop/previews/AILoadingVeilPreview/AILoadingVeilPreview';
+import { IdleCultivationPreview } from './workshop/previews/idle-cultivation/IdleCultivationPreview';
 import { WorkshopHome } from './workshop/WorkshopHome';
 import { ArrowLeft } from 'lucide-react';
 import './styles.css';
@@ -35,6 +36,14 @@ export default function App() {
     return (
       <PreviewLayout>
         <AILoadingVeilPreview />
+      </PreviewLayout>
+    );
+  }
+
+  if (preview === 'idle-cultivation') {
+    return (
+      <PreviewLayout>
+        <IdleCultivationPreview />
       </PreviewLayout>
     );
   }
