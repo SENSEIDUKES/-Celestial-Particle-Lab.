@@ -1,4 +1,4 @@
-import { CosmicArtifact } from '../../../components/relics/types';
+import { CosmicArtifact } from '../../../components/relics/shared/types';
 
 export const mockRelics: CosmicArtifact[] = [
   {

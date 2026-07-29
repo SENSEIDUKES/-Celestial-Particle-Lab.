@@ -7,14 +7,29 @@ export type WorkshopCategory =
   | 'codex-ui'
   | 'other';
 
+export interface WorkshopSource {
+  /** Repository containing the production implementation this feature is compared against. */
+  repository: string;
+  /** File path of the production implementation, relative to that repository. */
+  path: string;
+  /** Date the Original Reference was last checked against the real production implementation. */
+  lastCompared: string;
+}
+
 export type WorkshopEntry = {
   id: string;
   title: string;
   description: string;
   category: WorkshopCategory;
   status: 'draft' | 'refining' | 'approved';
+  source: WorkshopSource;
 };
 
+/**
+ * One entry per actual feature — never per version. A feature's Original
+ * Reference vs Development split lives inside its own Workshop page
+ * (see FeatureWorkspace), not as a second manifest entry or homepage card.
+ */
 export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'celestial-backdrop',
@@ -22,6 +37,11 @@ export const workshopEntries: WorkshopEntry[] = [
     description: 'Color-adaptive celestial particle field with a hidden scroll absorption point.',
     category: 'backgrounds',
     status: 'refining',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/CelestialParticleShower.tsx',
+      lastCompared: '2026-07-29',
+    },
   },
   {
     id: 'chapter-generation-manifestation',
@@ -29,6 +49,11 @@ export const workshopEntries: WorkshopEntry[] = [
     description: 'Shared LoadingSystem state simulator — primary veil and compact indicator driven by one task-card format.',
     category: 'animations',
     status: 'refining',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/AILoadingVeil.tsx',
+      lastCompared: '2026-07-29',
+    },
   },
   {
     id: 'idle-cultivation',
@@ -36,26 +61,22 @@ export const workshopEntries: WorkshopEntry[] = [
     description: 'Idle Qi reward presentation and absorption animation.',
     category: 'rewards',
     status: 'refining',
-  },
-  {
-    id: 'idle-cultivation-v2',
-    title: 'Closed-Door Cultivation V2',
-    description: 'Refined idle Qi reward — ink-aura protected space, safe-area anchoring, ascending claim particles.',
-    category: 'rewards',
-    status: 'refining',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/IdleCultivationModal.tsx',
+      lastCompared: '2026-07-29',
+    },
   },
   {
     id: 'relics-gallery',
     title: 'Relics Gallery',
-    description: 'Visual development preview for Cosmic Artifacts separated by rarity rank, with the full-screen Relic Reveal celebration flow.',
+    description: 'Cosmic Artifact cards separated by rarity rank, with the full-screen Relic Reveal celebration flow.',
     category: 'rewards',
     status: 'refining',
-  },
-  {
-    id: 'relics-dev',
-    title: 'Relics Gallery — DEV',
-    description: 'DEV copy of the Relic Reveal sequence for active UI work: sealed premium card face, post-reveal rank lighting, spin sparks, and a rank-free stats box.',
-    category: 'rewards',
-    status: 'draft',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/UserProfileInventoryPanel.tsx',
+      lastCompared: '2026-07-29',
+    },
   },
 ];

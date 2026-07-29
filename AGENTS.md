@@ -36,21 +36,38 @@ Do not turn this repository into a second full application. Use mock data and pr
 
 ## Organization
 
-- `src/workshop/manifest.ts` lists every workshop entry shown on the home screen.
-- `src/workshop/` contains preview wrappers and workshop-only presentation.
-- Reusable component logic may live in `src/components/` or an appropriately named feature folder.
+- `src/workshop/manifest.ts` lists every workshop entry shown on the home screen — **one entry per feature, never one per version.**
+- `src/workshop/FeatureWorkspace.tsx` is the shared shell every feature preview opens into: an Original Reference / Development / Compare switch over one shared preview canvas.
+- `src/workshop/previews/<feature>/` contains the workspace preview wrapper (built on `FeatureWorkspace`), mock data, and preview-state simulators for that feature.
+- `src/App.tsx` resolves `?preview=<id>` through a `previewRegistry` map — add one line per feature, never a new `if` block.
+- Reusable component logic lives in `src/components/<feature-name>/`, split into:
+  - `reference/` — an untouched, locked replica of what exists in production. Never modified during normal Workshop tweaking.
+  - `development/` — the active Workshop version. Starts as a copy of `reference/`. This is the only folder agents change.
+  - `shared/` (when it applies) — logic genuinely identical between the two, such as shared utilities or components that have no fork yet.
 - Static visual assets belong in `public/` under a clearly named folder.
 - Keep component-specific styles close to the component when practical.
 - Portable agent skills live under `skills/`.
 
+### No "V2" folders, cards, or preview IDs
+
+Never create a second homepage card, a second manifest entry, a second preview folder, or a `V2`/`V3`/"Revised"/"New"/"Experimental" component name for the same feature. Git history already preserves prior iterations. A redesign in progress belongs in that feature's existing `development/` folder, opened through its existing `?preview=<id>` route and switched to with the Development button — never a new route.
+
 When adding a new experiment:
 
-1. Give it a focused component or feature folder.
-2. Add a preview wrapper under `src/workshop/`.
-3. Add one entry to `src/workshop/manifest.ts`.
-4. Make it reachable through a simple `?preview=<id>` URL.
-5. Add a component README containing source information, current dates, Workshop history, mock boundaries, and transfer instructions.
+1. Give it a focused feature folder under `src/components/` with `reference/` and `development/` subfolders (`shared/` only if something is genuinely unforked).
+2. Add a workspace preview wrapper under `src/workshop/previews/<feature>/`, built on `FeatureWorkspace`.
+3. Add one entry to `src/workshop/manifest.ts`, including `source.repository`, `source.path`, and `source.lastCompared`.
+4. Register it in the `previewRegistry` in `src/App.tsx`. Make it reachable through a simple `?preview=<id>` URL.
+5. Add one component README (at the feature folder root) containing source information, current dates, Workshop history, mock boundaries, and transfer instructions.
 6. Document any files that must be copied into the source application.
+
+### Lifecycle for an approved change
+
+1. **Import** — copy production's current implementation into `reference/`.
+2. **Fork once** — `development/` starts as a copy of `reference/`.
+3. **Refine** — every Workshop task modifies `development/` only.
+4. **Approve** — once approved, transfer `development/` back to the production repository through a separate task.
+5. **Resynchronize** — after production integration, refresh `reference/` from the newly synchronized production code, update `source.lastCompared`, and reset `development/` for the next redesign cycle.
 
 ## Dating requirement
 

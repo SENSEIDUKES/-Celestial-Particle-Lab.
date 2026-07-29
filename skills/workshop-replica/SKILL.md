@@ -121,36 +121,38 @@ Preview controls must remain clearly separated from the reusable UI. They are Wo
 
 ## Phase 5: Keep the result portable
 
-Prefer a structure similar to:
+Every feature gets exactly one folder with a `reference/` and `development/` split — never a second component folder, preview folder, or homepage card for a "V2":
 
 ```text
 src/
   components/
     <target-name>/
-      <TargetComponent>.tsx
-      <TargetComponent>.css
-      assets/
+      reference/
+        <TargetComponent>.tsx   — untouched, locked replica of production
+      development/
+        <TargetComponent>.tsx   — active Workshop version, starts as a copy of reference
+      shared/                   — only for logic genuinely identical across both (optional)
       README.md
 
   workshop/
     previews/
       <target-name>/
-        <TargetPreview>.tsx
+        <TargetName>Workspace.tsx   — built on FeatureWorkspace
         previewData.ts
         previewStates.ts
 ```
 
-Adapt to the repository's existing structure rather than forcing unnecessary reorganization.
+Adapt file names to the repository's existing structure rather than forcing unnecessary reorganization, but do not skip the `reference/` vs `development/` split — it is what lets `reference/` stay a trustworthy, untouched comparison point while `development/` absorbs every Workshop change.
 
 Separate these concerns:
 
-- reusable UI
-- preview-only wrapper
+- reusable UI (`reference/` and `development/`)
+- preview-only wrapper (the `Workspace.tsx`, built on `FeatureWorkspace`)
 - mock data
 - state simulator
 - Workshop navigation and controls
 
-Never embed Workshop-only controls or mock behavior into the reusable production component.
+Never embed Workshop-only controls or mock behavior into the reusable production component. Never create a second manifest entry, preview folder, or component folder named `V2`/`V3`/"Revised"/"Experimental" for the same feature — git history already preserves prior iterations, and a redesign in progress belongs in that feature's `development/` folder.
 
 ## Phase 6: Reuse approved Workshop systems
 
@@ -172,10 +174,11 @@ Add the replica to the Workshop's existing discovery system.
 
 At minimum:
 
-- add or update the Workshop manifest/registry
+- add one entry to `src/workshop/manifest.ts`, including `source.repository`, `source.path`, and `source.lastCompared` — one entry per feature, never one per version
+- register the feature's `Workspace.tsx` component in the `previewRegistry` in `src/App.tsx`
 - give it a stable preview ID
 - make it reachable by direct URL
-- keep the Workshop home page intact
+- keep the Workshop home page intact — it must show one card per feature, never a second card for a variant or redesign in progress
 - do not break existing previews
 
 ## Required dating and history metadata
