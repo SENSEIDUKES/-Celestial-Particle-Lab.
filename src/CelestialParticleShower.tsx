@@ -205,13 +205,20 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         ctx.fillStyle = sheetGrad;
         ctx.fill();
 
-        // Spiral rollers: fine rings of light at each end, half offscreen.
+        // Spiral rollers: fine rings of light wrapped in a soft halo,
+        // half offscreen at each end.
         const rollerR = Math.min(width, height) * 0.042;
         for (const side of [-1, 1]) {
           const rx = side < 0 ? -rollerR * 0.3 : width + rollerR * 0.3;
           const ry = rimY - rollerR * 0.3;
-          ctx.shadowBlur = 14;
-          ctx.shadowColor = toRgba(palette.bright, 0.7);
+          // Halo: a warm pool of light behind the rings.
+          fillEllipticalGlow(rx, ry, rollerR * 2.6, rollerR * 2.6, [
+            [0, toRgba(palette.pale, 0.28 * pulse)],
+            [0.45, toRgba(palette.bright, 0.13 * pulse)],
+            [1, toRgba(palette.base, 0)],
+          ]);
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = toRgba(palette.bright, 0.85);
           for (const [radius, alpha, lineWidth] of [
             [rollerR, 0.55, 1.4],
             [rollerR * 0.68, 0.42, 1.2],
@@ -253,26 +260,26 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           [1, toRgba(palette.base, 0)],
         ]);
 
-        // The absorption point: a compact star — a hot pinpoint with a
-        // subtle cross sparkle, not a bar of light.
-        fillEllipticalGlow(cx, dipY, height * 0.035, height * 0.035, [
-          [0, toRgba(mix(palette.pale, WHITE, 0.6), 0.95 * pulse)],
-          [0.4, toRgba(palette.pale, 0.4 * pulse)],
+        // The absorption point: a soft diffuse glow with only a whisper of
+        // a cross sparkle — felt, not drawn.
+        fillEllipticalGlow(cx, dipY, height * 0.042, height * 0.042, [
+          [0, toRgba(mix(palette.pale, WHITE, 0.6), 0.72 * pulse)],
+          [0.4, toRgba(palette.pale, 0.3 * pulse)],
           [1, toRgba(palette.bright, 0)],
         ]);
-        const sparkleLen = height * 0.055;
+        const sparkleLen = height * 0.045;
         const sparkleGradH = ctx.createLinearGradient(cx - sparkleLen, 0, cx + sparkleLen, 0);
         sparkleGradH.addColorStop(0, toRgba(palette.pale, 0));
-        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.5 * pulse));
+        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.22 * pulse));
         sparkleGradH.addColorStop(1, toRgba(palette.pale, 0));
         ctx.fillStyle = sparkleGradH;
-        ctx.fillRect(cx - sparkleLen, dipY - 0.6, sparkleLen * 2, 1.2);
+        ctx.fillRect(cx - sparkleLen, dipY - 0.4, sparkleLen * 2, 0.8);
         const sparkleGradV = ctx.createLinearGradient(0, dipY - sparkleLen * 0.6, 0, dipY + sparkleLen * 0.6);
         sparkleGradV.addColorStop(0, toRgba(palette.pale, 0));
-        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.35 * pulse));
+        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.14 * pulse));
         sparkleGradV.addColorStop(1, toRgba(palette.pale, 0));
         ctx.fillStyle = sparkleGradV;
-        ctx.fillRect(cx - 0.6, dipY - sparkleLen * 0.6, 1.2, sparkleLen * 1.2);
+        ctx.fillRect(cx - 0.4, dipY - sparkleLen * 0.6, 0.8, sparkleLen * 1.2);
 
         // The beam: a single broad wash of light, no structure. Layers blend
         // into one soft column that dissolves into the dark.
