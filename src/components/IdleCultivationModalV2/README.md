@@ -12,6 +12,7 @@
 
 - **2026-07-29:** Created faithful Workshop replica and local state simulator (kept unchanged as `IdleCultivationModal`, `?preview=idle-cultivation`, for side-by-side comparison).
 - **2026-07-29:** Duplicated to V2 and reworked the visual space: soft dark ink aura behind the vignette and orb, viewport-fixed positioning with `env(safe-area-inset-bottom)` offsets, swipe pass-through with tap-only activation, shimmer/glow "collect me" cue on the cloud, claim particles visibly ascending from the cultivator, more opaque minimized orb, reduced-motion calming.
+- **2026-07-29:** Redrew the cultivator silhouette as a seated meditator — distinct neck and shoulders, tapered torso, forearms folding into visible hands in the lap, and a low crossed-legs base with knees — while preserving the neon rim-light icon language (thin cyan strokes, navy robe gradient, platform rings).
 
 ## Component Details
 
