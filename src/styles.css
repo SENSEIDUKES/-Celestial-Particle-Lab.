@@ -68,6 +68,7 @@ body {
 .workshop-status { display: inline-block; margin-top: 1rem; color: rgba(245, 241, 232, 0.45); }
 
 .preview-stage {
+  --celestial-accent: #f5b942;
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -93,7 +94,7 @@ body {
   opacity: 0.1;
   animation: breathe 4s ease-in-out infinite;
 }
-.ambient-glow-gold { top: 8%; left: 8%; background: #f59e0b; }
+.ambient-glow-gold { top: 8%; left: 8%; background: var(--celestial-accent); }
 .ambient-glow-blue { right: 8%; bottom: 8%; background: #04acff; animation-delay: 1.4s; }
 .preview-relic {
   position: relative;
@@ -101,16 +102,37 @@ body {
   width: min(27rem, calc(100vw - 3rem));
   box-sizing: border-box;
   padding: 2.25rem;
-  border: 1px solid color-mix(in srgb, #f5b942 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--celestial-accent) 32%, transparent);
   border-radius: 1.5rem;
   background: linear-gradient(145deg, rgba(15, 11, 5, 0.92), rgba(3, 9, 14, 0.88));
   box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.56), inset 0 1px rgba(255, 239, 193, 0.08);
   color: #fff7df;
   text-align: center;
 }
-.preview-relic-eyebrow { margin: 0 0 0.65rem; color: #f5b942; font: 600 0.7rem/1.2 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase; }
+.preview-relic-eyebrow { margin: 0 0 0.65rem; color: var(--celestial-accent); font: 600 0.7rem/1.2 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase; }
 .preview-relic h1 { margin: 0; font: 500 clamp(1.8rem, 5vw, 2.5rem)/1.1 Georgia, serif; }
 .preview-relic-copy { margin: 1rem auto 0; max-width: 22rem; color: rgba(255, 247, 223, 0.7); font: 400 0.95rem/1.6 ui-sans-serif, system-ui, sans-serif; }
+
+.preview-accent-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+  color: rgba(255, 247, 223, 0.62);
+  font: 600 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.preview-accent-control input {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--celestial-accent) 65%, white);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
 
 @keyframes breathe {
   0%, 100% { transform: scale(0.95); opacity: 0.07; }

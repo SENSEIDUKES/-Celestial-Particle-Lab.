@@ -462,6 +462,9 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
             ctx.shadowBlur = glyphSize * (0.75 + absorbT);
             ctx.shadowColor = toRgba(palette.base, 0.78);
             ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = toRgba(palette.bright, 0.96);
+            ctx.fillRect(-glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
           } else {
             const radius = p.size * 2 * scale;
             const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
