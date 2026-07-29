@@ -9,6 +9,7 @@ interface Particle {
   speedY: number;
   speedX: number;
   opacity: number;
+  baseOpacity: number;
   fadeSpeed: number;
   color: Rgb;
   glyph?: HTMLImageElement;
@@ -18,6 +19,8 @@ interface Particle {
 
 const toRgba = ([red, green, blue]: Rgb, alpha: number) =>
   `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 export const CelestialParticleShower: React.FC = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -64,6 +67,7 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
     const createParticle = (isInitial = false): Particle => {
       const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
       const isGlyph = size > 4 && Math.random() < 0.42;
+      const opacity = Math.random() * 0.7 + 0.3;
 
       return {
         x: Math.random() * width,
@@ -71,7 +75,8 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
         size,
         speedY: -(Math.random() * 1.5 + 0.5),
         speedX: (Math.random() - 0.5) * 0.8,
-        opacity: Math.random() * 0.7 + 0.3,
+        opacity,
+        baseOpacity: opacity,
         fadeSpeed: Math.random() * 0.003 + 0.001,
         color: colors[Math.floor(Math.random() * colors.length)],
         glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
@@ -87,39 +92,64 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // Absorption anchor: the hidden scroll hangs just above top-center.
+      const absorbX = width / 2;
+      const absorbBandStart = height * 0.24; // particles start curving in below this line
+
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.y += p.speedY;
-        p.x += p.speedX;
-        p.opacity -= p.fadeSpeed;
 
-        if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
-          p.rotation += p.rotationSpeed;
+        // Absorption progress: 0 below the band, 1 at the very top edge.
+        const absorbT = clamp01(1 - p.y / absorbBandStart);
+
+        // Curve inward: steer horizontal drift toward the top-center anchor,
+        // strengthening as the particle rises into the glow.
+        if (absorbT > 0) {
+          const pull = 0.012 + absorbT * 0.06;
+          p.speedX += (absorbX - p.x) * pull * 0.02;
+          p.speedX *= 0.985; // damp lateral wander so the arc stays smooth
+          // Slight upward quickening, like being drawn in.
+          p.y += p.speedY * (1 + absorbT * 0.6);
+          p.x += p.speedX;
+        } else {
+          p.y += p.speedY;
+          p.x += p.speedX;
         }
 
-        if (p.opacity <= 0 || p.y < -20) {
+        p.opacity -= p.fadeSpeed * (1 + absorbT * 2);
+
+        if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
+          p.rotation += p.rotationSpeed * (1 + absorbT * 1.5);
+        }
+
+        // Shrink and dissolve as the particle reaches the scroll edge.
+        const scale = 1 - Math.pow(absorbT, 1.6) * 0.9;
+        const alpha = p.opacity * (1 - Math.pow(absorbT, 2) * 0.85);
+
+        if (p.opacity <= 0 || scale <= 0.08 || p.y < -20) {
           particles[i] = createParticle(false);
           continue;
         }
 
         ctx.save();
-        ctx.globalAlpha = p.opacity;
+        ctx.globalAlpha = clamp01(alpha);
 
         if (p.glyph?.complete && p.glyph.naturalWidth > 0) {
           ctx.translate(p.x, p.y);
           if (p.rotation !== undefined) ctx.rotate(p.rotation);
-          const glyphSize = Math.max(22, p.size * 2.4);
-          ctx.shadowBlur = glyphSize * 0.75;
+          const glyphSize = Math.max(22, p.size * 2.4) * scale;
+          ctx.shadowBlur = glyphSize * (0.75 + absorbT * 0.9);
           ctx.shadowColor = 'rgba(245, 185, 66, 0.78)';
           ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
         } else {
-          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+          const radius = p.size * 2 * scale;
+          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
           gradient.addColorStop(0, toRgba(p.color, 1));
           gradient.addColorStop(0.4, toRgba(p.color, 0.4));
           gradient.addColorStop(1, toRgba(p.color, 0));
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, Math.max(radius, 0.1), 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -137,5 +167,18 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
+  return (
+    <>
+      <div className="celestial-absorber" aria-hidden="true">
+        <div className="celestial-absorber-glow" />
+        <img
+          className="celestial-scroll-edge"
+          src="/icons/book-scroll.svg"
+          alt=""
+          draggable={false}
+        />
+      </div>
+      <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />
+    </>
+  );
 });
