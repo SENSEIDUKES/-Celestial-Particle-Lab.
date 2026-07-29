@@ -26,7 +26,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'chapter-generation-manifestation',
     title: 'Chapter Generation Manifestation',
-    description: 'AILoadingVeil component state simulator for generating chapters and backgrounds.',
+    description: 'Shared LoadingSystem state simulator — primary veil and compact indicator driven by one task-card format.',
     category: 'animations',
     status: 'refining',
   },
