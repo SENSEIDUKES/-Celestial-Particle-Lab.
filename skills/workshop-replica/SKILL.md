@@ -7,7 +7,7 @@ last_updated: 2026-07-28
 
 # Workshop Replica Skill
 
-Use this skill whenever the user asks to bring a real page, component, animation, or flow from another application into the Light Novel Workshop for safe visual refinement.
+Use this skill whenever the user asks to bring a real page, component, animation, or flow from another application into the SEN Visual Development space for safe visual refinement.
 
 ## Required input
 
