@@ -94,13 +94,34 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
       particles.push(createParticle(true));
     }
 
+    // Fill an elliptical radial gradient (canvas gradients are circular, so
+    // we draw in a scaled space).
+    const fillEllipticalGlow = (
+      x: number,
+      y: number,
+      rx: number,
+      ry: number,
+      stops: readonly (readonly [number, string])[],
+    ) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(rx, ry);
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      for (const [offset, color] of stops) gradient.addColorStop(offset, color);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
     // --- The celestial scroll: massive, mostly above the viewport ----------
     // Only its lower rim, two rolled edges, and the light pouring from the
     // center dip are ever visible.
     const drawScroll = (time: number) => {
       const cx = width / 2;
-      const rimY = height * 0.02; // rim height at the left/right edges
-      const dipY = height * 0.085; // the rim dips down at center — the absorption point
+      const rimY = height * 0.018; // rim height at the left/right edges
+      const dipY = height * 0.062; // the rim dips down at center — the absorption point
       const pulse = 0.9 + 0.1 * Math.sin(time * 1.3);
       const flicker = 0.92 + 0.08 * Math.sin(time * 2.1);
 
@@ -123,7 +144,7 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
       ctx.globalCompositeOperation = 'screen';
 
       // Rolled edges: dark cylinders with golden rims, half offscreen.
-      const rollerR = Math.min(width, height) * 0.06;
+      const rollerR = Math.min(width, height) * 0.055;
       for (const side of [-1, 1]) {
         const rx = side < 0 ? -rollerR * 0.35 : width + rollerR * 0.35;
         const ry = rimY - rollerR * 0.35;
@@ -151,62 +172,75 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
         ctx.shadowBlur = 0;
       }
 
-      // The glowing lower rim, dipping at center.
+      // The glowing lower rim — long and shallow, like the edge of an open
+      // scroll — with a second faint line above it for edge thickness.
+      const edgeThickness = Math.max(6, height * 0.009);
+      ctx.beginPath();
+      ctx.moveTo(-10, rimY - edgeThickness);
+      ctx.quadraticCurveTo(cx, rimControlY - edgeThickness * 2.4, width + 10, rimY - edgeThickness);
+      ctx.strokeStyle = `rgba(255, 195, 100, ${0.14 * flicker})`;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
       ctx.beginPath();
       ctx.moveTo(-10, rimY);
       ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
-      ctx.strokeStyle = `rgba(255, 190, 90, ${0.22 * flicker})`;
-      ctx.lineWidth = 7;
-      ctx.shadowBlur = 26;
-      ctx.shadowColor = 'rgba(255, 195, 95, 0.9)';
+      ctx.strokeStyle = `rgba(255, 190, 90, ${0.2 * flicker})`;
+      ctx.lineWidth = 6;
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = 'rgba(255, 195, 95, 0.85)';
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(-10, rimY);
       ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
-      ctx.strokeStyle = `rgba(255, 228, 165, ${0.85 * flicker})`;
-      ctx.lineWidth = 1.8;
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = `rgba(255, 228, 165, ${0.8 * flicker})`;
+      ctx.lineWidth = 1.6;
+      ctx.shadowBlur = 10;
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // The heavenly beam pouring down from the center dip.
-      const beamLen = height * 0.55;
-      const beamGrad = ctx.createLinearGradient(0, dipY, 0, dipY + beamLen);
-      beamGrad.addColorStop(0, `rgba(255, 220, 140, ${0.3 * pulse})`);
-      beamGrad.addColorStop(0.45, `rgba(255, 200, 110, ${0.12 * pulse})`);
-      beamGrad.addColorStop(1, 'rgba(255, 200, 110, 0)');
-      ctx.beginPath();
-      ctx.moveTo(cx - width * 0.015, dipY);
-      ctx.lineTo(cx + width * 0.015, dipY);
-      ctx.lineTo(cx + width * 0.17, dipY + beamLen);
-      ctx.lineTo(cx - width * 0.17, dipY + beamLen);
-      ctx.closePath();
-      ctx.fillStyle = beamGrad;
-      ctx.fill();
-      // Bright core of the beam.
-      const coreGrad = ctx.createLinearGradient(0, dipY, 0, dipY + beamLen * 0.6);
-      coreGrad.addColorStop(0, `rgba(255, 236, 190, ${0.28 * pulse})`);
-      coreGrad.addColorStop(1, 'rgba(255, 220, 140, 0)');
-      ctx.beginPath();
-      ctx.moveTo(cx - width * 0.005, dipY);
-      ctx.lineTo(cx + width * 0.005, dipY);
-      ctx.lineTo(cx + width * 0.06, dipY + beamLen * 0.6);
-      ctx.lineTo(cx - width * 0.06, dipY + beamLen * 0.6);
-      ctx.closePath();
-      ctx.fillStyle = coreGrad;
-      ctx.fill();
+      // The light at the absorption point: stretched wide along the scroll
+      // edge so it reads as part of the scroll, not a floating orb.
+      fillEllipticalGlow(cx, dipY, width * 0.46, height * 0.115, [
+        [0, `rgba(255, 232, 175, ${0.5 * pulse})`],
+        [0.35, `rgba(255, 212, 125, ${0.28 * pulse})`],
+        [0.7, `rgba(245, 158, 11, ${0.1 * pulse})`],
+        [1, 'rgba(245, 158, 11, 0)'],
+      ]);
+      // Bright elongated core hugging the rim.
+      fillEllipticalGlow(cx, dipY, width * 0.2, height * 0.042, [
+        [0, `rgba(255, 248, 225, ${0.85 * pulse})`],
+        [0.5, `rgba(255, 222, 145, ${0.35 * pulse})`],
+        [1, 'rgba(255, 214, 130, 0)'],
+      ]);
 
-      // The flare at the absorption point itself.
-      const flareR = height * 0.16;
-      const flare = ctx.createRadialGradient(cx, dipY, 0, cx, dipY, flareR);
-      flare.addColorStop(0, `rgba(255, 246, 220, ${0.95 * pulse})`);
-      flare.addColorStop(0.15, `rgba(255, 216, 135, ${0.55 * pulse})`);
-      flare.addColorStop(0.5, `rgba(245, 158, 11, ${0.16 * pulse})`);
-      flare.addColorStop(1, 'rgba(245, 158, 11, 0)');
-      ctx.fillStyle = flare;
-      ctx.beginPath();
-      ctx.arc(cx, dipY, flareR, 0, Math.PI * 2);
-      ctx.fill();
+      // The heavenly beam: washed-out layers of soft light — no hard edges.
+      const beamLen = height * 0.5;
+      // Broad ambient wash hanging under the scroll.
+      fillEllipticalGlow(cx, dipY + beamLen * 0.32, width * 0.3, beamLen * 0.62, [
+        [0, `rgba(255, 222, 150, ${0.1 * pulse})`],
+        [0.55, `rgba(255, 210, 130, ${0.045 * pulse})`],
+        [1, 'rgba(255, 205, 120, 0)'],
+      ]);
+      // Nested wedges, each wider and fainter — the layered falloff washes
+      // the beam out instead of drawing a hard cone.
+      for (let layer = 0; layer < 5; layer++) {
+        const spread = 0.018 + layer * 0.045;
+        const bottomSpread = 0.05 + layer * 0.075;
+        const alpha = (0.085 - layer * 0.016) * pulse;
+        const beamGrad = ctx.createLinearGradient(0, dipY, 0, dipY + beamLen);
+        beamGrad.addColorStop(0, `rgba(255, 224, 155, ${alpha})`);
+        beamGrad.addColorStop(0.5, `rgba(255, 212, 130, ${alpha * 0.45})`);
+        beamGrad.addColorStop(1, 'rgba(255, 205, 120, 0)');
+        ctx.beginPath();
+        ctx.moveTo(cx - width * spread, dipY);
+        ctx.lineTo(cx + width * spread, dipY);
+        ctx.lineTo(cx + width * bottomSpread, dipY + beamLen);
+        ctx.lineTo(cx - width * bottomSpread, dipY + beamLen);
+        ctx.closePath();
+        ctx.fillStyle = beamGrad;
+        ctx.fill();
+      }
 
       ctx.restore();
     };
@@ -219,7 +253,7 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
 
       // One absorption point: the center dip of the scroll's lower rim.
       const absorbX = width / 2;
-      const absorbY = height * 0.085;
+      const absorbY = height * 0.062;
       const funnelSpan = height * 0.85; // the funnel reaches almost the full screen
       const killRadius = Math.max(10, height * 0.014);
 
@@ -236,9 +270,9 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
         const absorbT = clamp01(1 - dist / (height * 0.3));
 
         // Curve toward the center line, with a faint swirl so paths arc
-        // instead of beelining.
-        p.speedX += dx * (0.0004 + funnelT * funnelT * 0.0045);
-        p.speedX += -dy * 0.000012 * funnelT;
+        // instead of beelining. Kept loose so the stream stays spread out.
+        p.speedX += dx * (0.00033 + funnelT * funnelT * 0.0037);
+        p.speedX += -dy * 0.00001 * funnelT;
         p.speedX *= 0.99;
 
         // Slight acceleration as the particle is drawn upward.
