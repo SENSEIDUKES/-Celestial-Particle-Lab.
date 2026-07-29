@@ -12,8 +12,17 @@ interface Particle {
   fadeSpeed: number;
   color: Rgb;
   glyph?: HTMLImageElement;
+  outerLane?: -1 | 1;
   rotation?: number;
   rotationSpeed?: number;
+}
+
+interface ForegroundZone {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  centerX: number;
 }
 
 interface AccentPalette {
@@ -69,6 +78,9 @@ const hexToRgb = (value: string): Rgb | null => {
 const toRgba = ([red, green, blue]: Rgb, alpha: number) =>
   `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 
+const DEFAULT_FOREGROUND_SELECTOR =
+  '[data-celestial-foreground], dialog[open], [role="dialog"]';
+
 export interface CelestialParticleShowerProps {
   /**
    * Accent color for the whole effect — scroll glow, beam, absorption point,
@@ -78,10 +90,22 @@ export interface CelestialParticleShowerProps {
    * celestial gold.
    */
   accent?: string;
+  /**
+   * Visible content is treated as a calm zone when it matches this selector.
+   * Dialogs work out of the box; application panels can opt in once with
+   * `data-celestial-foreground` instead of maintaining a separate backdrop.
+   */
+  foregroundSelector?: string;
+  /** Extra breathing room, in CSS pixels, around foreground content. */
+  foregroundPadding?: number;
 }
 
 export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = React.memo(
-  ({ accent }) => {
+  ({
+    accent,
+    foregroundSelector = DEFAULT_FOREGROUND_SELECTOR,
+    foregroundPadding = 72,
+  }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -106,6 +130,63 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         height = canvas.height = window.innerHeight;
       };
       window.addEventListener('resize', handleResize);
+
+      let foregroundZones: ForegroundZone[] = [];
+      let nextForegroundCheck = 0;
+
+      const refreshForegroundZones = () => {
+        const canvasRect = canvas.getBoundingClientRect();
+        const padding = Math.max(0, foregroundPadding);
+
+        try {
+          foregroundZones = Array.from(document.querySelectorAll<HTMLElement>(foregroundSelector))
+            .filter((element) => {
+              if (element === canvas) return false;
+              const style = getComputedStyle(element);
+              return style.display !== 'none' && style.visibility !== 'hidden';
+            })
+            .map((element) => element.getBoundingClientRect())
+            .filter((rect) => rect.width > 0 && rect.height > 0)
+            .map((rect) => {
+              const left = Math.max(0, rect.left - canvasRect.left - padding);
+              const right = Math.min(width, rect.right - canvasRect.left + padding);
+              const top = Math.max(0, rect.top - canvasRect.top - padding);
+              const bottom = Math.min(height, rect.bottom - canvasRect.top + padding);
+
+              return {
+                left,
+                right,
+                top,
+                bottom,
+                centerX: (left + right) / 2,
+              };
+            })
+            .filter((zone) => zone.right > zone.left && zone.bottom > zone.top);
+        } catch {
+          foregroundZones = [];
+        }
+      };
+
+      const calmAmountAt = (x: number, y: number) =>
+        foregroundZones.reduce((strongest, zone) => {
+          const outsideX = Math.max(zone.left - x, 0, x - zone.right);
+          const outsideY = Math.max(zone.top - y, 0, y - zone.bottom);
+          const distance = Math.hypot(outsideX, outsideY);
+          const calm = distance === 0 ? 0.86 : clamp01(1 - distance / 120) * 0.86;
+          return Math.max(strongest, calm);
+        }, 0);
+
+      const streamBoostAt = (x: number, y: number) =>
+        foregroundZones.reduce((strongest, zone) => {
+          const isAboveOrBelow = y < zone.top || y > zone.bottom;
+          if (!isAboveOrBelow) return strongest;
+
+          const streamHalfWidth = Math.max(80, Math.min(width * 0.2, (zone.right - zone.left) * 0.55));
+          const proximity = clamp01(1 - Math.abs(x - zone.centerX) / (streamHalfWidth * 1.75));
+          return Math.max(strongest, proximity * 0.22);
+        }, 0);
+
+      refreshForegroundZones();
 
       const particles: Particle[] = [];
       const glyphs = [
@@ -135,9 +216,14 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
       const createParticle = (isInitial = false): Particle => {
         const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
         const isGlyph = size > 4 && Math.random() < 0.42;
+        const outerLane = isGlyph ? (Math.random() < 0.5 ? -1 : 1) : undefined;
+        const glyphInForegroundMode = isGlyph && foregroundZones.length > 0;
+        const x = glyphInForegroundMode
+          ? width * (outerLane === -1 ? 0.08 + Math.random() * 0.2 : 0.72 + Math.random() * 0.2)
+          : Math.random() * width;
 
         return {
-          x: Math.random() * width,
+          x,
           y: isInitial ? Math.random() * height : height + 20,
           size,
           speedY: -(Math.random() * 1.5 + 0.5),
@@ -146,6 +232,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           fadeSpeed: Math.random() * 0.003 + 0.001,
           color: colors[Math.floor(Math.random() * colors.length)],
           glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
+          outerLane,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.02,
         };
@@ -299,6 +386,10 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
       const animate = () => {
         const time = performance.now() / 1000;
+        if (time >= nextForegroundCheck) {
+          refreshForegroundZones();
+          nextForegroundCheck = time + 0.2;
+        }
         ctx.clearRect(0, 0, width, height);
 
         drawScroll(time);
@@ -327,6 +418,13 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           p.speedX += -dy * 0.00001 * funnelT;
           p.speedX *= 0.99;
 
+          // Larger Library glyphs make room for foreground UI by drifting
+          // toward the outer thirds. The center stream remains free to read.
+          if (p.glyph && foregroundZones.length > 0) {
+            const targetX = width * (p.outerLane === -1 ? 0.18 : 0.82);
+            p.x += (targetX - p.x) * 0.012;
+          }
+
           // Slight acceleration as the particle is drawn upward.
           p.y += p.speedY * (1 + funnelT * 0.55);
           p.x += p.speedX;
@@ -339,7 +437,13 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
           // Shrink and dissolve into the light.
           const scale = 1 - Math.pow(absorbT, 1.5) * 0.92;
-          const alpha = p.opacity * (1 - Math.pow(absorbT, 2) * 0.85);
+          const foregroundCalm = calmAmountAt(p.x, p.y);
+          const streamBoost = streamBoostAt(p.x, p.y);
+          const alpha =
+            p.opacity *
+            (1 - Math.pow(absorbT, 2) * 0.85) *
+            (1 - foregroundCalm) *
+            (1 + streamBoost);
           // Dust caught in the beam takes on the accent as it nears the scroll.
           const color = mix(p.color, palette.bright, absorbT * 0.85);
 
@@ -382,7 +486,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         window.removeEventListener('resize', handleResize);
         cancelAnimationFrame(animationId);
       };
-    }, [accent]);
+    }, [accent, foregroundPadding, foregroundSelector]);
 
     return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
   },

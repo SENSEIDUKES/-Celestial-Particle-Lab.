@@ -30,4 +30,8 @@ The first six custom Library glyphs are stored in [`public/icons`](./public/icon
 
 These are the approved symbol direction for the particle system. Coding agents should use and refine these assets rather than replacing them with generic space, wizard, planet, or fantasy-game icons.
 
+## Foreground-safe behavior
+
+`CelestialParticleShower` automatically clears visual space behind open native dialogs and elements marked with `data-celestial-foreground`. It dims particles inside the content bounds, moves glyphs to the outer thirds, and keeps the vertical absorption stream readable above and below. When no matching content is visible, the full particle field returns without swapping to another backdrop.
+
 Edit `src/CelestialParticleShower.tsx` to refine the effect. When finished, copy that component and any finalized glyph assets back into the main Light-Novels repository.
