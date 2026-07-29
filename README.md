@@ -1,8 +1,6 @@
-# Light Novel Workshop
+# SEN Visual Development
 
-A standalone visual workshop for SEN and the Light-Novels app.
-
-Use this repository to build, preview, refine, and approve portable UI pieces before moving them into the main `SENSEIDUKES/Light-Novels` repository or another SEN application.
+The central development and preview space for SEN components and experiences. This repository isolates UI refinement from the main `SENSEIDUKES/Light-Novels` production environment.
 
 ## Coding agents: required setup
 

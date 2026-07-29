@@ -5,9 +5,9 @@ export function WorkshopHome() {
     <main className="workshop-home">
       <header className="workshop-header">
         <p className="workshop-kicker">SEN Visual Development</p>
-        <h1>Light Novel Workshop</h1>
-        <p>
-          A live space for refining portable UI components, animations, icons, rewards, and visual effects before moving them into Light-Novels.
+        <h1 className="workshop-title">SEN Visual Development</h1>
+        <p className="workshop-subtitle">
+          The central development and preview space for SEN components and experiences.
         </p>
       </header>
 

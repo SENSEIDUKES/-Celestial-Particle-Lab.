@@ -4,7 +4,7 @@ Read this file before making changes.
 
 ## Purpose
 
-This repository is the **Light Novel Workshop**: a standalone visual development space for SEN and the main `SENSEIDUKES/Light-Novels` application.
+This repository is the **SEN Development space**: a centralized visual development and preview environment for SEN components and the main `SENSEIDUKES/Light-Novels` application.
 
 Use it to isolate, preview, and refine UI components, animations, icons, rewards, and visual effects without needing the production app, authentication, story data, or migration infrastructure.
 

@@ -40,6 +40,22 @@ export default function AILoadingVeilPreview() {
     setEstimatedSecondsRemaining(null);
   };
 
+  // Very short Scout retrieval — finishes inside the compact grace window,
+  // so the shared LoadingSystem keeps it hidden instead of flashing UI.
+  const runScoutQuickTask = () => {
+    setActiveAgentId('scout');
+    setPhase(null);
+    setProgressMessage('Scanning the archives...');
+    setStreamingBlocksCount(0);
+    setEstimatedSecondsRemaining(null);
+    setIsVeilMinimized(false);
+    setIsGenerating(true);
+    window.setTimeout(() => {
+      setIsGenerating(false);
+      setProgressMessage(null);
+    }, 900);
+  };
+
   return (
     <div className="relative min-h-screen bg-neutral-950 p-8 font-sans text-neutral-200">
       <div className="max-w-2xl mx-auto space-y-8">
@@ -114,7 +130,16 @@ export default function AILoadingVeilPreview() {
               >
                 Chapter Manifestation
               </button>
+              <button
+                onClick={runScoutQuickTask}
+                className="px-4 py-2 bg-portal/20 border border-portal/30 hover:bg-portal/30 text-portal text-xs rounded transition-colors"
+              >
+                Scout Quick Task (~1s, stays hidden)
+              </button>
             </div>
+            <p className="text-[11px] text-neutral-500 leading-snug">
+              Scout tasks route to the compact indicator; tasks finishing faster than the compact grace window never render.
+            </p>
           </div>
 
           <div className="pt-4 border-t border-neutral-800 flex justify-between items-center">
