@@ -2,14 +2,16 @@ import React from 'react';
 import { motion } from 'motion/react';
 
 /**
- * Sword Cultivator Clash — "Animation Concept 2" for the lower half of the
- * Versa generation panel. Two flying sword cultivators drift in from opposite
- * sides, clash once at the center with a spark, recoil, and glide back out on
- * a clean 8-second loop. Circular qi trails flow beneath them, a pulse ring
- * breathes outward from each clash, and faint motes keep the scene alive.
+ * Sword Cultivator Clash — a looping manifestation diorama. Two flying sword
+ * cultivators drift in from opposite sides, clash once at the center with a
+ * spark, recoil, and glide back out on a clean 8-second loop. Circular qi
+ * trails flow beneath them, a pulse ring breathes outward from each clash,
+ * and faint motes keep the scene alive.
  *
- * Pure SVG + motion — no canvas, no WebGL — so it stays sharp and cheap on
- * mobile. Workshop-only: lives in development/ alongside the veil card.
+ * Stage-only component: caption, carousel dots, and expand controls live in
+ * the veil card so several animation scenes can share one footer. The SVG
+ * scales with contain (xMidYMid meet) into whatever space the card gives it.
+ * Pure SVG + motion — sharp and cheap on mobile.
  */
 
 const LOOP = 8;
@@ -73,150 +75,126 @@ const riderTransition = {
 
 export default function SwordCultivatorClash() {
   return (
-    <div className="w-full">
-      <div className="relative w-full max-w-sm mx-auto" aria-hidden="true">
-        <svg viewBox="0 0 400 250" className="w-full h-auto block">
-          <defs>
-            <filter id="scc-glow-red" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="2.2" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="scc-glow-violet" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="2.2" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="scc-soft" x="-80%" y="-80%" width="260%" height="260%">
-              <feGaussianBlur stdDeviation="3.5" />
-            </filter>
-            <linearGradient id="scc-blade-red" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7f1d1d" stopOpacity="0.3" />
-              <stop offset="55%" stopColor="#ef4444" />
-              <stop offset="100%" stopColor="#fff1f0" />
-            </linearGradient>
-            <linearGradient id="scc-blade-violet" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#4c1d95" stopOpacity="0.3" />
-              <stop offset="55%" stopColor="#a855f7" />
-              <stop offset="100%" stopColor="#f5f0ff" />
-            </linearGradient>
-            <linearGradient id="scc-arc-red" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
-            </linearGradient>
-            <linearGradient id="scc-arc-violet" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#a855f7" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="#a855f7" stopOpacity="0.9" />
-            </linearGradient>
-          </defs>
+    <svg viewBox="0 0 400 250" className="h-full w-full block" aria-hidden="true">
+      <defs>
+        <filter id="scc-glow-red" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="scc-glow-violet" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="scc-soft" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3.5" />
+        </filter>
+        <linearGradient id="scc-blade-red" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#7f1d1d" stopOpacity="0.3" />
+          <stop offset="55%" stopColor="#ef4444" />
+          <stop offset="100%" stopColor="#fff1f0" />
+        </linearGradient>
+        <linearGradient id="scc-blade-violet" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#4c1d95" stopOpacity="0.3" />
+          <stop offset="55%" stopColor="#a855f7" />
+          <stop offset="100%" stopColor="#f5f0ff" />
+        </linearGradient>
+        <linearGradient id="scc-arc-red" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
+        </linearGradient>
+        <linearGradient id="scc-arc-violet" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.9" />
+        </linearGradient>
+      </defs>
 
-          {/* Faint orbit ellipse the trails ride on */}
-          <ellipse cx="200" cy="130" rx="118" ry="52" fill="none" stroke="#8b8b9e" strokeWidth="0.7" opacity="0.14" />
+      {/* Faint orbit ellipse the trails ride on */}
+      <ellipse cx="200" cy="130" rx="118" ry="52" fill="none" stroke="#8b8b9e" strokeWidth="0.7" opacity="0.14" />
 
-          {/* Glow underlay for the circular energy trails */}
-          <path d="M 84 116 A 118 52 0 0 0 200 182" fill="none" stroke="#ef4444" strokeWidth="4" opacity="0.12" filter="url(#scc-soft)" />
-          <path d="M 316 116 A 118 52 0 0 1 200 182" fill="none" stroke="#a855f7" strokeWidth="4" opacity="0.12" filter="url(#scc-soft)" />
+      {/* Glow underlay for the circular energy trails */}
+      <path d="M 84 116 A 118 52 0 0 0 200 182" fill="none" stroke="#ef4444" strokeWidth="4" opacity="0.12" filter="url(#scc-soft)" />
+      <path d="M 316 116 A 118 52 0 0 1 200 182" fill="none" stroke="#a855f7" strokeWidth="4" opacity="0.12" filter="url(#scc-soft)" />
 
-          {/* Flowing qi trails — energy streaming around the loop */}
-          <motion.path
-            d="M 84 116 A 118 52 0 0 0 200 182"
-            fill="none" stroke="url(#scc-arc-red)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 11"
-            animate={{ strokeDashoffset: [0, -112] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-          />
-          <motion.path
-            d="M 316 116 A 118 52 0 0 1 200 182"
-            fill="none" stroke="url(#scc-arc-violet)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 11"
-            animate={{ strokeDashoffset: [0, 112] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-          />
+      {/* Flowing qi trails — energy streaming around the loop */}
+      <motion.path
+        d="M 84 116 A 118 52 0 0 0 200 182"
+        fill="none" stroke="url(#scc-arc-red)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 11"
+        animate={{ strokeDashoffset: [0, -112] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.path
+        d="M 316 116 A 118 52 0 0 1 200 182"
+        fill="none" stroke="url(#scc-arc-violet)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 11"
+        animate={{ strokeDashoffset: [0, 112] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+      />
 
-          {/* Pulse rings breathing outward from each clash */}
-          <motion.g
-            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-            animate={{ scale: [0.2, 0.2, 1.7], opacity: [0, 0.8, 0] }}
-            transition={{ duration: LOOP, times: [0, 0.42, 0.72], repeat: Infinity, ease: 'easeOut' }}
-          >
-            <circle cx="200" cy="101" r="34" fill="none" stroke="#e8e4f0" strokeWidth="1.6" />
-          </motion.g>
-          <motion.g
-            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-            animate={{ scale: [0.2, 0.2, 1.45], opacity: [0, 0.5, 0] }}
-            transition={{ duration: LOOP, times: [0, 0.47, 0.8], repeat: Infinity, ease: 'easeOut' }}
-          >
-            <circle cx="200" cy="101" r="48" fill="none" stroke="#c084fc" strokeWidth="1.1" />
-          </motion.g>
+      {/* Pulse rings breathing outward from each clash */}
+      <motion.g
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        animate={{ scale: [0.2, 0.2, 1.7], opacity: [0, 0.8, 0] }}
+        transition={{ duration: LOOP, times: [0, 0.42, 0.72], repeat: Infinity, ease: 'easeOut' }}
+      >
+        <circle cx="200" cy="101" r="34" fill="none" stroke="#e8e4f0" strokeWidth="1.6" />
+      </motion.g>
+      <motion.g
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        animate={{ scale: [0.2, 0.2, 1.45], opacity: [0, 0.5, 0] }}
+        transition={{ duration: LOOP, times: [0, 0.47, 0.8], repeat: Infinity, ease: 'easeOut' }}
+      >
+        <circle cx="200" cy="101" r="48" fill="none" stroke="#c084fc" strokeWidth="1.1" />
+      </motion.g>
 
-          {/* Crimson cultivator — rides in from the left */}
-          <motion.g
-            animate={{ x: [-56, -56, 0, 0, -9, -30, -56], opacity: [0, 1, 1, 1, 1, 0.85, 0] }}
-            transition={riderTransition}
-          >
-            <g transform="translate(136 82) rotate(16)">
-              <Rider p={RED} filterId="scc-glow-red" bladeId="scc-blade-red" />
-            </g>
-          </motion.g>
+      {/* Crimson cultivator — rides in from the left */}
+      <motion.g
+        animate={{ x: [-56, -56, 0, 0, -9, -30, -56], opacity: [0, 1, 1, 1, 1, 0.85, 0] }}
+        transition={riderTransition}
+      >
+        <g transform="translate(136 82) rotate(16)">
+          <Rider p={RED} filterId="scc-glow-red" bladeId="scc-blade-red" />
+        </g>
+      </motion.g>
 
-          {/* Violet cultivator — rides in from the right, mirrored */}
-          <motion.g
-            animate={{ x: [56, 56, 0, 0, 9, 30, 56], opacity: [0, 1, 1, 1, 1, 0.85, 0] }}
-            transition={riderTransition}
-          >
-            <g transform="translate(264 82) scale(-1 1) rotate(16)">
-              <Rider p={VIOLET} filterId="scc-glow-violet" bladeId="scc-blade-violet" />
-            </g>
-          </motion.g>
+      {/* Violet cultivator — rides in from the right, mirrored */}
+      <motion.g
+        animate={{ x: [56, 56, 0, 0, 9, 30, 56], opacity: [0, 1, 1, 1, 1, 0.85, 0] }}
+        transition={riderTransition}
+      >
+        <g transform="translate(264 82) scale(-1 1) rotate(16)">
+          <Rider p={VIOLET} filterId="scc-glow-violet" bladeId="scc-blade-violet" />
+        </g>
+      </motion.g>
 
-          {/* Clash spark — a single sharp flash at blade contact */}
-          <motion.g
-            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-            animate={{ scale: [0.15, 0.15, 1.4, 0.85, 0.3], opacity: [0, 0, 1, 0.65, 0] }}
-            transition={{ duration: LOOP, times: [0, 0.385, 0.425, 0.5, 0.62], repeat: Infinity, ease: 'easeOut' }}
-          >
-            <g transform="translate(200 101)">
-              {[0, 45, 90, 135].map((deg) => (
-                <line key={deg} x1="0" y1="-7" x2="0" y2="-19" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" opacity="0.8" transform={`rotate(${deg})`} />
-              ))}
-              <path d="M0 -17 L3 -3 L17 0 L3 3 L0 17 L-3 3 L-17 0 L-3 -3 Z" fill="#ffffff" filter="url(#scc-soft)" />
-              <circle r="4.5" fill="#ffffff" />
-            </g>
-          </motion.g>
-
-          {/* Ambient motes keeping the scene alive between clashes */}
-          {SPARKS.map(([cx, cy, r, color, dur, delay], i) => (
-            <motion.circle
-              key={i}
-              cx={cx} cy={cy} r={r} fill={color}
-              animate={{ y: [0, -26], opacity: [0, 0.75, 0] }}
-              transition={{ duration: dur, delay, repeat: Infinity, ease: 'easeInOut' }}
-            />
+      {/* Clash spark — a single sharp flash at blade contact */}
+      <motion.g
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        animate={{ scale: [0.15, 0.15, 1.4, 0.85, 0.3], opacity: [0, 0, 1, 0.65, 0] }}
+        transition={{ duration: LOOP, times: [0, 0.385, 0.425, 0.5, 0.62], repeat: Infinity, ease: 'easeOut' }}
+      >
+        <g transform="translate(200 101)">
+          {[0, 45, 90, 135].map((deg) => (
+            <line key={deg} x1="0" y1="-7" x2="0" y2="-19" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" opacity="0.8" transform={`rotate(${deg})`} />
           ))}
-        </svg>
-      </div>
+          <path d="M0 -17 L3 -3 L17 0 L3 3 L0 17 L-3 3 L-17 0 L-3 -3 Z" fill="#ffffff" filter="url(#scc-soft)" />
+          <circle r="4.5" fill="#ffffff" />
+        </g>
+      </motion.g>
 
-      {/* Concept caption — matches the reference panel footer */}
-      <div className="mt-4 text-center">
-        <p className="font-display text-[11px] tracking-[0.3em] uppercase text-human/90 mb-1">
-          Animation Concept 2
-        </p>
-        <p className="font-serif text-base text-signal mb-3">
-          Sword Cultivator Clash
-        </p>
-        <div className="flex items-center justify-center gap-2">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <span
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full ${
-                i === 2 ? 'bg-human shadow-[0_0_6px_rgba(139,0,0,0.8)]' : 'bg-neutral-700'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
+      {/* Ambient motes keeping the scene alive between clashes */}
+      {SPARKS.map(([cx, cy, r, color, dur, delay], i) => (
+        <motion.circle
+          key={i}
+          cx={cx} cy={cy} r={r} fill={color}
+          animate={{ y: [0, -26], opacity: [0, 0.75, 0] }}
+          transition={{ duration: dur, delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+    </svg>
   );
 }
