@@ -3,6 +3,7 @@ import AILoadingVeilPreview from './workshop/previews/AILoadingVeilPreview/AILoa
 import { IdleCultivationPreview } from './workshop/previews/idle-cultivation/IdleCultivationPreview';
 import { IdleCultivationV2Preview } from './workshop/previews/idle-cultivation-v2/IdleCultivationV2Preview';
 import RelicsPreview from './workshop/previews/relics/RelicsPreview';
+import RelicsDevPreview from './workshop/previews/relics-dev/RelicsDevPreview';
 import { WorkshopHome } from './workshop/WorkshopHome';
 import { ArrowLeft } from 'lucide-react';
 import './styles.css';
@@ -62,6 +63,14 @@ export default function App() {
     return (
       <PreviewLayout>
         <RelicsPreview />
+      </PreviewLayout>
+    );
+  }
+
+  if (preview === 'relics-dev') {
+    return (
+      <PreviewLayout>
+        <RelicsDevPreview />
       </PreviewLayout>
     );
   }
