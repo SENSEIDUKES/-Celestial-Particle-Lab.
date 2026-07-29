@@ -264,6 +264,18 @@ body {
   display: grid;
   place-items: center;
 }
+/* Same look as .preview-stage but scoped to its parent instead of the
+   viewport, so it can sit inside the FeatureWorkspace canvas without
+   covering the workspace header and view switcher. */
+.preview-stage-embedded {
+  --celestial-accent: #f5b942;
+  position: relative;
+  min-height: calc(100vh - 11rem);
+  overflow: hidden;
+  background: #000;
+  display: grid;
+  place-items: center;
+}
 .particle-canvas {
   position: absolute;
   inset: 0;

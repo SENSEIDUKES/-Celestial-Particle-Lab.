@@ -82,7 +82,7 @@ function CardVisual({ id }: { id: string }) {
   if (id === 'celestial-backdrop') return <CelestialVisual />;
   if (id === 'chapter-generation-manifestation') return <ManifestationVisual />;
   if (id === 'idle-cultivation') return <IdleCultivationVisual />;
-  if (id === 'relics-gallery' || id === 'relics-dev') return <RelicsGalleryVisual />;
+  if (id === 'relics-gallery') return <RelicsGalleryVisual />;
   return null;
 }
 
