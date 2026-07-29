@@ -61,8 +61,47 @@ Before implementing:
    output when the task crosses those layers.
 5. Identify the current canonical owner of the behavior.
 
-Do not perform a broad repository archaeology pass when a focused trace establishes
-ownership.
+#### Focused trace pattern
+
+Use the shortest trace that proves ownership:
+
+1. **Visible entry point:** find the route, screen, rendered copy, event handler, or
+   component where the behavior appears.
+2. **State connection:** follow imported hooks, selectors, context, props, actions, or
+   query keys to the state owner.
+3. **Domain operation:** follow the action into the service, adapter, generation
+   pipeline, repository, API handler, or shared engine that performs the work.
+4. **Persistence or media boundary:** identify the database access, synchronization
+   path, storage adapter, object key, or durable record involved.
+5. **Return path:** confirm how the result reaches downstream state and renders after
+   refresh or reload.
+
+Search with concrete evidence from the task. Useful search anchors include:
+
+- exact visible copy or error text;
+- component, type, action, event, field, or query-key names;
+- persisted table/field names and media metadata;
+- imports and callers of the first relevant symbol;
+- tests describing the expected behavior;
+- paired domain terms such as `story + cover`, `codex + portrait`, `reward + claim`,
+  or `chapter + persist`.
+
+When the first search is noisy, narrow by directory, file type, caller, or a second
+co-occurring term. When it returns nothing, search the rendered copy, stored field, or
+consumer instead of inventing a new implementation.
+
+Example traces:
+
+- **Missing Codex portrait:** card/rendered entity → portrait selector/hook → entity
+  registration or image-resolution service → Postgres media reference → R2 object →
+  reload rendering.
+- **Relic reward mismatch:** claim interaction → reward action/store → cultivation or
+  relic calculation → persistence → reveal-card presentation.
+- **Slow Library story load:** Library screen → hydration/sync action → query/repository
+  → reconciliation and cover-media resolution → rendered story entry.
+
+Stop once the owner and affected contract are clear. Do not perform broad repository
+archaeology when a focused trace establishes ownership.
 
 ### 3. State the change boundary
 
@@ -211,4 +250,6 @@ A successful use of this skill leaves the repository with:
 - existing contracts preserved or deliberately migrated;
 - affected loading, failure, and persistence states considered;
 - targeted validation completed;
-- a concise explanation of what system was changed and why it was the correct owner.
+- a concise explanation of what system was changed and why it was the correct owner;
+- any discovered mismatch between this skill's system map and the current repository
+  called out so the reference can be corrected instead of silently drifting.
