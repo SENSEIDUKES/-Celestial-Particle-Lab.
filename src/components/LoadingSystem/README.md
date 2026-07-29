@@ -14,7 +14,6 @@
 - **2026-07-29:** Refined the simulator page layout: one primary-veil button with phase selector, and two compact-indicator buttons (Versa background, Scout retrieval).
 - **2026-07-29:** `LoadingVeil` now hides the atmospheric phrase block when the task card's `description` is empty, hides the phase marker pill when `operationTitle` is empty, and accepts an optional `emblemClassName` spacing override (threaded through `LoadingSystem`) — the hooks the DEV veil uses for its compact layout.
 - **2026-07-29:** Forked `LoadingVeil`/`LoadingSystem` into `DevLoadingVeilCard`/`DevLoadingSystem` so the DEV veil can iterate on Versa's presence without touching the reference. DEV veil now shows a live "Manifesting N/20" tracker detail (was "N passages formed", incrementing as passages stream in) and gives Versa's floating emblem visual justification: a grounded violet pool breathing independently beneath her, a slow-rotating violet cloak-energy ring, and qi motes rising past her. The reference "Versa" veil is untouched.
-- **2026-07-29:** Replaced the DEV veil's smooth cloak-energy ring with a live, DBZ-aura-style effect (reference: a Super Saiyan power-up) — jagged violet flame tongues rising off her silhouette that flicker unevenly rather than breathing on one shared cycle, a fading shockwave ring released at her feet, and faster/erratic rising sparks. Reads as active power instead of a static glow.
 
 ## What this is
 

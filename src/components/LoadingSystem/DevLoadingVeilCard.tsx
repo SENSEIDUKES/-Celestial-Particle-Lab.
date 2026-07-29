@@ -215,84 +215,46 @@ export default function DevLoadingVeilCard({ task, onMinimize, backdrop, emblemC
           />
         )}
 
-        {/* Ground shockwave — a burst ring releasing outward at her feet, like she's discharging power. */}
-        {isVersa && (
-          <motion.div
-            aria-hidden="true"
-            className="absolute left-1/2 bottom-[11%] -translate-x-1/2 rounded-full pointer-events-none"
-            style={{ width: '34%', height: '9%', border: '1.5px solid rgba(233,213,255,0.65)' }}
-            animate={{ scale: [1, 2.8], opacity: [0.6, 0] }}
-            transition={{ duration: 1.7, repeat: Infinity, ease: 'easeOut' }}
-          />
-        )}
-
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={
-            isVersa
-              ? { opacity: [0.55, 1, 0.65, 0.95, 0.6], scale: [0.97, 1.08, 1, 1.1, 0.98] }
-              : { opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }
-          }
-          transition={isVersa ? { duration: 1.1, repeat: Infinity, ease: 'easeInOut' } : { duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           className={`absolute inset-[-20%] rounded-full blur-2xl ${isVersa ? 'bg-human/20' : 'bg-portal/20'}`}
         />
 
-        {/* Cloak energy — a live DBZ-style aura: jagged violet flame tongues licking upward off her
-            silhouette, flickering fast and unevenly rather than breathing as one smooth pulse, so the
-            floating pose reads as barely-contained power instead of a static glow sitting behind her. */}
-        {isVersa &&
-          [
-            { left: '14%', h: 92, w: 16, dur: 0.55, delay: 0 },
-            { left: '27%', h: 128, w: 20, dur: 0.42, delay: 0.12 },
-            { left: '41%', h: 108, w: 17, dur: 0.5, delay: 0.28 },
-            { left: '50%', h: 148, w: 24, dur: 0.38, delay: 0.05 },
-            { left: '61%', h: 112, w: 18, dur: 0.48, delay: 0.2 },
-            { left: '74%', h: 132, w: 21, dur: 0.44, delay: 0.09 },
-            { left: '87%', h: 88, w: 15, dur: 0.6, delay: 0.17 },
-          ].map((f, i) => (
-            <motion.div
-              key={i}
-              aria-hidden="true"
-              className="absolute bottom-[16%] pointer-events-none"
-              style={{
-                left: f.left,
-                width: f.w,
-                height: f.h,
-                marginLeft: -f.w / 2,
-                transformOrigin: 'bottom center',
-                clipPath:
-                  'polygon(30% 100%, 10% 68%, 38% 52%, 18% 30%, 50% 14%, 40% 42%, 72% 22%, 58% 55%, 88% 62%, 62% 100%)',
-                background:
-                  'linear-gradient(to top, rgba(243,232,255,0.95) 0%, rgba(192,132,252,0.85) 30%, rgba(147,51,234,0.5) 60%, transparent 100%)',
-                filter: 'blur(1.2px)',
-                mixBlendMode: 'screen',
-              }}
-              animate={{ scaleY: [0.7, 1, 0.8, 1.05, 0.75], opacity: [0.55, 1, 0.65, 0.95, 0.6] }}
-              transition={{ duration: f.dur, repeat: Infinity, ease: 'easeInOut', delay: f.delay }}
-            />
-          ))}
+        {/* Cloak energy — slow-swirling violet wisps circling the figure, the visual reason she floats. */}
+        {isVersa && (
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-[-10%] rounded-full pointer-events-none"
+            style={{
+              background:
+                'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.4) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.32) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
+              filter: 'blur(9px)',
+              mixBlendMode: 'screen',
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
 
-        {/* Qi sparks — quick, erratic embers snapping up and away from the aura rather than drifting calmly. */}
+        {/* Qi motes rising past her as she hovers. */}
         {isVersa &&
-          [0, 1, 2, 3, 4].map(i => (
+          [0, 1, 2, 3].map(i => (
             <motion.span
               key={i}
               aria-hidden="true"
               className="absolute rounded-full pointer-events-none"
               style={{
-                left: `${20 + i * 15}%`,
-                bottom: '18%',
-                width: i % 2 === 0 ? 3 : 2,
-                height: i % 2 === 0 ? 3 : 2,
-                background: 'rgba(243,232,255,0.95)',
-                boxShadow: '0 0 6px rgba(192,132,252,0.95), 0 0 14px rgba(147,51,234,0.6)',
+                left: `${26 + i * 16}%`,
+                bottom: '14%',
+                width: 3,
+                height: 3,
+                background: 'rgba(216,180,254,0.95)',
+                boxShadow: '0 0 6px rgba(168,85,247,0.9), 0 0 12px rgba(168,85,247,0.5)',
               }}
-              animate={{
-                y: [0, -(52 + i * 10)],
-                opacity: [0, 1, 0.8, 0],
-                x: [0, (i % 2 === 0 ? 1 : -1) * (8 + i * 2), (i % 2 === 0 ? -1 : 1) * 4],
-              }}
-              transition={{ duration: 1.1 + i * 0.15, repeat: Infinity, delay: i * 0.22, ease: 'easeOut' }}
+              animate={{ y: [0, -(48 + i * 8)], opacity: [0, 0.9, 0], x: [0, (i % 2 === 0 ? 1 : -1) * 6] }}
+              transition={{ duration: 3.4 + i * 0.4, repeat: Infinity, delay: i * 0.7, ease: 'easeOut' }}
             />
           ))}
 
