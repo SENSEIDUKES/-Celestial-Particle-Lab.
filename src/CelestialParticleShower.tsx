@@ -16,126 +16,374 @@ interface Particle {
   rotationSpeed?: number;
 }
 
+interface AccentPalette {
+  /** The accent itself. */
+  base: Rgb;
+  /** Lightened — hot cores, bright rims. */
+  bright: Rgb;
+  /** Near-white tint of the accent — the hottest points. */
+  pale: Rgb;
+  /** Darkened — scroll body, roller silhouettes. */
+  deep: Rgb;
+  /** Mid-dark — parchment gradient stops. */
+  dim: Rgb;
+}
+
+const DEFAULT_ACCENT: Rgb = [245, 185, 66];
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+const clampChannel = (value: number) => Math.min(255, Math.max(0, Math.round(value)));
+
+const mix = (a: Rgb, b: Rgb, t: number): Rgb => [
+  clampChannel(a[0] + (b[0] - a[0]) * t),
+  clampChannel(a[1] + (b[1] - a[1]) * t),
+  clampChannel(a[2] + (b[2] - a[2]) * t),
+];
+
+const WHITE: Rgb = [255, 255, 255];
+const BLACK: Rgb = [0, 0, 0];
+
+const buildPalette = (accent: Rgb): AccentPalette => ({
+  base: accent,
+  bright: mix(accent, WHITE, 0.35),
+  pale: mix(accent, WHITE, 0.72),
+  deep: mix(accent, BLACK, 0.82),
+  dim: mix(accent, BLACK, 0.55),
+});
+
+const hexToRgb = (value: string): Rgb | null => {
+  const hex = value.trim().replace(/^#/, '');
+  const full =
+    hex.length === 3
+      ? hex.split('').map((c) => c + c).join('')
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
+  return [
+    parseInt(full.slice(0, 2), 16),
+    parseInt(full.slice(2, 4), 16),
+    parseInt(full.slice(4, 6), 16),
+  ];
+};
+
 const toRgba = ([red, green, blue]: Rgb, alpha: number) =>
   `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 
-export const CelestialParticleShower: React.FC = React.memo(() => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export interface CelestialParticleShowerProps {
+  /**
+   * Accent color for the whole effect — scroll glow, beam, absorption point,
+   * particle bloom, and glyph halos all derive from it. Accepts a hex string
+   * (e.g. "#a855f7"). When omitted, the component reads the
+   * `--celestial-accent` CSS variable from its ancestors, falling back to
+   * celestial gold.
+   */
+  accent?: string;
+}
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = React.memo(
+  ({ accent }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    let animationId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
+      // Resolve the accent: prop → CSS variable → default gold.
+      const cssAccent = getComputedStyle(canvas).getPropertyValue('--celestial-accent');
+      const accentRgb =
+        (accent && hexToRgb(accent)) || (cssAccent && hexToRgb(cssAccent)) || DEFAULT_ACCENT;
+      const palette = buildPalette(accentRgb);
 
-    const particles: Particle[] = [];
-    const glyphs = [
-      '/icons/yin-yang.svg',
-      '/icons/shen-long-dragon.svg',
-      '/icons/sacred-tree.svg',
-      '/icons/thunder-cloud.svg',
-      '/icons/book-scroll.svg',
-      '/icons/cultivator.svg',
-    ].map((source) => {
-      const glyph = new Image();
-      glyph.decoding = 'async';
-      glyph.src = source;
-      return glyph;
-    });
-    const colors: Rgb[] = [
-      [245, 158, 11],
-      [4, 172, 255],
-      [255, 215, 0],
-      [255, 255, 255],
-      [168, 85, 247],
-    ];
+      let animationId: number;
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
 
-    const createParticle = (isInitial = false): Particle => {
-      const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
-      const isGlyph = size > 4 && Math.random() < 0.42;
-
-      return {
-        x: Math.random() * width,
-        y: isInitial ? Math.random() * height : height + 20,
-        size,
-        speedY: -(Math.random() * 1.5 + 0.5),
-        speedX: (Math.random() - 0.5) * 0.8,
-        opacity: Math.random() * 0.7 + 0.3,
-        fadeSpeed: Math.random() * 0.003 + 0.001,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
-        rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.02,
+      const handleResize = () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
       };
-    };
+      window.addEventListener('resize', handleResize);
 
-    for (let i = 0; i < 75; i++) {
-      particles.push(createParticle(true));
-    }
+      const particles: Particle[] = [];
+      const glyphs = [
+        '/icons/yin-yang.svg',
+        '/icons/shen-long-dragon.svg',
+        '/icons/sacred-tree.svg',
+        '/icons/thunder-cloud.svg',
+        '/icons/book-scroll.svg',
+        '/icons/cultivator.svg',
+      ].map((source) => {
+        const glyph = new Image();
+        glyph.decoding = 'async';
+        glyph.src = source;
+        return glyph;
+      });
 
-    const animate = () => {
-      ctx.clearRect(0, 0, width, height);
+      // Mostly accent-derived tones; a neutral minority keeps depth.
+      const colors: Rgb[] = [
+        palette.base,
+        palette.bright,
+        palette.pale,
+        mix(palette.base, WHITE, 0.15),
+        WHITE,
+        mix(WHITE, palette.base, 0.15), // cool white with a whisper of accent
+      ];
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.y += p.speedY;
-        p.x += p.speedX;
-        p.opacity -= p.fadeSpeed;
+      const createParticle = (isInitial = false): Particle => {
+        const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
+        const isGlyph = size > 4 && Math.random() < 0.42;
 
-        if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
-          p.rotation += p.rotationSpeed;
-        }
+        return {
+          x: Math.random() * width,
+          y: isInitial ? Math.random() * height : height + 20,
+          size,
+          speedY: -(Math.random() * 1.5 + 0.5),
+          speedX: (Math.random() - 0.5) * 0.8,
+          opacity: Math.random() * 0.7 + 0.3,
+          fadeSpeed: Math.random() * 0.003 + 0.001,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.02,
+        };
+      };
 
-        if (p.opacity <= 0 || p.y < -20) {
-          particles[i] = createParticle(false);
-          continue;
-        }
-
-        ctx.save();
-        ctx.globalAlpha = p.opacity;
-
-        if (p.glyph?.complete && p.glyph.naturalWidth > 0) {
-          ctx.translate(p.x, p.y);
-          if (p.rotation !== undefined) ctx.rotate(p.rotation);
-          const glyphSize = Math.max(22, p.size * 2.4);
-          ctx.shadowBlur = glyphSize * 0.75;
-          ctx.shadowColor = 'rgba(245, 185, 66, 0.78)';
-          ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
-        } else {
-          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
-          gradient.addColorStop(0, toRgba(p.color, 1));
-          gradient.addColorStop(0.4, toRgba(p.color, 0.4));
-          gradient.addColorStop(1, toRgba(p.color, 0));
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        ctx.restore();
+      for (let i = 0; i < 110; i++) {
+        particles.push(createParticle(true));
       }
 
-      animationId = requestAnimationFrame(animate);
-    };
+      // Fill an elliptical radial gradient (canvas gradients are circular, so
+      // we draw in a scaled space).
+      const fillEllipticalGlow = (
+        x: number,
+        y: number,
+        rx: number,
+        ry: number,
+        stops: readonly (readonly [number, string])[],
+      ) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(rx, ry);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        for (const [offset, color] of stops) gradient.addColorStop(offset, color);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      };
 
-    animate();
+      // --- The celestial scroll -------------------------------------------
+      // Cosmic, not literal: almost no visible body — just a delicate curved
+      // rim of light, two spiral rollers, a compact star at the absorption
+      // point, and a whisper of a beam.
+      const drawScroll = (time: number) => {
+        const cx = width / 2;
+        const rimY = height * 0.016; // rim height at the left/right edges
+        const dipY = height * 0.055; // the rim dips at center — the absorption point
+        const pulse = 0.9 + 0.1 * Math.sin(time * 1.3);
+        const flicker = 0.92 + 0.08 * Math.sin(time * 2.1);
+        const rimControlY = 2 * dipY - rimY;
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationId);
-    };
-  }, []);
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
 
-  return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
-});
+        // The faintest suggestion of mass above the rim — nearly black,
+        // just enough to read as an object hanging overhead.
+        const sheetGrad = ctx.createLinearGradient(0, -height * 0.4, 0, dipY);
+        sheetGrad.addColorStop(0, toRgba(palette.deep, 0));
+        sheetGrad.addColorStop(1, toRgba(palette.deep, 0.16));
+        ctx.beginPath();
+        ctx.moveTo(-10, rimY);
+        ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
+        ctx.lineTo(width + 10, -height);
+        ctx.lineTo(-10, -height);
+        ctx.closePath();
+        ctx.fillStyle = sheetGrad;
+        ctx.fill();
+
+        // Spiral rollers: fine rings of light wrapped in a soft halo,
+        // half offscreen at each end.
+        const rollerR = Math.min(width, height) * 0.042;
+        for (const side of [-1, 1]) {
+          const rx = side < 0 ? -rollerR * 0.3 : width + rollerR * 0.3;
+          const ry = rimY - rollerR * 0.3;
+          // Halo: a warm pool of light behind the rings.
+          fillEllipticalGlow(rx, ry, rollerR * 2.6, rollerR * 2.6, [
+            [0, toRgba(palette.pale, 0.28 * pulse)],
+            [0.45, toRgba(palette.bright, 0.13 * pulse)],
+            [1, toRgba(palette.base, 0)],
+          ]);
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = toRgba(palette.bright, 0.85);
+          for (const [radius, alpha, lineWidth] of [
+            [rollerR, 0.55, 1.4],
+            [rollerR * 0.68, 0.42, 1.2],
+            [rollerR * 0.4, 0.3, 1],
+            [rollerR * 0.16, 0.4, 1],
+          ] as const) {
+            ctx.beginPath();
+            ctx.arc(rx, ry, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = toRgba(palette.bright, alpha * flicker);
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+        }
+
+        // The rim: one delicate curved line of light, dipping at center.
+        ctx.beginPath();
+        ctx.moveTo(-10, rimY);
+        ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
+        ctx.strokeStyle = toRgba(palette.base, 0.16 * flicker);
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = toRgba(palette.bright, 0.8);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-10, rimY);
+        ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
+        ctx.strokeStyle = toRgba(palette.pale, 0.72 * flicker);
+        ctx.lineWidth = 1.1;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Soft halo around the rim's center dip.
+        fillEllipticalGlow(cx, dipY, width * 0.3, height * 0.085, [
+          [0, toRgba(palette.pale, 0.32 * pulse)],
+          [0.4, toRgba(palette.bright, 0.16 * pulse)],
+          [0.75, toRgba(palette.base, 0.05 * pulse)],
+          [1, toRgba(palette.base, 0)],
+        ]);
+
+        // The absorption point: a soft diffuse glow with only a whisper of
+        // a cross sparkle — felt, not drawn.
+        fillEllipticalGlow(cx, dipY, height * 0.042, height * 0.042, [
+          [0, toRgba(mix(palette.pale, WHITE, 0.6), 0.72 * pulse)],
+          [0.4, toRgba(palette.pale, 0.3 * pulse)],
+          [1, toRgba(palette.bright, 0)],
+        ]);
+        const sparkleLen = height * 0.045;
+        const sparkleGradH = ctx.createLinearGradient(cx - sparkleLen, 0, cx + sparkleLen, 0);
+        sparkleGradH.addColorStop(0, toRgba(palette.pale, 0));
+        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.22 * pulse));
+        sparkleGradH.addColorStop(1, toRgba(palette.pale, 0));
+        ctx.fillStyle = sparkleGradH;
+        ctx.fillRect(cx - sparkleLen, dipY - 0.4, sparkleLen * 2, 0.8);
+        const sparkleGradV = ctx.createLinearGradient(0, dipY - sparkleLen * 0.6, 0, dipY + sparkleLen * 0.6);
+        sparkleGradV.addColorStop(0, toRgba(palette.pale, 0));
+        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.14 * pulse));
+        sparkleGradV.addColorStop(1, toRgba(palette.pale, 0));
+        ctx.fillStyle = sparkleGradV;
+        ctx.fillRect(cx - 0.4, dipY - sparkleLen * 0.6, 0.8, sparkleLen * 1.2);
+
+        // The beam: a single broad wash of light, no structure. Layers blend
+        // into one soft column that dissolves into the dark.
+        const beamLen = height * 0.5;
+        fillEllipticalGlow(cx, dipY + beamLen * 0.3, width * 0.24, beamLen * 0.58, [
+          [0, toRgba(palette.pale, 0.075 * pulse)],
+          [0.5, toRgba(palette.bright, 0.035 * pulse)],
+          [1, toRgba(palette.bright, 0)],
+        ]);
+        fillEllipticalGlow(cx, dipY + beamLen * 0.22, width * 0.11, beamLen * 0.4, [
+          [0, toRgba(palette.pale, 0.06 * pulse)],
+          [1, toRgba(palette.bright, 0)],
+        ]);
+
+        ctx.restore();
+      };
+
+      const animate = () => {
+        const time = performance.now() / 1000;
+        ctx.clearRect(0, 0, width, height);
+
+        drawScroll(time);
+
+        // One absorption point: the center dip of the scroll's lower rim.
+        const absorbX = width / 2;
+        const absorbY = height * 0.055;
+        const funnelSpan = height * 0.85; // the funnel reaches almost the full screen
+        const killRadius = Math.max(10, height * 0.014);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+
+          const dx = absorbX - p.x;
+          const dy = p.y - absorbY;
+          const dist = Math.hypot(dx, dy);
+
+          // Funnel: gentle convergence low on screen, strong near the rim.
+          const funnelT = clamp01(1 - p.y / funnelSpan);
+          // Absorption: final shrink/fade in the last stretch to the point.
+          const absorbT = clamp01(1 - dist / (height * 0.3));
+
+          // Curve toward the center line, with a faint swirl so paths arc
+          // instead of beelining. Kept loose so the stream stays spread out.
+          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.0037);
+          p.speedX += -dy * 0.00001 * funnelT;
+          p.speedX *= 0.99;
+
+          // Slight acceleration as the particle is drawn upward.
+          p.y += p.speedY * (1 + funnelT * 0.55);
+          p.x += p.speedX;
+
+          p.opacity -= p.fadeSpeed * (1 + absorbT * 1.5);
+
+          if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
+            p.rotation += p.rotationSpeed * (1 + absorbT);
+          }
+
+          // Shrink and dissolve into the light.
+          const scale = 1 - Math.pow(absorbT, 1.5) * 0.92;
+          const alpha = p.opacity * (1 - Math.pow(absorbT, 2) * 0.85);
+          // Dust caught in the beam takes on the accent as it nears the scroll.
+          const color = mix(p.color, palette.bright, absorbT * 0.85);
+
+          if (p.opacity <= 0 || dist < killRadius || scale <= 0.06 || p.y < -20) {
+            particles[i] = createParticle(false);
+            continue;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = clamp01(alpha);
+
+          if (p.glyph?.complete && p.glyph.naturalWidth > 0) {
+            ctx.translate(p.x, p.y);
+            if (p.rotation !== undefined) ctx.rotate(p.rotation);
+            const glyphSize = Math.max(22, p.size * 2.4) * scale;
+            ctx.shadowBlur = glyphSize * (0.75 + absorbT);
+            ctx.shadowColor = toRgba(palette.base, 0.78);
+            ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
+          } else {
+            const radius = p.size * 2 * scale;
+            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+            gradient.addColorStop(0, toRgba(color, 1));
+            gradient.addColorStop(0.4, toRgba(color, 0.4));
+            gradient.addColorStop(1, toRgba(color, 0));
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(radius, 0.1), 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.restore();
+        }
+
+        animationId = requestAnimationFrame(animate);
+      };
+
+      animate();
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        cancelAnimationFrame(animationId);
+      };
+    }, [accent]);
+
+    return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
+  },
+);
