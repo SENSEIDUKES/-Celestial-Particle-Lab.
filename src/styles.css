@@ -99,6 +99,7 @@ body {
   position: relative;
   z-index: 2;
   width: min(27rem, calc(100vw - 3rem));
+  box-sizing: border-box;
   padding: 2.25rem;
   border: 1px solid color-mix(in srgb, #f5b942 32%, transparent);
   border-radius: 1.5rem;
