@@ -11,6 +11,7 @@
 ## Workshop history
 
 - **2026-07-29:** Created faithful Workshop replica, extracted RelicCard and RelicModal out of UserProfileInventoryPanel.tsx, mocked CosmicArtifact types and data, and separated by rank in the preview.
+- **2026-07-29:** Added a Reveal button under each small relic that opens the full-screen Relic Reveal celebration flow (see `src/components/relic-reveal/`), plus a Workshop-only Replay Effects tool for fine-tuning the rarity effects.
 
 ## Replication Notes
 
