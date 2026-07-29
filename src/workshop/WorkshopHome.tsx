@@ -1,26 +1,124 @@
-import { workshopEntries } from './manifest';
+import { workshopEntries, type WorkshopEntry } from './manifest';
+
+const statusLabel: Record<WorkshopEntry['status'], string> = {
+  draft: 'In Development',
+  refining: 'In Review',
+  approved: 'Approved',
+};
+
+function CelestialVisual() {
+  return (
+    <svg viewBox="0 0 400 240" role="img" aria-label="Celestial particle backdrop preview" preserveAspectRatio="xMidYMid slice">
+      <circle cx="205" cy="105" r="72" fill="none" stroke="#b3a898" strokeWidth="1" opacity="0.55" />
+      <path d="M-10 150 C 70 80, 140 190, 210 120 S 330 70, 420 130" fill="none" stroke="#a89c8a" strokeWidth="1.1" opacity="0.9" />
+      <path d="M-10 165 C 70 95, 140 205, 210 135 S 330 85, 420 145" fill="none" stroke="#a89c8a" strokeWidth="1" opacity="0.6" />
+      <path d="M-10 135 C 70 65, 140 175, 210 105 S 330 55, 420 115" fill="none" stroke="#a89c8a" strokeWidth="1" opacity="0.45" />
+      <path d="M-10 180 C 70 110, 140 220, 210 150 S 330 100, 420 160" fill="none" stroke="#a89c8a" strokeWidth="1" opacity="0.3" />
+      <circle cx="120" cy="98" r="1.6" fill="#8f8474" />
+      <circle cx="268" cy="70" r="1.6" fill="#8f8474" />
+      <circle cx="310" cy="150" r="1.4" fill="#8f8474" opacity="0.7" />
+    </svg>
+  );
+}
+
+function ManifestationVisual() {
+  return (
+    <svg viewBox="0 0 400 240" role="img" aria-label="Chapter generation manifestation preview" preserveAspectRatio="xMidYMid slice">
+      <rect x="62" y="38" width="276" height="168" rx="8" fill="#fbf8f1" stroke="#ddd4c4" strokeWidth="1" />
+      <text x="92" y="118" fontFamily="Georgia, 'Times New Roman', serif" fontSize="44" fill="#b0a696">Aa</text>
+      <rect x="158" y="66" width="140" height="10" rx="5" fill="#d8d0bf" />
+      <rect x="158" y="88" width="158" height="6" rx="3" fill="#e3dcd0" />
+      <rect x="158" y="102" width="158" height="6" rx="3" fill="#e3dcd0" />
+      <rect x="158" y="116" width="120" height="6" rx="3" fill="#e3dcd0" />
+      <line x1="62" y1="164" x2="338" y2="164" stroke="#ddd4c4" strokeWidth="1" />
+      <g stroke="#9d927e" strokeWidth="1.6" strokeLinecap="round">
+        <line x1="100" y1="180" x2="112" y2="180" />
+        <line x1="100" y1="185" x2="114" y2="185" />
+        <line x1="100" y1="190" x2="110" y2="190" />
+      </g>
+      <text x="152" y="191" fontFamily="Georgia, serif" fontSize="13" fill="#9d927e">Tt</text>
+      <text x="196" y="190" fontFamily="Georgia, serif" fontSize="15" fill="#9d927e">“</text>
+      <circle cx="240" cy="184" r="5" fill="none" stroke="#9d927e" strokeWidth="1.6" />
+      <path d="M286 178 h10 v14 l-5 -4 l-5 4 z" fill="none" stroke="#9d927e" strokeWidth="1.4" strokeLinejoin="round" />
+      <rect x="146" y="200" width="24" height="2.5" rx="1.25" fill="#b3402f" />
+    </svg>
+  );
+}
+
+function CardVisual({ id }: { id: string }) {
+  if (id === 'celestial-backdrop') return <CelestialVisual />;
+  if (id === 'chapter-generation-manifestation') return <ManifestationVisual />;
+  return null;
+}
+
+function EdgeOrbit({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg
+      className={`workshop-orbit workshop-orbit-${side}`}
+      viewBox="0 0 300 600"
+      aria-hidden="true"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <circle cx="150" cy="300" r="220" fill="none" stroke="#b3402f" strokeWidth="1" opacity="0.18" />
+      <circle cx="150" cy="300" r="170" fill="none" stroke="#b3402f" strokeWidth="1" opacity="0.12" />
+      <circle cx="150" cy="80" r="2" fill="#b3402f" opacity="0.5" />
+      <circle cx="330" cy="240" r="1.6" fill="#b3402f" opacity="0.4" />
+      <circle cx="60" cy="430" r="1.8" fill="#b3402f" opacity="0.45" />
+      <circle cx="290" cy="500" r="1.4" fill="#b3402f" opacity="0.3" />
+    </svg>
+  );
+}
 
 export function WorkshopHome() {
   return (
     <main className="workshop-home">
-      <header className="workshop-header">
-        <p className="workshop-kicker">SEN Visual Development</p>
-        <h1 className="workshop-title">SEN Visual Development</h1>
-        <p className="workshop-subtitle">
-          The central development and preview space for SEN components and experiences.
-        </p>
-      </header>
+      <EdgeOrbit side="left" />
+      <EdgeOrbit side="right" />
 
-      <section className="workshop-grid" aria-label="Workshop components">
-        {workshopEntries.map((entry) => (
-          <a className="workshop-card" href={`?preview=${entry.id}`} key={entry.id}>
-            <span className="workshop-category">{entry.category}</span>
-            <h2>{entry.title}</h2>
-            <p>{entry.description}</p>
-            <span className="workshop-status">{entry.status}</span>
-          </a>
-        ))}
-      </section>
+      <div className="workshop-shell">
+        <div className="workshop-topbar">
+          <span className="workshop-brand">SEIHOUSE</span>
+          <nav className="workshop-nav" aria-label="Workshop">
+            <span className="workshop-nav-active">Development</span>
+          </nav>
+          <span className="workshop-topbar-spacer" aria-hidden="true" />
+        </div>
+
+        <header className="workshop-header">
+          <h1 className="workshop-title">Development</h1>
+          <p className="workshop-kicker">Component Workshop</p>
+          <p className="workshop-subtitle">
+            Explore and refine the building blocks of our interface.
+          </p>
+        </header>
+
+        <section className="workshop-grid" aria-label="Workshop components">
+          {workshopEntries.map((entry) => (
+            <a className="workshop-card" href={`?preview=${entry.id}`} key={entry.id}>
+              <div className="workshop-card-visual">
+                <CardVisual id={entry.id} />
+              </div>
+              <div className="workshop-card-body">
+                <h2>{entry.title}</h2>
+                <p>{entry.description}</p>
+                <div className="workshop-card-meta">
+                  <span className={`workshop-status workshop-status-${entry.status}`}>
+                    <span className="workshop-status-dot" aria-hidden="true" />
+                    {statusLabel[entry.status]}
+                  </span>
+                  <span className="workshop-card-arrow" aria-hidden="true">→</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </section>
+
+        <footer className="workshop-footer">
+          <span>Build thoughtful interfaces.</span>
+          <span className="workshop-footer-dot" aria-hidden="true" />
+          <span>Ship with confidence.</span>
+        </footer>
+      </div>
     </main>
   );
 }

@@ -11,6 +11,7 @@
 ## Workshop history
 
 - **2026-07-29:** Consolidated the AILoadingVeil's two duplicated presentations into one reusable loading system with a normalized task-card format and two visual modes (primary veil / compact indicator).
+- **2026-07-29:** Refined the simulator page layout: one primary-veil button with phase selector, and two compact-indicator buttons (Versa background, Scout retrieval).
 
 ## What this is
 
@@ -44,10 +45,10 @@ render, because they complete too quickly to communicate useful information.
 
 ## Preview states
 
-- All AI generation phases (blueprint, initial-arc, steer, cover, chapter)
-- Minimized primary veil (compact indicator with expand control)
-- Scout tasks routed to compact mode
-- Scout quick task (~1s) — stays hidden entirely
+- Primary veil — one "Open Veil" button (Versa) with a phase selector covering
+  blueprint, initial-arc, steer, cover, and chapter
+- Versa compact — background chapter task; expandable back into the veil
+- Scout compact — retrieval task; always compact, never blocks the screen
 
 ## Production dependencies intentionally excluded
 
