@@ -213,15 +213,15 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           const center = DUST_SPRITE_SIZE / 2;
           const gradient = spriteCtx.createRadialGradient(center, center, 0, center, center, center);
           gradient.addColorStop(0, toRgba(color, 1));
-          gradient.addColorStop(0.4, toRgba(color, 0.4));
+          gradient.addColorStop(0.4, toRgba(color, 0.5));
           gradient.addColorStop(1, toRgba(color, 0));
           spriteCtx.fillStyle = gradient;
           spriteCtx.fillRect(0, 0, DUST_SPRITE_SIZE, DUST_SPRITE_SIZE);
           return sprite;
         }),
       );
-      const glyphShadowColor = toRgba(palette.base, 0.78);
-      const glyphTintColor = toRgba(palette.bright, 0.96);
+      const glyphShadowColor = toRgba(palette.base, 0.95);
+      const glyphTintColor = toRgba(palette.bright, 1);
 
       const createParticle = (isInitial = false): Particle => {
         const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
@@ -237,14 +237,14 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           y: isInitial ? Math.random() * height : height + 20,
           size,
           speedY: -(Math.random() * 1.5 + 0.5),
-          speedX: (Math.random() - 0.5) * 0.8,
-          opacity: Math.random() * 0.7 + 0.3,
+          speedX: (Math.random() - 0.5) * 1,
+          opacity: Math.random() * 0.875 + 0.375,
           fadeSpeed: Math.random() * 0.003 + 0.001,
           colorIndex: Math.floor(Math.random() * colors.length),
           glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
           outerLane,
           rotation: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 0.02,
+          rotationSpeed: (Math.random() - 0.5) * 0.025,
         };
       };
 
@@ -437,9 +437,10 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
           // Curve toward the center line, with a faint swirl so paths arc
           // instead of beelining. Kept loose so the stream stays spread out.
-          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.0037) * frameScale;
+          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.003) * frameScale;
           p.speedX += -dy * 0.00001 * funnelT * frameScale;
           p.speedX *= Math.pow(0.99, frameScale);
+          p.speedX += (Math.random() - 0.5) * 0.015 * frameScale;
 
           // Larger Library glyphs make room for foreground UI by drifting
           // toward the outer thirds. The center stream remains free to read.
@@ -502,7 +503,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
             ctx.translate(p.x, p.y);
             if (p.rotation !== undefined) ctx.rotate(p.rotation);
             const glyphSize = Math.max(22, p.size * 2.4) * scale;
-            ctx.shadowBlur = glyphSize * (0.75 + absorbT);
+            ctx.shadowBlur = glyphSize * (0.95 + absorbT * 1.25);
             ctx.shadowColor = glyphShadowColor;
             ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
             ctx.globalCompositeOperation = 'source-atop';
