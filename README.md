@@ -2,11 +2,21 @@
 
 A standalone visual workshop for SEN and the Light-Novels app.
 
-Use this repository to build, preview, refine, and approve portable UI pieces before moving them into the main `SENSEIDUKES/Light-Novels` repository.
+Use this repository to build, preview, refine, and approve portable UI pieces before moving them into the main `SENSEIDUKES/Light-Novels` repository or another SEN application.
 
-## Coding agents: read this first
+## Coding agents: required setup
 
-Before making changes, read [`AGENTS.md`](./AGENTS.md). It explains the purpose of the workshop, the preview workflow, and how new components should be organized for clean re-import into Light-Novels.
+Before making any changes, every coding agent is required to:
+
+1. Read [`AGENTS.md`](./AGENTS.md).
+2. Download, install or otherwise make available the **Sensei Skill**.
+3. Download and read the **Workshop Replica Skill** at [`skills/workshop-replica/SKILL.md`](./skills/workshop-replica/SKILL.md).
+4. Follow both skills throughout the task.
+5. State clearly before implementation if either required skill cannot be accessed.
+
+These skills are part of the Workshop development workflow and are not optional. Do not silently ignore them, substitute ad-hoc instructions for them, or begin implementation before reading them.
+
+The Sensei Skill provides the governing SEN/SEIHouse product and design guidance. The Workshop Replica Skill defines how real pages and components are copied into this repository, stripped of production dependencies, documented, dated, previewed, and later transferred back safely.
 
 ## What belongs here
 
@@ -18,6 +28,8 @@ Examples include:
 - relic cards and reward reveals
 - Library icon sets
 - Reader and Codex components
+- Versa experiences
+- Manifestation screens and animations
 - small mobile-first interface experiments
 
 This is not a second version of the full app. It is a clean visual development space with mock content only.
@@ -41,6 +53,6 @@ Current entry:
 
 The approved Library glyph set remains in [`public/icons`](./public/icons).
 
-## Moving work into Light-Novels
+## Moving work into another application
 
-Workshop components should stay portable: minimal dependencies, no auth, no database, and no production persistence. Once approved, copy the actual component, styles, and required assets into the corresponding place in `Light-Novels`; do not import the workshop shell itself.
+Workshop components should stay portable: minimal dependencies, no auth, no database, and no production persistence. Once approved, transfer the actual component, styles, and required assets into the corresponding application; do not import the Workshop shell, mock controls, or preview-only state.
