@@ -30,4 +30,11 @@ export const workshopEntries: WorkshopEntry[] = [
     category: 'animations',
     status: 'refining',
   },
+  {
+    id: 'idle-cultivation',
+    title: 'Closed-Door Cultivation',
+    description: 'Idle Qi reward presentation and absorption animation.',
+    category: 'rewards',
+    status: 'refining',
+  },
 ];
