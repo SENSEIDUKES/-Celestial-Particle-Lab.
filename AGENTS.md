@@ -8,9 +8,17 @@ This repository is the **Light Novel Workshop**: a standalone visual development
 
 Use it to isolate, preview, and refine UI components, animations, icons, rewards, and visual effects without needing the production app, authentication, story data, or migration infrastructure.
 
+## Available skill
+
+When the user asks to bring a real page, screen, component, animation, or flow from another repository into this Workshop, read and follow:
+
+`skills/workshop-replica/SKILL.md`
+
+Treat that file as the required extraction workflow. It covers faithful visual replication, local state simulation, production-boundary rules, portability, verification, and dated component history.
+
 ## Core rule
 
-Build workshop pieces so the finished component can be moved cleanly into `Light-Novels`.
+Build workshop pieces so the finished component can be moved cleanly into `Light-Novels` or another SEN application.
 
 Do not turn this repository into a second full application. Use mock data and preview-only wrappers where necessary, but keep the actual component portable and separate from the workshop shell.
 
@@ -21,6 +29,7 @@ Do not turn this repository into a second full application. Use mock data and pr
 - Reusable component logic may live in `src/components/` or an appropriately named feature folder.
 - Static visual assets belong in `public/` under a clearly named folder.
 - Keep component-specific styles close to the component when practical.
+- Portable agent skills live under `skills/`.
 
 When adding a new experiment:
 
@@ -28,7 +37,20 @@ When adding a new experiment:
 2. Add a preview wrapper under `src/workshop/`.
 3. Add one entry to `src/workshop/manifest.ts`.
 4. Make it reachable through a simple `?preview=<id>` URL.
-5. Document any files that must be copied into `Light-Novels`.
+5. Add a component README containing source information, current dates, Workshop history, mock boundaries, and transfer instructions.
+6. Document any files that must be copied into the source application.
+
+## Dating requirement
+
+Every replicated page or component must record:
+
+- replica creation date
+- last Workshop update date
+- last source comparison date
+- current lifecycle status
+- a concise dated Workshop history
+
+Use the real current calendar date. Update the history whenever the replica receives a material visual or structural change. Do not update the source-comparison date unless the source was actually inspected again.
 
 ## Working style
 
@@ -50,4 +72,4 @@ Keep the local or forwarded preview available, usually on port `5173`. After cha
 
 ## Final integration
 
-Do not automatically change `Light-Novels` unless the user explicitly asks. When a workshop piece is approved, identify the exact component, styles, assets, and dependencies needed for transfer, and leave workshop-only navigation or mock wrappers behind.
+Do not automatically change a source application unless the user explicitly asks. When a Workshop piece is approved, identify the exact component, styles, assets, and dependencies needed for transfer, and leave Workshop-only navigation, mocks, and preview controls behind.
