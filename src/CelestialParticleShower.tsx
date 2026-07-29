@@ -176,22 +176,26 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         ctx.restore();
       };
 
-      // --- The celestial scroll: massive, mostly above the viewport ----------
-      // Only its lower rim, two rolled edges, and the light pouring from the
-      // center dip are ever visible.
+      // --- The celestial scroll -------------------------------------------
+      // Cosmic, not literal: almost no visible body — just a delicate curved
+      // rim of light, two spiral rollers, a compact star at the absorption
+      // point, and a whisper of a beam.
       const drawScroll = (time: number) => {
         const cx = width / 2;
-        const rimY = height * 0.018; // rim height at the left/right edges
-        const dipY = height * 0.062; // the rim dips at center — the absorption point
+        const rimY = height * 0.016; // rim height at the left/right edges
+        const dipY = height * 0.055; // the rim dips at center — the absorption point
         const pulse = 0.9 + 0.1 * Math.sin(time * 1.3);
         const flicker = 0.92 + 0.08 * Math.sin(time * 2.1);
-
-        // Scroll body: a dark mass hanging above the rim, tinted by the accent.
         const rimControlY = 2 * dipY - rimY;
-        const sheetGrad = ctx.createLinearGradient(0, -height * 0.5, 0, dipY);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        // The faintest suggestion of mass above the rim — nearly black,
+        // just enough to read as an object hanging overhead.
+        const sheetGrad = ctx.createLinearGradient(0, -height * 0.4, 0, dipY);
         sheetGrad.addColorStop(0, toRgba(palette.deep, 0));
-        sheetGrad.addColorStop(0.55, toRgba(palette.deep, 0.35));
-        sheetGrad.addColorStop(1, toRgba(palette.dim, 0.5));
+        sheetGrad.addColorStop(1, toRgba(palette.deep, 0.16));
         ctx.beginPath();
         ctx.moveTo(-10, rimY);
         ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
@@ -201,107 +205,87 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         ctx.fillStyle = sheetGrad;
         ctx.fill();
 
-        ctx.save();
-        ctx.globalCompositeOperation = 'screen';
-
-        // Rolled edges: dark cylinders with glowing rims, half offscreen.
-        const rollerR = Math.min(width, height) * 0.055;
+        // Spiral rollers: fine rings of light at each end, half offscreen.
+        const rollerR = Math.min(width, height) * 0.042;
         for (const side of [-1, 1]) {
-          const rx = side < 0 ? -rollerR * 0.35 : width + rollerR * 0.35;
-          const ry = rimY - rollerR * 0.35;
-          const bodyGrad = ctx.createRadialGradient(rx, ry, rollerR * 0.1, rx, ry, rollerR);
-          bodyGrad.addColorStop(0, toRgba(palette.deep, 0.9));
-          bodyGrad.addColorStop(0.75, toRgba(palette.deep, 0.75));
-          bodyGrad.addColorStop(1, toRgba(palette.dim, 0.4));
-          ctx.beginPath();
-          ctx.arc(rx, ry, rollerR, 0, Math.PI * 2);
-          ctx.fillStyle = bodyGrad;
-          ctx.fill();
-          ctx.shadowBlur = 18;
-          ctx.shadowColor = toRgba(palette.bright, 0.8);
-          for (const [radius, alpha] of [
-            [rollerR, 0.7],
-            [rollerR * 0.66, 0.5],
-            [rollerR * 0.34, 0.35],
+          const rx = side < 0 ? -rollerR * 0.3 : width + rollerR * 0.3;
+          const ry = rimY - rollerR * 0.3;
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = toRgba(palette.bright, 0.7);
+          for (const [radius, alpha, lineWidth] of [
+            [rollerR, 0.55, 1.4],
+            [rollerR * 0.68, 0.42, 1.2],
+            [rollerR * 0.4, 0.3, 1],
+            [rollerR * 0.16, 0.4, 1],
           ] as const) {
             ctx.beginPath();
             ctx.arc(rx, ry, radius, 0, Math.PI * 2);
             ctx.strokeStyle = toRgba(palette.bright, alpha * flicker);
-            ctx.lineWidth = 1.6;
+            ctx.lineWidth = lineWidth;
             ctx.stroke();
           }
           ctx.shadowBlur = 0;
         }
 
-        // The glowing lower rim — long and shallow, like the edge of an open
-        // scroll — with a second faint line above it for edge thickness.
-        const edgeThickness = Math.max(6, height * 0.009);
-        ctx.beginPath();
-        ctx.moveTo(-10, rimY - edgeThickness);
-        ctx.quadraticCurveTo(cx, rimControlY - edgeThickness * 2.4, width + 10, rimY - edgeThickness);
-        ctx.strokeStyle = toRgba(palette.bright, 0.14 * flicker);
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
+        // The rim: one delicate curved line of light, dipping at center.
         ctx.beginPath();
         ctx.moveTo(-10, rimY);
         ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
-        ctx.strokeStyle = toRgba(palette.base, 0.2 * flicker);
-        ctx.lineWidth = 6;
-        ctx.shadowBlur = 22;
-        ctx.shadowColor = toRgba(palette.bright, 0.85);
+        ctx.strokeStyle = toRgba(palette.base, 0.16 * flicker);
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = toRgba(palette.bright, 0.8);
         ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(-10, rimY);
         ctx.quadraticCurveTo(cx, rimControlY, width + 10, rimY);
-        ctx.strokeStyle = toRgba(palette.pale, 0.8 * flicker);
-        ctx.lineWidth = 1.6;
-        ctx.shadowBlur = 10;
+        ctx.strokeStyle = toRgba(palette.pale, 0.72 * flicker);
+        ctx.lineWidth = 1.1;
+        ctx.shadowBlur = 8;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // The light at the absorption point: stretched wide along the scroll
-        // edge so it reads as part of the scroll, not a floating orb.
-        fillEllipticalGlow(cx, dipY, width * 0.46, height * 0.115, [
-          [0, toRgba(palette.pale, 0.5 * pulse)],
-          [0.35, toRgba(palette.bright, 0.28 * pulse)],
-          [0.7, toRgba(palette.base, 0.1 * pulse)],
+        // Soft halo around the rim's center dip.
+        fillEllipticalGlow(cx, dipY, width * 0.3, height * 0.085, [
+          [0, toRgba(palette.pale, 0.32 * pulse)],
+          [0.4, toRgba(palette.bright, 0.16 * pulse)],
+          [0.75, toRgba(palette.base, 0.05 * pulse)],
           [1, toRgba(palette.base, 0)],
         ]);
-        // Bright elongated core hugging the rim.
-        fillEllipticalGlow(cx, dipY, width * 0.2, height * 0.042, [
-          [0, toRgba(mix(palette.pale, WHITE, 0.5), 0.85 * pulse)],
-          [0.5, toRgba(palette.pale, 0.35 * pulse)],
-          [1, toRgba(palette.bright, 0)],
-        ]);
 
-        // The heavenly beam: washed-out layers of soft light — no hard edges.
-        const beamLen = height * 0.5;
-        // Broad ambient wash hanging under the scroll.
-        fillEllipticalGlow(cx, dipY + beamLen * 0.32, width * 0.3, beamLen * 0.62, [
-          [0, toRgba(palette.pale, 0.1 * pulse)],
-          [0.55, toRgba(palette.bright, 0.045 * pulse)],
+        // The absorption point: a compact star — a hot pinpoint with a
+        // subtle cross sparkle, not a bar of light.
+        fillEllipticalGlow(cx, dipY, height * 0.035, height * 0.035, [
+          [0, toRgba(mix(palette.pale, WHITE, 0.6), 0.95 * pulse)],
+          [0.4, toRgba(palette.pale, 0.4 * pulse)],
           [1, toRgba(palette.bright, 0)],
         ]);
-        // Nested wedges, each wider and fainter — the layered falloff washes
-        // the beam out instead of drawing a hard cone.
-        for (let layer = 0; layer < 5; layer++) {
-          const spread = 0.018 + layer * 0.045;
-          const bottomSpread = 0.05 + layer * 0.075;
-          const alpha = (0.085 - layer * 0.016) * pulse;
-          const beamGrad = ctx.createLinearGradient(0, dipY, 0, dipY + beamLen);
-          beamGrad.addColorStop(0, toRgba(palette.pale, alpha));
-          beamGrad.addColorStop(0.5, toRgba(palette.bright, alpha * 0.45));
-          beamGrad.addColorStop(1, toRgba(palette.bright, 0));
-          ctx.beginPath();
-          ctx.moveTo(cx - width * spread, dipY);
-          ctx.lineTo(cx + width * spread, dipY);
-          ctx.lineTo(cx + width * bottomSpread, dipY + beamLen);
-          ctx.lineTo(cx - width * bottomSpread, dipY + beamLen);
-          ctx.closePath();
-          ctx.fillStyle = beamGrad;
-          ctx.fill();
-        }
+        const sparkleLen = height * 0.055;
+        const sparkleGradH = ctx.createLinearGradient(cx - sparkleLen, 0, cx + sparkleLen, 0);
+        sparkleGradH.addColorStop(0, toRgba(palette.pale, 0));
+        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.5 * pulse));
+        sparkleGradH.addColorStop(1, toRgba(palette.pale, 0));
+        ctx.fillStyle = sparkleGradH;
+        ctx.fillRect(cx - sparkleLen, dipY - 0.6, sparkleLen * 2, 1.2);
+        const sparkleGradV = ctx.createLinearGradient(0, dipY - sparkleLen * 0.6, 0, dipY + sparkleLen * 0.6);
+        sparkleGradV.addColorStop(0, toRgba(palette.pale, 0));
+        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.35 * pulse));
+        sparkleGradV.addColorStop(1, toRgba(palette.pale, 0));
+        ctx.fillStyle = sparkleGradV;
+        ctx.fillRect(cx - 0.6, dipY - sparkleLen * 0.6, 1.2, sparkleLen * 1.2);
+
+        // The beam: a single broad wash of light, no structure. Layers blend
+        // into one soft column that dissolves into the dark.
+        const beamLen = height * 0.5;
+        fillEllipticalGlow(cx, dipY + beamLen * 0.3, width * 0.24, beamLen * 0.58, [
+          [0, toRgba(palette.pale, 0.075 * pulse)],
+          [0.5, toRgba(palette.bright, 0.035 * pulse)],
+          [1, toRgba(palette.bright, 0)],
+        ]);
+        fillEllipticalGlow(cx, dipY + beamLen * 0.22, width * 0.11, beamLen * 0.4, [
+          [0, toRgba(palette.pale, 0.06 * pulse)],
+          [1, toRgba(palette.bright, 0)],
+        ]);
 
         ctx.restore();
       };
@@ -314,7 +298,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
         // One absorption point: the center dip of the scroll's lower rim.
         const absorbX = width / 2;
-        const absorbY = height * 0.062;
+        const absorbY = height * 0.055;
         const funnelSpan = height * 0.85; // the funnel reaches almost the full screen
         const killRadius = Math.max(10, height * 0.014);
 
