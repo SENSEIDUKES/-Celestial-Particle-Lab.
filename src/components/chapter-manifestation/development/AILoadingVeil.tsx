@@ -25,7 +25,10 @@ const CHAPTER_PASSAGE_TARGET = 20;
  * compared side by side in the Workshop preview:
  * - the atmospheric phase phrase is dropped for a more compact card
  * - the phase marker pill beneath the card is dropped
- * - Versa's emblem sits lower with more breathing room
+ * - 2026-07-30: the card is a single 100dvh mobile composition — Versa hero,
+ *   compact chapter status, and a swipeable animation area filling the
+ *   remaining viewport. The emblem spacing override is no longer needed;
+ *   the hero zone manages its own footprint.
  * Workshop-only: do not wire this into production flows.
  */
 export default function AILoadingVeil({
@@ -94,8 +97,6 @@ export default function AILoadingVeil({
       mode="auto"
       minimized={isVeilMinimized}
       onMinimizedChange={setIsVeilMinimized}
-      // Versa sits lower with more room above her.
-      emblemClassName="mb-10 mt-10"
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
