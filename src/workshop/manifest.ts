@@ -38,6 +38,13 @@ export const workshopEntries: WorkshopEntry[] = [
     status: 'refining',
   },
   {
+    id: 'idle-cultivation-v2',
+    title: 'Closed-Door Cultivation V2',
+    description: 'Refined idle Qi reward — ink-aura protected space, safe-area anchoring, ascending claim particles.',
+    category: 'rewards',
+    status: 'refining',
+  },
+  {
     id: 'relics-gallery',
     title: 'Relics Gallery',
     description: 'Visual development preview for Cosmic Artifacts separated by rarity rank, with the full-screen Relic Reveal celebration flow.',
