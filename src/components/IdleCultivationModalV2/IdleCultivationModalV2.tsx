@@ -27,16 +27,25 @@ function CultivatorSvg({ className, style }: { className?: string; style?: React
       <ellipse cx="60" cy="92" rx="46" ry="5.5" fill="none" stroke={`rgba(${PORTAL_RGB},0.28)`} strokeWidth="0.8" />
       <ellipse cx="60" cy="92" rx="54" ry="7.5" fill="none" stroke={`rgba(${PORTAL_RGB},0.12)`} strokeWidth="0.6" />
       <g stroke="rgba(140,233,255,0.55)" strokeWidth="0.7">
-        {/* robed body flaring into crossed legs */}
+        {/* neck */}
+        <path d="M56.5 25.5 L63.5 25.5 L63 31 L57 31 Z" fill="#04060d" stroke="none" />
+        {/* crossed legs: low wide mound, knees poking above the lap */}
         <path
-          d="M60 33 C49 35 43.5 43 41.5 53 C40 61 35.5 67.5 27.5 72.5 C19.5 77.5 15.5 84.5 22.5 88.5 C28.5 91.8 43 92.8 60 92.8 C77 92.8 91.5 91.8 97.5 88.5 C104.5 84.5 100.5 77.5 92.5 72.5 C84.5 67.5 80 61 78.5 53 C76.5 43 71 35 60 33 Z"
+          d="M60 66.5 C53 63 44 61 36.5 61.5 C30.5 62 26 63.5 23.5 66 C20.5 69 18.5 72.5 18.5 76 C18.5 80.5 22 84.5 28.5 87 C36 89.8 48 91 60 91 C72 91 84 89.8 91.5 87 C98 84.5 101.5 80.5 101.5 76 C101.5 72.5 99.5 69 96.5 66 C94 63.5 89.5 62 83.5 61.5 C76 61 67 63 60 66.5 Z"
           fill={`url(#${robeGradId})`}
         />
-        {/* folded hands */}
-        <ellipse cx="60" cy="75" rx="8.5" ry="3.6" fill="#0d1626" stroke="none" />
+        {/* torso: shoulders, tapered robe, forearms folding into the lap */}
+        <path
+          d="M54.5 30 C50.5 31 47 32.5 45 34.5 C43.5 36.5 42.8 39 42.5 42 C42 46 41.5 50 40.8 53.5 C40.3 56 39.5 58 38.5 59.5 C42.5 63 50 65.5 60 65.5 C70 65.5 77.5 63 81.5 59.5 C80.5 58 79.7 56 79.2 53.5 C78.5 50 78 46 77.5 42 C77.2 39 76.5 36.5 75 34.5 C73 32.5 69.5 31 65.5 30 Z"
+          fill={`url(#${robeGradId})`}
+        />
+        {/* robe fold pooling between the legs */}
+        <path d="M60 69 C60 75 59.5 83 60 89.5" fill="none" stroke="rgba(140,233,255,0.28)" strokeWidth="0.6" />
+        {/* folded hands resting in the lap */}
+        <ellipse cx="60" cy="65" rx="6" ry="2.8" fill="#0d1626" stroke="rgba(140,233,255,0.4)" strokeWidth="0.5" />
         {/* head + topknot */}
-        <circle cx="60" cy="24" r="7" fill="#04060d" />
-        <ellipse cx="60" cy="14.5" rx="2.4" ry="3" fill="#04060d" />
+        <circle cx="60" cy="21" r="6.5" fill="#04060d" />
+        <ellipse cx="60" cy="12.5" rx="2.2" ry="2.8" fill="#04060d" />
       </g>
     </svg>
   );
