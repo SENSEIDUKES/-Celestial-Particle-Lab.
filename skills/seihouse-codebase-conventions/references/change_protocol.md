@@ -88,6 +88,12 @@ Keep the final implementation summary concise:
 - what was changed;
 - what contracts or behavior were preserved;
 - what targeted validation ran;
-- any genuine remaining risk or follow-up.
+- any genuine remaining risk or follow-up;
+- any system-map statement found stale, incomplete, or contradicted by the current
+  repository, including the verified replacement fact.
+
+Do not silently edit the system map as unrelated scope during a product task. Report the
+mismatch so the reference can be corrected deliberately, or update it in the same change
+only when the task explicitly includes conventions maintenance.
 
 Do not include long repository-discovery narration.
