@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { RelicCard } from '../../../components/relics/RelicCard';
 import { RelicModal } from '../../../components/relics/RelicModal';
+import { RelicReveal } from '../../../components/relic-reveal/RelicReveal';
 import { CosmicArtifact } from '../../../components/relics/types';
 import { mockRelics } from './mockData';
-import { Library } from 'lucide-react';
+import { Library, Sparkles, RotateCcw } from 'lucide-react';
 
 export default function RelicsPreview() {
   const [inspectArtifact, setInspectArtifact] = useState<CosmicArtifact | null>(null);
+  const [revealArtifact, setRevealArtifact] = useState<CosmicArtifact | null>(null);
+  const [replayKey, setReplayKey] = useState(0);
 
   const getRelicsByRarity = (rarity: string) => mockRelics.filter(r => r.rarity === rarity);
 
   const rarityRanks = ['Transcendent', 'Mythic', 'Legendary', 'Epic', 'Rare', 'Common'];
+
+  const openReveal = (relic: CosmicArtifact) => {
+    setInspectArtifact(null);
+    setReplayKey(0);
+    setRevealArtifact(relic);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-sans p-6 md:p-12 pb-24 max-w-7xl mx-auto">
@@ -21,6 +30,7 @@ export default function RelicsPreview() {
         </h1>
         <p className="text-sm text-neutral-400 font-mono mt-2 max-w-2xl">
           Visual development preview for Cosmic Artifacts (Relics). Showcasing all rarity tiers and their corresponding visual treatments.
+          Use the Reveal button under any relic to open its full-screen celebration flow.
         </p>
       </div>
 
@@ -44,11 +54,20 @@ export default function RelicsPreview() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {relics.map(relic => (
-                  <RelicCard 
-                    key={relic.id} 
-                    artifact={relic} 
-                    onClick={setInspectArtifact} 
-                  />
+                  <div key={relic.id} className="flex flex-col gap-2">
+                    <RelicCard 
+                      artifact={relic} 
+                      onClick={setInspectArtifact} 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openReveal(relic)}
+                      className="flex items-center justify-center gap-1.5 py-1.5 rounded-full border border-portal/40 text-portal text-[10px] uppercase tracking-widest font-mono hover:bg-portal/10 hover:border-portal/70 transition-colors"
+                    >
+                      <Sparkles size={10} />
+                      Reveal
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -60,6 +79,27 @@ export default function RelicsPreview() {
         inspectArtifact={inspectArtifact} 
         onClose={() => setInspectArtifact(null)} 
       />
+
+      {revealArtifact && (
+        <>
+          <RelicReveal
+            key={revealArtifact.id}
+            artifact={revealArtifact}
+            replayKey={replayKey}
+            onClaim={() => setRevealArtifact(null)}
+            onDismiss={() => setRevealArtifact(null)}
+          />
+          {/* Workshop tool — not part of the product UI */}
+          <button
+            type="button"
+            onClick={() => setReplayKey(k => k + 1)}
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[130] flex items-center gap-2 px-5 py-2.5 rounded-full bg-neutral-900/90 border border-neutral-600 text-neutral-200 text-[11px] uppercase tracking-widest font-mono hover:bg-neutral-800 hover:text-white hover:border-neutral-400 transition-colors shadow-lg backdrop-blur"
+          >
+            <RotateCcw size={12} />
+            Replay Effects
+          </button>
+        </>
+      )}
     </div>
   );
 }

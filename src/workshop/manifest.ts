@@ -40,7 +40,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'relics-gallery',
     title: 'Relics Gallery',
-    description: 'Visual development preview for Cosmic Artifacts separated by rarity rank.',
+    description: 'Visual development preview for Cosmic Artifacts separated by rarity rank, with the full-screen Relic Reveal celebration flow.',
     category: 'rewards',
     status: 'refining',
   },
