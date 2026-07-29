@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AILoadingVeil from '../../../components/AILoadingVeil/AILoadingVeil';
-import { Square, Sparkles, Minimize2, Compass, Layers } from 'lucide-react';
+import DevLoadingVeil from '../../../components/AILoadingVeil/DevLoadingVeil';
+import { Square, Sparkles, Minimize2, Compass, Layers, ChevronUp, FlaskConical } from 'lucide-react';
 
 type GenerationPhase = 'blueprint' | 'initial-arc' | 'steer' | 'cover' | 'chapter' | null;
 
@@ -22,6 +23,8 @@ export default function AILoadingVeilPreview() {
   const [isVeilMinimized, setIsVeilMinimized] = useState(false);
   const [generatingChapterNum, setGeneratingChapterNum] = useState<number | null>(1);
   const [veilPhase, setVeilPhase] = useState<Exclude<GenerationPhase, null>>('chapter');
+  const [showPhases, setShowPhases] = useState(false);
+  const [veilVariant, setVeilVariant] = useState<'versa' | 'dev'>('versa');
 
   // Simulation loop for chapter phase progress
   useEffect(() => {
@@ -41,8 +44,9 @@ export default function AILoadingVeilPreview() {
   };
 
   // The one primary veil — Versa, full-screen, blocking.
-  const openVeil = () => {
+  const openVeil = (variant: 'versa' | 'dev') => {
     resetRun();
+    setVeilVariant(variant);
     setActiveAgentId('versa');
     setPhase(veilPhase);
     setEstimatedSecondsRemaining(veilPhase === 'chapter' ? 45 : null);
@@ -96,27 +100,47 @@ export default function AILoadingVeilPreview() {
             <p className="text-[11px] text-neutral-500 leading-snug">
               Full-screen immersive veil for blocking operations. Pick a phase, then open the veil.
             </p>
-            <div className="flex flex-wrap gap-2">
-              {VEIL_PHASES.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setVeilPhase(p.id)}
-                  className={`px-3 py-1.5 text-[11px] rounded-full border transition-colors ${
-                    veilPhase === p.id
-                      ? 'bg-human/15 border-human/40 text-human'
-                      : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-300'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
+            <div>
+              <button
+                onClick={() => setShowPhases(v => !v)}
+                className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors"
+                aria-expanded={showPhases}
+              >
+                Phase · <span className="text-neutral-300">{VEIL_PHASES.find(p => p.id === veilPhase)?.label}</span>
+                <ChevronUp size={12} className={`transition-transform ${showPhases ? '' : 'rotate-180'}`} />
+              </button>
+              {showPhases && (
+                <div className="flex flex-wrap gap-2 mt-2.5">
+                  {VEIL_PHASES.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setVeilPhase(p.id)}
+                      className={`px-3 py-1.5 text-[11px] rounded-full border transition-colors ${
+                        veilPhase === p.id
+                          ? 'bg-human/15 border-human/40 text-human'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-300'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <button
-              onClick={openVeil}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-human/20 border border-human/40 hover:bg-human/30 text-human text-sm font-semibold tracking-wide rounded-lg transition-colors"
-            >
-              <Sparkles size={15} /> Open Veil — Versa
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => openVeil('versa')}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-human/20 border border-human/40 hover:bg-human/30 text-human text-sm font-semibold tracking-wide rounded-lg transition-colors"
+              >
+                <Sparkles size={15} /> Open Veil — Versa
+              </button>
+              <button
+                onClick={() => openVeil('dev')}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-violet-500/10 border border-violet-500/40 hover:bg-violet-500/20 text-violet-400 text-sm font-semibold tracking-wide rounded-lg transition-colors"
+              >
+                <FlaskConical size={15} /> Open Veil — DEV
+              </button>
+            </div>
           </section>
 
           {/* Compact indicators */}
@@ -162,17 +186,31 @@ export default function AILoadingVeilPreview() {
         </div>
       </div>
 
-      <AILoadingVeil
-        isGenerating={isGenerating}
-        generationPhase={phase}
-        generationProgressMessage={progressMessage}
-        estimatedSecondsRemaining={estimatedSecondsRemaining}
-        activeAgentId={activeAgentId}
-        streamingBlocksCount={streamingBlocksCount}
-        isVeilMinimized={isVeilMinimized}
-        setIsVeilMinimized={setIsVeilMinimized}
-        generatingChapterNum={generatingChapterNum}
-      />
+      {veilVariant === 'dev' ? (
+        <DevLoadingVeil
+          isGenerating={isGenerating}
+          generationPhase={phase}
+          generationProgressMessage={progressMessage}
+          estimatedSecondsRemaining={estimatedSecondsRemaining}
+          activeAgentId={activeAgentId}
+          streamingBlocksCount={streamingBlocksCount}
+          isVeilMinimized={isVeilMinimized}
+          setIsVeilMinimized={setIsVeilMinimized}
+          generatingChapterNum={generatingChapterNum}
+        />
+      ) : (
+        <AILoadingVeil
+          isGenerating={isGenerating}
+          generationPhase={phase}
+          generationProgressMessage={progressMessage}
+          estimatedSecondsRemaining={estimatedSecondsRemaining}
+          activeAgentId={activeAgentId}
+          streamingBlocksCount={streamingBlocksCount}
+          isVeilMinimized={isVeilMinimized}
+          setIsVeilMinimized={setIsVeilMinimized}
+          generatingChapterNum={generatingChapterNum}
+        />
+      )}
     </div>
   );
 }
