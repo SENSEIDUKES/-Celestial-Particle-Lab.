@@ -1,6 +1,7 @@
 import React from 'react';
 import LoadingSystem from '../LoadingSystem/LoadingSystem';
 import { buildAILoadingTaskCard } from '../LoadingSystem/taskCard';
+import { CelestialParticleShower } from '../../CelestialParticleShower';
 import type { AILoadingVeilProps } from './AILoadingVeil';
 
 // Short atmospheric status lines Versa cycles through while a chapter is forged.
@@ -74,6 +75,11 @@ export default function DevLoadingVeil({
       mode="auto"
       minimized={isVeilMinimized}
       onMinimizedChange={setIsVeilMinimized}
+      backdrop={
+        <CelestialParticleShower
+          accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
+        />
+      }
     />
   );
 }
