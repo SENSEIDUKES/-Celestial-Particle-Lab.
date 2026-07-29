@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
+type Rgb = readonly [number, number, number];
+
 interface Particle {
   x: number;
   y: number;
@@ -8,11 +10,14 @@ interface Particle {
   speedX: number;
   opacity: number;
   fadeSpeed: number;
-  color: string;
-  symbol?: string;
+  color: Rgb;
+  glyph?: HTMLImageElement;
   rotation?: number;
   rotationSpeed?: number;
 }
+
+const toRgba = ([red, green, blue]: Rgb, alpha: number) =>
+  `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 
 export const CelestialParticleShower: React.FC = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,18 +40,30 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
     window.addEventListener('resize', handleResize);
 
     const particles: Particle[] = [];
-    const symbols = ['☯', '✨', '✦', '✧', '✵', '❈', '⚜'];
-    const colors = [
-      'rgba(245, 158, 11, ',
-      'rgba(4, 172, 255, ',
-      'rgba(255, 215, 0, ',
-      'rgba(255, 255, 255, ',
-      'rgba(168, 85, 247, ',
+    const glyphs = [
+      '/icons/yin-yang.svg',
+      '/icons/shen-long-dragon.svg',
+      '/icons/sacred-tree.svg',
+      '/icons/thunder-cloud.svg',
+      '/icons/book-scroll.svg',
+      '/icons/cultivator.svg',
+    ].map((source) => {
+      const glyph = new Image();
+      glyph.decoding = 'async';
+      glyph.src = source;
+      return glyph;
+    });
+    const colors: Rgb[] = [
+      [245, 158, 11],
+      [4, 172, 255],
+      [255, 215, 0],
+      [255, 255, 255],
+      [168, 85, 247],
     ];
 
     const createParticle = (isInitial = false): Particle => {
       const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
-      const isSymbol = size > 4 && Math.random() < 0.4;
+      const isGlyph = size > 4 && Math.random() < 0.42;
 
       return {
         x: Math.random() * width,
@@ -57,7 +74,7 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
         opacity: Math.random() * 0.7 + 0.3,
         fadeSpeed: Math.random() * 0.003 + 0.001,
         color: colors[Math.floor(Math.random() * colors.length)],
-        symbol: isSymbol ? symbols[Math.floor(Math.random() * symbols.length)] : undefined,
+        glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
         rotation: Math.random() * Math.PI * 2,
         rotationSpeed: (Math.random() - 0.5) * 0.02,
       };
@@ -88,21 +105,18 @@ export const CelestialParticleShower: React.FC = React.memo(() => {
         ctx.save();
         ctx.globalAlpha = p.opacity;
 
-        if (p.symbol) {
+        if (p.glyph?.complete && p.glyph.naturalWidth > 0) {
           ctx.translate(p.x, p.y);
           if (p.rotation !== undefined) ctx.rotate(p.rotation);
-          ctx.font = `${p.size + 8}px Inter, sans-serif`;
-          ctx.fillStyle = `${p.color}1)`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = p.color.replace(', ', ')');
-          ctx.fillText(p.symbol, 0, 0);
+          const glyphSize = Math.max(22, p.size * 2.4);
+          ctx.shadowBlur = glyphSize * 0.75;
+          ctx.shadowColor = 'rgba(245, 185, 66, 0.78)';
+          ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
         } else {
           const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
-          gradient.addColorStop(0, `${p.color}1)`);
-          gradient.addColorStop(0.4, `${p.color}0.4)`);
-          gradient.addColorStop(1, `${p.color}0)`);
+          gradient.addColorStop(0, toRgba(p.color, 1));
+          gradient.addColorStop(0.4, toRgba(p.color, 0.4));
+          gradient.addColorStop(1, toRgba(p.color, 0));
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
