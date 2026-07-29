@@ -8,13 +8,25 @@ This repository is the **Light Novel Workshop**: a standalone visual development
 
 Use it to isolate, preview, and refine UI components, animations, icons, rewards, and visual effects without needing the production app, authentication, story data, or migration infrastructure.
 
-## Available skill
+## Required skills
 
-When the user asks to bring a real page, screen, component, animation, or flow from another repository into this Workshop, read and follow:
+Before beginning any implementation, download, install or otherwise make available, and read all required skills for this repository.
 
-`skills/workshop-replica/SKILL.md`
+Current required skills:
 
-Treat that file as the required extraction workflow. It covers faithful visual replication, local state simulation, production-boundary rules, portability, verification, and dated component history.
+- **Sensei Skill** — the governing SEN/SEIHouse product, design, restraint, and implementation guidance.
+- **Workshop Replica Skill** — [`skills/workshop-replica/SKILL.md`](./skills/workshop-replica/SKILL.md), used whenever a real page, screen, component, animation, or flow is brought into the Workshop.
+
+These skills are part of the repository workflow and are not optional. Do not silently proceed without them.
+
+At the beginning of the task:
+
+1. Confirm that both required skills were downloaded or are available in the agent environment.
+2. Read both skills before changing code.
+3. State clearly if either skill cannot be accessed.
+4. Do not invent a replacement version of a missing skill.
+
+When the user asks to bring a real page, screen, component, animation, or flow from another repository into this Workshop, the Workshop Replica Skill is mandatory. It covers faithful visual replication, local state simulation, production-boundary rules, portability, verification, and dated component history.
 
 ## Core rule
 
