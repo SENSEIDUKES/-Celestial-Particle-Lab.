@@ -2,6 +2,12 @@
 
 The central development and preview space for SEN components and experiences. This repository isolates UI refinement from the main `SENSEIDUKES/Light-Novels` production environment.
 
+## Production application boundary
+
+Files inside `SENSEIDUKES/Light-Novels` and every other production Light Novel application are **off-limits during Development repository work**. Agents may inspect those repositories only to understand or faithfully replicate an existing component.
+
+Do not edit, create, delete, commit, push, or open a pull request that changes any Light Novel application from a Development task. Moving approved Development work back into a production application must be treated as a separate integration task and requires the user's explicit authorization.
+
 ## Coding agents: required setup
 
 Before making any changes, every coding agent is required to:
@@ -53,4 +59,4 @@ The approved Library glyph set remains in [`public/icons`](./public/icons).
 
 ## Moving work into another application
 
-Workshop components should stay portable: minimal dependencies, no auth, no database, and no production persistence. Once approved, transfer the actual component, styles, and required assets into the corresponding application; do not import the Workshop shell, mock controls, or preview-only state.
+Workshop components should stay portable: minimal dependencies, no auth, no database, and no production persistence. Once approved, transfer into a corresponding application may happen only as a separate, explicitly authorized integration task. Transfer the actual component, styles, and required assets; do not import the Workshop shell, mock controls, or preview-only state.
