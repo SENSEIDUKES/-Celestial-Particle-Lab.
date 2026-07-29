@@ -10,7 +10,7 @@ interface Particle {
   speedX: number;
   opacity: number;
   fadeSpeed: number;
-  color: Rgb;
+  colorIndex: number;
   glyph?: HTMLImageElement;
   outerLane?: -1 | 1;
   rotation?: number;
@@ -39,6 +39,10 @@ interface AccentPalette {
 }
 
 const DEFAULT_ACCENT: Rgb = [245, 185, 66];
+const TARGET_FRAME_MS = 1000 / 60;
+const MIN_RENDER_INTERVAL_MS = 9.5;
+const DUST_SPRITE_SIZE = 64;
+const DUST_BLEND_STEPS = 8;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -167,25 +171,6 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         }
       };
 
-      const calmAmountAt = (x: number, y: number) =>
-        foregroundZones.reduce((strongest, zone) => {
-          const outsideX = Math.max(zone.left - x, 0, x - zone.right);
-          const outsideY = Math.max(zone.top - y, 0, y - zone.bottom);
-          const distance = Math.hypot(outsideX, outsideY);
-          const calm = distance === 0 ? 0.86 : clamp01(1 - distance / 120) * 0.86;
-          return Math.max(strongest, calm);
-        }, 0);
-
-      const streamBoostAt = (x: number, y: number) =>
-        foregroundZones.reduce((strongest, zone) => {
-          const isAboveOrBelow = y < zone.top || y > zone.bottom;
-          if (!isAboveOrBelow) return strongest;
-
-          const streamHalfWidth = Math.max(80, Math.min(width * 0.2, (zone.right - zone.left) * 0.55));
-          const proximity = clamp01(1 - Math.abs(x - zone.centerX) / (streamHalfWidth * 1.75));
-          return Math.max(strongest, proximity * 0.22);
-        }, 0);
-
       refreshForegroundZones();
 
       const particles: Particle[] = [];
@@ -213,6 +198,31 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         mix(WHITE, palette.base, 0.15), // cool white with a whisper of accent
       ];
 
+      // Dust uses the same radial glow as before, but the expensive gradients
+      // are rendered once instead of being rebuilt for every particle/frame.
+      const dustSprites = colors.map((baseColor) =>
+        Array.from({ length: DUST_BLEND_STEPS }, (_, step) => {
+          const blend = step / (DUST_BLEND_STEPS - 1);
+          const color = mix(baseColor, palette.bright, blend * 0.85);
+          const sprite = document.createElement('canvas');
+          sprite.width = DUST_SPRITE_SIZE;
+          sprite.height = DUST_SPRITE_SIZE;
+          const spriteCtx = sprite.getContext('2d');
+          if (!spriteCtx) return sprite;
+
+          const center = DUST_SPRITE_SIZE / 2;
+          const gradient = spriteCtx.createRadialGradient(center, center, 0, center, center, center);
+          gradient.addColorStop(0, toRgba(color, 1));
+          gradient.addColorStop(0.4, toRgba(color, 0.4));
+          gradient.addColorStop(1, toRgba(color, 0));
+          spriteCtx.fillStyle = gradient;
+          spriteCtx.fillRect(0, 0, DUST_SPRITE_SIZE, DUST_SPRITE_SIZE);
+          return sprite;
+        }),
+      );
+      const glyphShadowColor = toRgba(palette.base, 0.78);
+      const glyphTintColor = toRgba(palette.bright, 0.96);
+
       const createParticle = (isInitial = false): Particle => {
         const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
         const isGlyph = size > 4 && Math.random() < 0.42;
@@ -230,7 +240,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           speedX: (Math.random() - 0.5) * 0.8,
           opacity: Math.random() * 0.7 + 0.3,
           fadeSpeed: Math.random() * 0.003 + 0.001,
-          color: colors[Math.floor(Math.random() * colors.length)],
+          colorIndex: Math.floor(Math.random() * colors.length),
           glyph: isGlyph ? glyphs[Math.floor(Math.random() * glyphs.length)] : undefined,
           outerLane,
           rotation: Math.random() * Math.PI * 2,
@@ -387,8 +397,18 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         ctx.restore();
       };
 
-      const animate = () => {
-        const time = performance.now() / 1000;
+      let lastRenderTime = 0;
+
+      const animate = (timestamp: number) => {
+        const elapsed = lastRenderTime === 0 ? TARGET_FRAME_MS : timestamp - lastRenderTime;
+        if (lastRenderTime !== 0 && elapsed < MIN_RENDER_INTERVAL_MS) {
+          animationId = requestAnimationFrame(animate);
+          return;
+        }
+
+        const frameScale = Math.min(elapsed / TARGET_FRAME_MS, 2);
+        lastRenderTime = timestamp;
+        const time = timestamp / 1000;
         if (time >= nextForegroundCheck) {
           refreshForegroundZones();
           nextForegroundCheck = time + 0.2;
@@ -417,79 +437,94 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
           // Curve toward the center line, with a faint swirl so paths arc
           // instead of beelining. Kept loose so the stream stays spread out.
-          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.0037);
-          p.speedX += -dy * 0.00001 * funnelT;
-          p.speedX *= 0.99;
+          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.0037) * frameScale;
+          p.speedX += -dy * 0.00001 * funnelT * frameScale;
+          p.speedX *= Math.pow(0.99, frameScale);
 
           // Larger Library glyphs make room for foreground UI by drifting
           // toward the outer thirds. The center stream remains free to read.
           if (p.glyph && foregroundZones.length > 0) {
             const targetX = width * (p.outerLane === -1 ? 0.18 : 0.82);
-            p.x += (targetX - p.x) * 0.012;
+            p.x += (targetX - p.x) * (1 - Math.pow(1 - 0.012, frameScale));
           }
 
           // Slight acceleration as the particle is drawn upward.
-          p.y += p.speedY * (1 + funnelT * 0.55);
-          p.x += p.speedX;
+          p.y += p.speedY * (1 + funnelT * 0.55) * frameScale;
+          p.x += p.speedX * frameScale;
 
-          p.opacity -= p.fadeSpeed * (1 + absorbT * 1.5);
+          p.opacity -= p.fadeSpeed * (1 + absorbT * 1.5) * frameScale;
 
           if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
-            p.rotation += p.rotationSpeed * (1 + absorbT);
+            p.rotation += p.rotationSpeed * (1 + absorbT) * frameScale;
           }
 
           // Shrink and dissolve into the light.
-          const scale = 1 - Math.pow(absorbT, 1.5) * 0.92;
-          const foregroundCalm = calmAmountAt(p.x, p.y);
-          const streamBoost = streamBoostAt(p.x, p.y);
+          const absorbSquared = absorbT * absorbT;
+          const scale = 1 - absorbT * Math.sqrt(absorbT) * 0.92;
+          let foregroundCalm = 0;
+          let streamBoost = 0;
+          for (const zone of foregroundZones) {
+            const outsideX = Math.max(zone.left - p.x, 0, p.x - zone.right);
+            const outsideY = Math.max(zone.top - p.y, 0, p.y - zone.bottom);
+            const distance = Math.hypot(outsideX, outsideY);
+            const calm = distance === 0 ? 0.86 : clamp01(1 - distance / 120) * 0.86;
+            foregroundCalm = Math.max(foregroundCalm, calm);
+
+            if (p.y < zone.top || p.y > zone.bottom) {
+              const streamHalfWidth = Math.max(
+                80,
+                Math.min(width * 0.2, (zone.right - zone.left) * 0.55),
+              );
+              const proximity = clamp01(
+                1 - Math.abs(p.x - zone.centerX) / (streamHalfWidth * 1.75),
+              );
+              streamBoost = Math.max(streamBoost, proximity * 0.22);
+            }
+          }
           const alpha =
             p.opacity *
-            (1 - Math.pow(absorbT, 2) * 0.85) *
+            (1 - absorbSquared * 0.85) *
             (1 - foregroundCalm) *
             (1 + streamBoost);
-          // Dust caught in the beam takes on the accent as it nears the scroll.
-          const color = mix(p.color, palette.bright, absorbT * 0.85);
 
           if (p.opacity <= 0 || dist < killRadius || scale <= 0.06 || p.y < -20) {
             particles[i] = createParticle(false);
             continue;
           }
 
-          ctx.save();
           const isGlyph = Boolean(p.glyph?.complete && p.glyph.naturalWidth > 0);
           const lowerFieldProgress = clamp01((p.y - height * 0.55) / (height * 0.45));
           const glyphBrightness = isGlyph ? 1 + lowerFieldProgress * 0.16 : 1;
           ctx.globalAlpha = clamp01(alpha * glyphBrightness);
 
           if (isGlyph && p.glyph) {
+            ctx.save();
             ctx.translate(p.x, p.y);
             if (p.rotation !== undefined) ctx.rotate(p.rotation);
             const glyphSize = Math.max(22, p.size * 2.4) * scale;
             ctx.shadowBlur = glyphSize * (0.75 + absorbT);
-            ctx.shadowColor = toRgba(palette.base, 0.78);
+            ctx.shadowColor = glyphShadowColor;
             ctx.drawImage(p.glyph, -glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
             ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = toRgba(palette.bright, 0.96);
+            ctx.fillStyle = glyphTintColor;
             ctx.fillRect(-glyphSize / 2, -glyphSize / 2, glyphSize, glyphSize);
+            ctx.restore();
           } else {
             const radius = p.size * 2 * scale;
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
-            gradient.addColorStop(0, toRgba(color, 1));
-            gradient.addColorStop(0.4, toRgba(color, 0.4));
-            gradient.addColorStop(1, toRgba(color, 0));
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, Math.max(radius, 0.1), 0, Math.PI * 2);
-            ctx.fill();
+            const blendStep = Math.min(
+              DUST_BLEND_STEPS - 1,
+              Math.round(absorbT * (DUST_BLEND_STEPS - 1)),
+            );
+            const sprite = dustSprites[p.colorIndex][blendStep];
+            ctx.drawImage(sprite, p.x - radius, p.y - radius, radius * 2, radius * 2);
           }
-
-          ctx.restore();
         }
 
+        ctx.globalAlpha = 1;
         animationId = requestAnimationFrame(animate);
       };
 
-      animate();
+      animationId = requestAnimationFrame(animate);
 
       return () => {
         window.removeEventListener('resize', handleResize);
