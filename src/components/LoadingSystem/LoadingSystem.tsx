@@ -24,6 +24,8 @@ export interface LoadingSystemProps {
    * quickly to communicate useful information.
    */
   compactGraceMs?: number;
+  /** Optional cinematic backdrop rendered behind the primary veil's content. */
+  backdrop?: React.ReactNode;
 }
 
 const DEFAULT_COMPACT_GRACE_MS = 1200;
@@ -41,6 +43,7 @@ export default function LoadingSystem({
   minimized,
   onMinimizedChange,
   compactGraceMs = DEFAULT_COMPACT_GRACE_MS,
+  backdrop,
 }: LoadingSystemProps) {
   const resolvedMode: Exclude<LoadingSystemMode, 'auto'> =
     mode === 'auto' ? (task?.preferredMode ?? 'primary') : mode;
@@ -70,6 +73,7 @@ export default function LoadingSystem({
           key="primary-veil"
           task={task}
           onMinimize={() => onMinimizedChange(true)}
+          backdrop={backdrop}
         />
       )}
       {showCompact && (

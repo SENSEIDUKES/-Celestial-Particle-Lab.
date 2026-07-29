@@ -139,13 +139,19 @@ const CelestialSigil: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
 export interface LoadingVeilProps {
   task: LoadingTaskCard;
   onMinimize: () => void;
+  /**
+   * Optional cinematic backdrop (e.g. the celestial particle field) rendered
+   * behind the veil content. When present, the veil's dark wash lightens so
+   * the backdrop stays visible.
+   */
+  backdrop?: React.ReactNode;
 }
 
 /**
  * Primary mode — the full-screen immersive veil for blocking operations.
  * Pure presentation: everything it shows comes from the LoadingTaskCard.
  */
-export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
+export default function LoadingVeil({ task, onMinimize, backdrop }: LoadingVeilProps) {
   const isVersa = task.agentId === 'versa';
   const progressWidth = task.progress;
 
@@ -156,8 +162,14 @@ export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.985, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } }}
       transition={{ duration: 0.25 }}
-      className="fixed inset-0 bg-void/95 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-y-auto"
+      className={`fixed inset-0 ${backdrop ? 'bg-void/70' : 'bg-void/95'} backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-6 text-center overflow-y-auto`}
     >
+      {backdrop && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          {backdrop}
+        </div>
+      )}
+
       {/* Top-right icon-only minimize control */}
       <button
         tabIndex={0}
@@ -165,7 +177,7 @@ export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
         onClick={onMinimize}
         title="Minimize to Background"
         aria-label="Minimize to Background"
-        className="absolute top-5 right-5 sm:top-6 sm:right-6 w-10 h-10 rounded-full border border-portal/35 bg-portal/10 hover:bg-portal/20 text-portal flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(4,172,255,0.1)] hover:shadow-[0_0_20px_rgba(4,172,255,0.3)] cursor-pointer"
+        className="absolute z-10 top-5 right-5 sm:top-6 sm:right-6 w-10 h-10 rounded-full border border-portal/35 bg-portal/10 hover:bg-portal/20 text-portal flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(4,172,255,0.1)] hover:shadow-[0_0_20px_rgba(4,172,255,0.3)] cursor-pointer"
       >
         <Minimize2 size={15} />
       </button>
@@ -173,7 +185,8 @@ export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[420px] h-[420px] rounded-full bg-radial-gradient from-portal/10 via-human/5 to-transparent blur-3xl pointer-events-none"></div>
 
       {/* Agent character — floating emblem inside a celestial matrix sigil */}
-      <div className="relative w-36 h-36 sm:w-40 sm:h-40 mb-10 mt-4 flex items-center justify-center shrink-0">
+      {/* Agent character — floating emblem inside a celestial matrix sigil */}
+      <div className="relative z-10 w-36 h-36 sm:w-40 sm:h-40 mb-10 mt-4 flex items-center justify-center shrink-0">
         <CelestialSigil isVersa={isVersa} />
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -196,8 +209,9 @@ export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
         </motion.div>
       </div>
 
-      {/* Unified agent card — name, rotating status quote, seal progress, atmospheric phrase */}
-      <div className={`w-full max-w-md bg-neutral-950/80 border ${isVersa ? 'border-human/25' : 'border-portal/25'} rounded-xl px-5 sm:px-6 py-6 shadow-[0_0_40px_rgba(0,0,0,0.6)]`}>
+      {/* Unified agent card — name, rotating status quote, seal progress, atmospheric phrase.
+          Marked as celestial foreground so a particle backdrop calms around it. */}
+      <div data-celestial-foreground className={`relative z-10 w-full max-w-md bg-neutral-950/80 border ${isVersa ? 'border-human/25' : 'border-portal/25'} rounded-xl px-5 sm:px-6 py-6 shadow-[0_0_40px_rgba(0,0,0,0.6)]`}>
         {/* Card header — the agent's name alone carries the hierarchy */}
         <div className="mb-2">
           <span className={`font-display font-bold text-2xl tracking-[0.35em] ${task.colorClass}`}>
@@ -283,7 +297,7 @@ export default function LoadingVeil({ task, onMinimize }: LoadingVeilProps) {
       </div>
 
       {/* Phase marker beneath the card — stable for the whole generation */}
-      <div className="mt-8">
+      <div className="relative z-10 mt-8">
         <span className="font-sc text-[10px] tracking-[0.3em] font-bold uppercase text-portal/90 bg-portal/5 px-4 py-2 border border-portal/25 rounded-full shadow-[0_0_12px_rgba(4,172,255,0.1)]">
           {task.operationTitle}
         </span>
