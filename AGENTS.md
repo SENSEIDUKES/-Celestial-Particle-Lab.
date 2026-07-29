@@ -4,43 +4,50 @@ Read this file before making changes.
 
 ## Purpose
 
-This repository is a minimal visual lab for refining SEN's existing `CelestialParticleShower` effect outside the main Light-Novels application.
+This repository is the **Light Novel Workshop**: a standalone visual development space for SEN and the main `SENSEIDUKES/Light-Novels` application.
 
-## Working rules
+Use it to isolate, preview, and refine UI components, animations, icons, rewards, and visual effects without needing the production app, authentication, story data, or migration infrastructure.
 
-- Work only on the celestial particle effect and the minimal preview needed to display it.
-- Keep the preview full-screen, dark, and visually clean.
-- Do not add sliders, control panels, settings interfaces, buttons, dashboards, or unrelated UI unless the user explicitly requests them.
-- Preserve the component as a portable React component that can be copied back into the main Light-Novels repository.
+## Core rule
+
+Build workshop pieces so the finished component can be moved cleanly into `Light-Novels`.
+
+Do not turn this repository into a second full application. Use mock data and preview-only wrappers where necessary, but keep the actual component portable and separate from the workshop shell.
+
+## Organization
+
+- `src/workshop/manifest.ts` lists every workshop entry shown on the home screen.
+- `src/workshop/` contains preview wrappers and workshop-only presentation.
+- Reusable component logic may live in `src/components/` or an appropriately named feature folder.
+- Static visual assets belong in `public/` under a clearly named folder.
+- Keep component-specific styles close to the component when practical.
+
+When adding a new experiment:
+
+1. Give it a focused component or feature folder.
+2. Add a preview wrapper under `src/workshop/`.
+3. Add one entry to `src/workshop/manifest.ts`.
+4. Make it reachable through a simple `?preview=<id>` URL.
+5. Document any files that must be copied into `Light-Novels`.
+
+## Working style
+
+- Keep previews mobile-first and easy to inspect on the deployed Vercel site.
 - Make visual changes directly from the user's instructions.
-- Do not introduce database, authentication, persistence, API, or migration work.
+- Avoid unnecessary dashboards, controls, settings, or architecture unless requested.
+- Do not add database, authentication, API, persistence, or migration work.
+- Reuse the existing app stack and keep dependencies minimal.
+- Preserve currently approved work while adding new workshop entries.
 
 ## Live preview workflow
-
-Install dependencies and run the Vite development server:
 
 ```bash
 npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-Keep the live preview available while working. Open the local or forwarded Vite URL, typically port `5173`.
-
-After each visual change:
-
-1. Confirm the app still compiles.
-2. Confirm the preview still renders.
-3. Use Vite hot reload, or refresh the preview if necessary.
-4. Keep the preview available so the user can immediately judge the animation.
-
-## Primary file
-
-Make particle-effect changes primarily in:
-
-`src/CelestialParticleShower.tsx`
-
-Only change surrounding preview files when required to display the effect correctly.
+Keep the local or forwarded preview available, usually on port `5173`. After changes, confirm the app compiles and the relevant preview still renders on mobile and desktop.
 
 ## Final integration
 
-When the effect is approved, keep the finished component easy to copy back into the main Light-Novels app without bringing along temporary preview-only complexity.
+Do not automatically change `Light-Novels` unless the user explicitly asks. When a workshop piece is approved, identify the exact component, styles, assets, and dependencies needed for transfer, and leave workshop-only navigation or mock wrappers behind.
