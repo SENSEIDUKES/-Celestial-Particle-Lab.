@@ -1,5 +1,5 @@
 import React from 'react';
-import LoadingSystem from '../LoadingSystem/LoadingSystem';
+import DevLoadingSystem from '../LoadingSystem/DevLoadingSystem';
 import { buildAILoadingTaskCard } from '../LoadingSystem/taskCard';
 import { CelestialParticleShower } from '../../CelestialParticleShower';
 import type { AILoadingVeilProps } from './AILoadingVeil';
@@ -13,6 +13,11 @@ const VERSA_QUOTES = [
   'Consulting the Codex...',
   'Binding narrative threads...',
 ];
+
+// DEV-only: target passage count for the live "Manifesting N/20" readout.
+// Kept local to this fork rather than the shared taskCard so the reference
+// veil's "N passages formed" copy is untouched.
+const CHAPTER_PASSAGE_TARGET = 20;
 
 /**
  * DEV copy of AILoadingVeil — the experimental veil under active iteration.
@@ -74,10 +79,16 @@ export default function DevLoadingVeil({
     // Compact card: no atmospheric phrase and no phase marker pill.
     description: '',
     operationTitle: '',
+    // Live "Manifesting N/20" instead of "N passages formed" — reads as an
+    // active process rather than a technical quantity. Chapter tracker
+    // title ("Chapter 1") stays untouched and permanently visible above it.
+    trackerDetail: isChapterPhase
+      ? (passagesWoven > 0 ? `Manifesting ${passagesWoven}/${CHAPTER_PASSAGE_TARGET}` : 'Initiating Cosmic Channel')
+      : 'Spiritual matrix forming',
   };
 
   return (
-    <LoadingSystem
+    <DevLoadingSystem
       active={isGenerating}
       task={task}
       mode="auto"
