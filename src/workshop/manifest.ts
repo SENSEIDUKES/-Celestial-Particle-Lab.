@@ -51,4 +51,11 @@ export const workshopEntries: WorkshopEntry[] = [
     category: 'rewards',
     status: 'refining',
   },
+  {
+    id: 'relics-dev',
+    title: 'Relics Gallery — DEV',
+    description: 'DEV copy of the Relic Reveal sequence for active UI work: sealed premium card face, post-reveal rank lighting, spin sparks, and a rank-free stats box.',
+    category: 'rewards',
+    status: 'draft',
+  },
 ];
