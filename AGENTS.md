@@ -15,16 +15,20 @@ Before beginning any implementation, download, install or otherwise make availab
 Current required skills:
 
 - **Sensei Skill** — the governing SEN/SEIHouse product, design, restraint, and implementation guidance.
+- **SEIHouse Codebase Conventions** — [`skills/seihouse-codebase-conventions/SKILL.md`](./skills/seihouse-codebase-conventions/SKILL.md), the required repository-orientation and architectural-consistency layer. Use it to identify the existing SEIHouse system that owns a change, preserve current state and data contracts, and avoid duplicate components, stores, services, schemas, persistence paths, or media paths.
 - **Workshop Replica Skill** — [`skills/workshop-replica/SKILL.md`](./skills/workshop-replica/SKILL.md), used whenever a real page, screen, component, animation, or flow is brought into the Workshop.
 
 These skills are part of the repository workflow and are not optional. Do not silently proceed without them.
 
-At the beginning of the task:
+At the beginning of every task:
 
-1. Confirm that both required skills were downloaded or are available in the agent environment.
-2. Read both skills before changing code.
-3. State clearly if either skill cannot be accessed.
-4. Do not invent a replacement version of a missing skill.
+1. Confirm that all required skills were downloaded or are available in the agent environment.
+2. Read the Sensei Skill and SEIHouse Codebase Conventions before changing code.
+3. Read the Workshop Replica Skill whenever the task brings a real page, screen, component, animation, or flow into this Workshop.
+4. State clearly if any required skill cannot be accessed.
+5. Do not invent a replacement version of a missing skill.
+
+The SEIHouse Codebase Conventions skill is mandatory for every implementation task. Even though this repository is a visual Workshop, agents must still locate and reuse the existing Workshop systems, component families, shared primitives, state patterns, and source-boundary conventions instead of creating parallel structures.
 
 When the user asks to bring a real page, screen, component, animation, or flow from another repository into this Workshop, the Workshop Replica Skill is mandatory. It covers faithful visual replication, local state simulation, production-boundary rules, portability, verification, and dated component history.
 
