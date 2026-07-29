@@ -12,6 +12,7 @@
 
 - **2026-07-29:** Created faithful Workshop replica and local state simulator.
 - **2026-07-29:** Consolidated presentation into the shared `LoadingSystem` (primary veil + compact indicator driven by a normalized task card). This file is now a thin adapter: props, quote rotation, and progress derivation are unchanged; Scout tasks route to compact mode and very short tasks stay hidden.
+- **2026-07-29:** Refined the DEV veil: dropped the atmospheric phase phrase ("Celestial threads are being woven into narrative form.") and the phase marker pill ("Chapter N Manifestation") for a more compact card, and lowered Versa's emblem for more breathing room. The reference veil is unchanged, so both can still be compared side by side.
 
 ## Component Notes
 

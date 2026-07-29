@@ -145,13 +145,18 @@ export interface LoadingVeilProps {
    * the backdrop stays visible.
    */
   backdrop?: React.ReactNode;
+  /**
+   * Optional spacing override for the agent emblem container (margins only).
+   * Defaults to 'mb-10 mt-4'.
+   */
+  emblemClassName?: string;
 }
 
 /**
  * Primary mode — the full-screen immersive veil for blocking operations.
  * Pure presentation: everything it shows comes from the LoadingTaskCard.
  */
-export default function LoadingVeil({ task, onMinimize, backdrop }: LoadingVeilProps) {
+export default function LoadingVeil({ task, onMinimize, backdrop, emblemClassName }: LoadingVeilProps) {
   const isVersa = task.agentId === 'versa';
   const progressWidth = task.progress;
 
@@ -186,7 +191,7 @@ export default function LoadingVeil({ task, onMinimize, backdrop }: LoadingVeilP
 
       {/* Agent character — floating emblem inside a celestial matrix sigil */}
       {/* Agent character — floating emblem inside a celestial matrix sigil */}
-      <div className="relative z-10 w-36 h-36 sm:w-40 sm:h-40 mb-10 mt-4 flex items-center justify-center shrink-0">
+      <div className={`relative z-10 w-36 h-36 sm:w-40 sm:h-40 ${emblemClassName ?? 'mb-10 mt-4'} flex items-center justify-center shrink-0`}>
         <CelestialSigil isVersa={isVersa} />
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -283,25 +288,32 @@ export default function LoadingVeil({ task, onMinimize, backdrop }: LoadingVeilP
           </div>
         </div>
 
-        {/* Ornamented divider */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="h-px flex-1 bg-neutral-800" />
-          <Sparkles size={10} className={isVersa ? 'text-human/60' : 'text-portal/60'} />
-          <div className="h-px flex-1 bg-neutral-800" />
+        {/* Atmospheric phrase — hidden entirely when the card has no description */}
+        {task.description && (
+          <>
+            {/* Ornamented divider */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-px flex-1 bg-neutral-800" />
+              <Sparkles size={10} className={isVersa ? 'text-human/60' : 'text-portal/60'} />
+              <div className="h-px flex-1 bg-neutral-800" />
+            </div>
+
+            <p className="font-serif italic text-sm text-neutral-300 leading-relaxed max-w-sm mx-auto">
+              {task.description}
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Phase marker beneath the card — stable for the whole generation;
+          hidden when the card has no operation title */}
+      {task.operationTitle && (
+        <div className="relative z-10 mt-8">
+          <span className="font-sc text-[10px] tracking-[0.3em] font-bold uppercase text-portal/90 bg-portal/5 px-4 py-2 border border-portal/25 rounded-full shadow-[0_0_12px_rgba(4,172,255,0.1)]">
+            {task.operationTitle}
+          </span>
         </div>
-
-        {/* Atmospheric phrase */}
-        <p className="font-serif italic text-sm text-neutral-300 leading-relaxed max-w-sm mx-auto">
-          {task.description}
-        </p>
-      </div>
-
-      {/* Phase marker beneath the card — stable for the whole generation */}
-      <div className="relative z-10 mt-8">
-        <span className="font-sc text-[10px] tracking-[0.3em] font-bold uppercase text-portal/90 bg-portal/5 px-4 py-2 border border-portal/25 rounded-full shadow-[0_0_12px_rgba(4,172,255,0.1)]">
-          {task.operationTitle}
-        </span>
-      </div>
+      )}
     </motion.div>
   );
 }

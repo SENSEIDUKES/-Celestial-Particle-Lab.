@@ -12,6 +12,7 @@
 
 - **2026-07-29:** Consolidated the AILoadingVeil's two duplicated presentations into one reusable loading system with a normalized task-card format and two visual modes (primary veil / compact indicator).
 - **2026-07-29:** Refined the simulator page layout: one primary-veil button with phase selector, and two compact-indicator buttons (Versa background, Scout retrieval).
+- **2026-07-29:** `LoadingVeil` now hides the atmospheric phrase block when the task card's `description` is empty, hides the phase marker pill when `operationTitle` is empty, and accepts an optional `emblemClassName` spacing override (threaded through `LoadingSystem`) — the hooks the DEV veil uses for its compact layout.
 
 ## What this is
 
@@ -45,8 +46,8 @@ render, because they complete too quickly to communicate useful information.
 
 ## Preview states
 
-- Primary veil — one "Open Veil" button (Versa) with a phase selector covering
-  blueprint, initial-arc, steer, cover, and chapter
+- Primary veil — two "Open Veil" buttons (Versa reference and DEV variant) with
+  a phase selector covering blueprint, initial-arc, steer, cover, and chapter
 - Versa compact — background chapter task; expandable back into the veil
 - Scout compact — retrieval task; always compact, never blocks the screen
 

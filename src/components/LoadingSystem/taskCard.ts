@@ -19,13 +19,13 @@ export type LoadingTaskIcon =
 export interface LoadingTaskCard {
   /** Display name of the operation or agent, e.g. 'VERSA'. */
   operationName: string;
-  /** Stable phase marker shown for the whole operation, e.g. 'Chapter 4 Manifestation'. */
+  /** Stable phase marker shown for the whole operation, e.g. 'Chapter 4 Manifestation'. Empty string hides the phase marker. */
   operationTitle: string;
   /** Emblem or glyph representing the operation. */
   icon: LoadingTaskIcon;
   /** Short live status line — the only text allowed to rotate while running. */
   status: string;
-  /** Longer atmospheric description of the current phase. */
+  /** Longer atmospheric description of the current phase. Empty string hides the phrase block. */
   description: string;
   /** 0–100 deterministic progress, or null for an indeterminate sweep. */
   progress: number | null;
