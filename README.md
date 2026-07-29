@@ -1,10 +1,26 @@
-# Celestial Particle Lab
+# Light Novel Workshop
 
-A minimal standalone React/Vite preview of SEN's existing `CelestialParticleShower` effect.
+A standalone visual workshop for SEN and the Light-Novels app.
+
+Use this repository to build, preview, refine, and approve portable UI pieces before moving them into the main `SENSEIDUKES/Light-Novels` repository.
 
 ## Coding agents: read this first
 
-Before making any changes, read [`AGENTS.md`](./AGENTS.md). It contains the required scope, live-preview workflow, and rules for keeping the component easy to move back into the main Light-Novels app.
+Before making changes, read [`AGENTS.md`](./AGENTS.md). It explains the purpose of the workshop, the preview workflow, and how new components should be organized for clean re-import into Light-Novels.
+
+## What belongs here
+
+Examples include:
+
+- backgrounds and ambient effects
+- loading and generation animations
+- Closed-Door Cultivation UI and motion
+- relic cards and reward reveals
+- Library icon sets
+- Reader and Codex components
+- small mobile-first interface experiments
+
+This is not a second version of the full app. It is a clean visual development space with mock content only.
 
 ## Run locally
 
@@ -13,25 +29,18 @@ npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-Open the local or forwarded Vite preview, usually on port `5173`, and keep it available while refining the animation.
+Open the local or forwarded Vite preview, usually on port `5173`.
 
-The preview intentionally contains only the particle canvas, black backdrop, and the two ambient glow layers used behind relic reveals. There are no controls or unrelated UI.
+## Current workshop entries
 
-## Approved Library glyph set
+The home screen is driven by [`src/workshop/manifest.ts`](./src/workshop/manifest.ts). Each approved experiment should have its own preview and a clear entry in that manifest.
 
-The first six custom Library glyphs are stored in [`public/icons`](./public/icons):
+Current entry:
 
-- `yin-yang.svg`
-- `shen-long-dragon.svg`
-- `sacred-tree.svg`
-- `thunder-cloud.svg`
-- `book-scroll.svg`
-- `cultivator.svg`
+- **Celestial Particle Backdrop** — `?preview=celestial-backdrop`
 
-These are the approved symbol direction for the particle system. Coding agents should use and refine these assets rather than replacing them with generic space, wizard, planet, or fantasy-game icons.
+The approved Library glyph set remains in [`public/icons`](./public/icons).
 
-## Foreground-safe behavior
+## Moving work into Light-Novels
 
-`CelestialParticleShower` automatically clears visual space behind open native dialogs and elements marked with `data-celestial-foreground`. It dims particles inside the content bounds, moves glyphs to the outer thirds, and keeps the vertical absorption stream readable above and below. When no matching content is visible, the full particle field returns without swapping to another backdrop.
-
-Edit `src/CelestialParticleShower.tsx` to refine the effect. When finished, copy that component and any finalized glyph assets back into the main Light-Novels repository.
+Workshop components should stay portable: minimal dependencies, no auth, no database, and no production persistence. Once approved, copy the actual component, styles, and required assets into the corresponding place in `Light-Novels`; do not import the workshop shell itself.
