@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Minimize2 } from 'lucide-react';
 import type { LoadingTaskCard } from '../shared/taskCard';
+import SwordCultivatorClash from './SwordCultivatorClash';
 
 const ACCENT = {
   versa: '#8B0000',
@@ -160,6 +161,11 @@ export interface LoadingVeilCardProps {
  *   her float, so the hover reads as levitation rather than a cutout
  * - a slow-rotating violet cloak-energy ring behind her
  * - qi motes rising past her as she works
+ * - 2026-07-30: aura deepened toward the reference look — a saturated violet
+ *   nebula mass with a bright core, twin counter-rotating wisps, more motes,
+ *   and a stronger violet cast on the figure herself
+ * - 2026-07-30: the card's lower half now carries "Animation Concept 2 —
+ *   Sword Cultivator Clash", a looping two-rider clash animation stage
  * Workshop-only: do not wire this into production flows.
  */
 export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClassName }: LoadingVeilCardProps) {
@@ -205,56 +211,103 @@ export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClas
             aria-hidden="true"
             className="absolute left-1/2 bottom-[8%] -translate-x-1/2 rounded-[50%] pointer-events-none"
             style={{
-              width: '68%',
-              height: '14%',
-              background: 'radial-gradient(ellipse at 50% 50%, rgba(168,85,247,0.4) 0%, rgba(76,29,149,0.22) 55%, transparent 80%)',
+              width: '72%',
+              height: '15%',
+              background: 'radial-gradient(ellipse at 50% 50%, rgba(168,85,247,0.5) 0%, rgba(76,29,149,0.3) 55%, transparent 80%)',
               filter: 'blur(5px)',
             }}
-            animate={{ opacity: [0.5, 0.85, 0.5], scaleX: [0.92, 1, 0.92] }}
+            animate={{ opacity: [0.65, 1, 0.65], scaleX: [0.92, 1, 0.92] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
         )}
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className={`absolute inset-[-20%] rounded-full blur-2xl ${isVersa ? 'bg-human/20' : 'bg-portal/20'}`}
-        />
+        {isVersa ? (
+          <>
+            {/* Nebula heart — the saturated violet mass from the reference,
+                breathing slowly so she reads as the eye of a storm of qi. */}
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-[-55%] rounded-full pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle at 50% 52%, rgba(233,213,255,0.5) 0%, rgba(192,132,252,0.45) 22%, rgba(147,51,234,0.38) 45%, rgba(88,28,135,0.28) 66%, transparent 82%)',
+                filter: 'blur(26px)',
+                mixBlendMode: 'screen',
+              }}
+              animate={{ opacity: [0.75, 1, 0.75], scale: [0.96, 1.04, 0.96] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Bright core where her power gathers */}
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-[-6%] rounded-full pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle at 50% 58%, rgba(243,232,255,0.65) 0%, rgba(216,180,254,0.4) 40%, transparent 70%)',
+                filter: 'blur(12px)',
+                mixBlendMode: 'screen',
+              }}
+              animate={{ opacity: [0.6, 0.95, 0.6] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-[-20%] rounded-full blur-2xl bg-portal/20"
+          />
+        )}
 
         {/* Cloak energy — slow-swirling violet wisps circling the figure, the visual reason she floats. */}
         {isVersa && (
-          <motion.div
-            aria-hidden="true"
-            className="absolute inset-[-10%] rounded-full pointer-events-none"
-            style={{
-              background:
-                'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.4) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.32) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
-              filter: 'blur(9px)',
-              mixBlendMode: 'screen',
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-          />
+          <>
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-[-10%] rounded-full pointer-events-none"
+              style={{
+                background:
+                  'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.55) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.45) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
+                filter: 'blur(8px)',
+                mixBlendMode: 'screen',
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Counter-rotating second wisp layer — keeps the swirl alive instead of a single slow wheel */}
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-[-22%] rounded-full pointer-events-none"
+              style={{
+                background:
+                  'conic-gradient(from 180deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.35) 22%, rgba(216,180,254,0) 46%, rgba(147,51,234,0.3) 70%, rgba(216,180,254,0) 92%, rgba(216,180,254,0) 100%)',
+                filter: 'blur(14px)',
+                mixBlendMode: 'screen',
+              }}
+              animate={{ rotate: -360 }}
+              transition={{ duration: 26, repeat: Infinity, ease: 'linear' }}
+            />
+          </>
         )}
 
         {/* Qi motes rising past her as she hovers. */}
         {isVersa &&
-          [0, 1, 2, 3].map(i => (
+          [0, 1, 2, 3, 4, 5].map(i => (
             <motion.span
               key={i}
               aria-hidden="true"
               className="absolute rounded-full pointer-events-none"
               style={{
-                left: `${26 + i * 16}%`,
+                left: `${22 + i * 12}%`,
                 bottom: '14%',
                 width: 3,
                 height: 3,
-                background: 'rgba(216,180,254,0.95)',
-                boxShadow: '0 0 6px rgba(168,85,247,0.9), 0 0 12px rgba(168,85,247,0.5)',
+                background: 'rgba(233,213,255,0.95)',
+                boxShadow: '0 0 7px rgba(192,132,252,0.95), 0 0 14px rgba(168,85,247,0.6)',
               }}
-              animate={{ y: [0, -(48 + i * 8)], opacity: [0, 0.9, 0], x: [0, (i % 2 === 0 ? 1 : -1) * 6] }}
-              transition={{ duration: 3.4 + i * 0.4, repeat: Infinity, delay: i * 0.7, ease: 'easeOut' }}
+              animate={{ y: [0, -(48 + i * 8)], opacity: [0, 0.95, 0], x: [0, (i % 2 === 0 ? 1 : -1) * 6] }}
+              transition={{ duration: 3 + i * 0.35, repeat: Infinity, delay: i * 0.55, ease: 'easeOut' }}
             />
           ))}
 
@@ -268,7 +321,7 @@ export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClas
             alt={task.icon.alt}
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
-            style={isVersa ? { filter: 'drop-shadow(0 0 15px rgba(139, 0, 0, 0.4)) drop-shadow(0 0 22px rgba(168,85,247,0.35))' } : { filter: 'drop-shadow(0 0 15px rgba(4, 172, 255, 0.4))' }}
+            style={isVersa ? { filter: 'drop-shadow(0 0 18px rgba(192,132,252,0.8)) drop-shadow(0 0 46px rgba(147,51,234,0.55))' } : { filter: 'drop-shadow(0 0 15px rgba(4, 172, 255, 0.4))' }}
           />
         </motion.div>
       </div>
@@ -347,11 +400,26 @@ export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClas
           </div>
         </div>
 
+        {/* Lower-half animation stage — Animation Concept 2, Sword Cultivator
+            Clash. Versa only; Scout's card stays compact. */}
+        {isVersa && (
+          <>
+            {/* Ornamented divider */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-px flex-1 bg-human/20" />
+              <Sparkles size={10} className="text-human/60" />
+              <div className="h-px flex-1 bg-human/20" />
+            </div>
+
+            <SwordCultivatorClash />
+          </>
+        )}
+
         {/* Atmospheric phrase — hidden entirely when the card has no description */}
         {task.description && (
           <>
             {/* Ornamented divider */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3 mb-5 mt-5">
               <div className="h-px flex-1 bg-neutral-800" />
               <Sparkles size={10} className={isVersa ? 'text-human/60' : 'text-portal/60'} />
               <div className="h-px flex-1 bg-neutral-800" />
