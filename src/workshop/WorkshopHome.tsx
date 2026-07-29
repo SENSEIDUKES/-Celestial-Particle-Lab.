@@ -62,10 +62,27 @@ function IdleCultivationVisual() {
   );
 }
 
+function RelicsGalleryVisual() {
+  return (
+    <svg viewBox="0 0 400 240" role="img" aria-label="Relics gallery preview" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="relic-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#ec4899" stopOpacity="0.1" />
+        </linearGradient>
+      </defs>
+      <rect x="140" y="60" width="120" height="120" rx="12" fill="url(#relic-grad)" stroke="#ec4899" strokeWidth="1" strokeOpacity="0.3" />
+      <polygon points="200,80 230,120 200,160 170,120" fill="none" stroke="#ec4899" strokeWidth="1.5" strokeOpacity="0.5" />
+      <circle cx="200" cy="120" r="10" fill="#4f46e5" fillOpacity="0.4" />
+    </svg>
+  );
+}
+
 function CardVisual({ id }: { id: string }) {
   if (id === 'celestial-backdrop') return <CelestialVisual />;
   if (id === 'chapter-generation-manifestation') return <ManifestationVisual />;
   if (id === 'idle-cultivation') return <IdleCultivationVisual />;
+  if (id === 'relics-gallery') return <RelicsGalleryVisual />;
   return null;
 }
 

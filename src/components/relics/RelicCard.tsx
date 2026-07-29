@@ -7,9 +7,8 @@ interface RelicCardProps {
   onClick: (artifact: CosmicArtifact) => void;
 }
 
-export const renderArtifactIcon = (name: string, rarity: string) => {
+export const renderArtifactIcon = (name: string, rarity: string, size: number = 20) => {
   const lower = name.toLowerCase();
-  const size = 20;
   let className = "";
   
   if (rarity === 'Transcendent') className = "text-cyan-400 animate-pulse drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]";

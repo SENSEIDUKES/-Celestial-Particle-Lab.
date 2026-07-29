@@ -51,9 +51,12 @@ Open the local or forwarded Vite preview, usually on port `5173`.
 
 The home screen is driven by [`src/workshop/manifest.ts`](./src/workshop/manifest.ts). Each approved experiment should have its own preview and a clear entry in that manifest.
 
-Current entry:
+Current entries:
 
 - **Celestial Particle Backdrop** — `?preview=celestial-backdrop`
+- **Chapter Generation Manifestation** — `?preview=chapter-generation-manifestation`
+- **Closed-Door Cultivation** — `?preview=idle-cultivation`
+- **Relics Gallery** — `?preview=relics-gallery`
 
 The approved Library glyph set remains in [`public/icons`](./public/icons).
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Award, Sparkles, HelpCircle, Shield, Zap, RefreshCw, Save, Sliders, Compass, Globe, Key } from 'lucide-react';
+import { Award, Zap } from 'lucide-react';
 import { CosmicArtifact } from './types';
+import { renderArtifactIcon } from './RelicCard';
 
 // Performance Optimization: Cache Intl.DateTimeFormat at module level
 const dateFormatter = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -50,30 +51,7 @@ export function RelicModal({ inspectArtifact, onClose }: RelicModalProps) {
         <div className="p-6 space-y-6">
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-black/60 border border-neutral-900 flex items-center justify-center relative shadow-inner overflow-hidden">
-              {(() => {
-                const lower = inspectArtifact.name.toLowerCase();
-                const size = 28;
-                let className = "";
-                const rarity = inspectArtifact.rarity;
-                
-                if (rarity === 'Transcendent') className = "text-cyan-400 animate-pulse drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]";
-                else if (rarity === 'Mythic') className = "text-red-500 animate-pulse drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]";
-                else if (rarity === 'Legendary') className = "text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]";
-                else if (rarity === 'Epic') className = "text-purple-400";
-                else if (rarity === 'Rare') className = "text-emerald-400";
-                else className = "text-neutral-500";
-
-                if (lower.includes('medallion') || lower.includes('badge')) return <Award size={size} className={className} />;
-                if (lower.includes('seal') || lower.includes('signet')) return <Shield size={size} className={className} />;
-                if (lower.includes('gourd') || lower.includes('nectar') || lower.includes('cauldron') || lower.includes('potion')) return <Zap size={size} className={className} />;
-                if (lower.includes('spindle') || lower.includes('thread') || lower.includes('matrix')) return <RefreshCw size={size} className={className} />;
-                if (lower.includes('pen') || lower.includes('brush') || lower.includes('scribe')) return <Save size={size} className={className} />;
-                if (lower.includes('crown') || lower.includes('circlet') || lower.includes('tiara')) return <Sliders size={size} className={className} />;
-                if (lower.includes('compass')) return <Compass size={size} className={className} />;
-                if (lower.includes('mirror')) return <Globe size={size} className={className} />;
-                if (lower.includes('key')) return <Key size={size} className={className} />;
-                return <Sparkles size={size} className={className} />;
-              })()}
+              {renderArtifactIcon(inspectArtifact.name, inspectArtifact.rarity, 28)}
               <div className="absolute inset-0 bg-gradient-to-t from-portal/5 via-transparent to-transparent"></div>
             </div>
             
