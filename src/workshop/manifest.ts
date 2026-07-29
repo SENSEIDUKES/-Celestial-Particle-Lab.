@@ -23,4 +23,11 @@ export const workshopEntries: WorkshopEntry[] = [
     category: 'backgrounds',
     status: 'refining',
   },
+  {
+    id: 'chapter-generation-manifestation',
+    title: 'Chapter Generation Manifestation',
+    description: 'AILoadingVeil component state simulator for generating chapters and backgrounds.',
+    category: 'animations',
+    status: 'refining',
+  },
 ];
