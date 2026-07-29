@@ -16,9 +16,12 @@ const VERSA_QUOTES = [
 
 /**
  * DEV copy of AILoadingVeil — the experimental veil under active iteration.
- * Starts identical to the reference (AILoadingVeil) so visual changes can be
- * compared side by side in the Workshop preview. Workshop-only: do not wire
- * this into production flows.
+ * Diverges from the reference (AILoadingVeil) so visual changes can be
+ * compared side by side in the Workshop preview:
+ * - the atmospheric phase phrase is dropped for a more compact card
+ * - the phase marker pill beneath the card is dropped
+ * - Versa's emblem sits lower with more breathing room
+ * Workshop-only: do not wire this into production flows.
  */
 export default function DevLoadingVeil({
   isGenerating,
@@ -57,16 +60,21 @@ export default function DevLoadingVeil({
     ? VERSA_QUOTES[quoteIndex]
     : (generationProgressMessage || 'Manifesting spiritual matrices...');
 
-  const task = buildAILoadingTaskCard({
-    generationPhase,
-    generationProgressMessage,
-    estimatedSecondsRemaining,
-    activeAgentId,
-    streamingBlocksCount,
-    generatingChapterNum,
-    statusQuote,
-    progress: progressWidth,
-  });
+  const task = {
+    ...buildAILoadingTaskCard({
+      generationPhase,
+      generationProgressMessage,
+      estimatedSecondsRemaining,
+      activeAgentId,
+      streamingBlocksCount,
+      generatingChapterNum,
+      statusQuote,
+      progress: progressWidth,
+    }),
+    // Compact card: no atmospheric phrase and no phase marker pill.
+    description: '',
+    operationTitle: '',
+  };
 
   return (
     <LoadingSystem
@@ -75,6 +83,8 @@ export default function DevLoadingVeil({
       mode="auto"
       minimized={isVeilMinimized}
       onMinimizedChange={setIsVeilMinimized}
+      // Versa sits lower with more room above her.
+      emblemClassName="mb-10 mt-10"
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}

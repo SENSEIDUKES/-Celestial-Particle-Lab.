@@ -26,6 +26,8 @@ export interface LoadingSystemProps {
   compactGraceMs?: number;
   /** Optional cinematic backdrop rendered behind the primary veil's content. */
   backdrop?: React.ReactNode;
+  /** Optional spacing override for the primary veil's agent emblem container. */
+  emblemClassName?: string;
 }
 
 const DEFAULT_COMPACT_GRACE_MS = 1200;
@@ -44,6 +46,7 @@ export default function LoadingSystem({
   onMinimizedChange,
   compactGraceMs = DEFAULT_COMPACT_GRACE_MS,
   backdrop,
+  emblemClassName,
 }: LoadingSystemProps) {
   const resolvedMode: Exclude<LoadingSystemMode, 'auto'> =
     mode === 'auto' ? (task?.preferredMode ?? 'primary') : mode;
@@ -74,6 +77,7 @@ export default function LoadingSystem({
           task={task}
           onMinimize={() => onMinimizedChange(true)}
           backdrop={backdrop}
+          emblemClassName={emblemClassName}
         />
       )}
       {showCompact && (
