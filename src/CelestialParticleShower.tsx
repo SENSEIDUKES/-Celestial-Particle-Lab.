@@ -272,6 +272,9 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         const rimY = height * 0.016; // rim height at the left/right edges
         const dipY = height * 0.055; // the rim dips at center — the absorption point
         const pulse = 0.9 + 0.1 * Math.sin(time * 1.3);
+        const starWave = Math.sin(time * 1.08);
+        const starScale = 1 + starWave * 0.035;
+        const starIntensity = 0.7 + starWave * 0.05;
         const flicker = 0.92 + 0.08 * Math.sin(time * 2.1);
         const rimControlY = 2 * dipY - rimY;
 
@@ -349,21 +352,21 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
         // The absorption point: a soft diffuse glow with only a whisper of
         // a cross sparkle — felt, not drawn.
-        fillEllipticalGlow(cx, dipY, height * 0.042, height * 0.042, [
-          [0, toRgba(mix(palette.pale, WHITE, 0.6), 0.72 * pulse)],
-          [0.4, toRgba(palette.pale, 0.3 * pulse)],
+        fillEllipticalGlow(cx, dipY, height * 0.042 * starScale, height * 0.042 * starScale, [
+          [0, toRgba(mix(palette.pale, WHITE, 0.6), starIntensity)],
+          [0.4, toRgba(palette.pale, starIntensity * 0.42)],
           [1, toRgba(palette.bright, 0)],
         ]);
-        const sparkleLen = height * 0.045;
+        const sparkleLen = height * 0.045 * starScale;
         const sparkleGradH = ctx.createLinearGradient(cx - sparkleLen, 0, cx + sparkleLen, 0);
         sparkleGradH.addColorStop(0, toRgba(palette.pale, 0));
-        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.22 * pulse));
+        sparkleGradH.addColorStop(0.5, toRgba(palette.pale, 0.2 + starWave * 0.025));
         sparkleGradH.addColorStop(1, toRgba(palette.pale, 0));
         ctx.fillStyle = sparkleGradH;
         ctx.fillRect(cx - sparkleLen, dipY - 0.4, sparkleLen * 2, 0.8);
         const sparkleGradV = ctx.createLinearGradient(0, dipY - sparkleLen * 0.6, 0, dipY + sparkleLen * 0.6);
         sparkleGradV.addColorStop(0, toRgba(palette.pale, 0));
-        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.14 * pulse));
+        sparkleGradV.addColorStop(0.5, toRgba(palette.pale, 0.13 + starWave * 0.018));
         sparkleGradV.addColorStop(1, toRgba(palette.pale, 0));
         ctx.fillStyle = sparkleGradV;
         ctx.fillRect(cx - 0.4, dipY - sparkleLen * 0.6, 0.8, sparkleLen * 1.2);
@@ -453,9 +456,12 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           }
 
           ctx.save();
-          ctx.globalAlpha = clamp01(alpha);
+          const isGlyph = Boolean(p.glyph?.complete && p.glyph.naturalWidth > 0);
+          const lowerFieldProgress = clamp01((p.y - height * 0.55) / (height * 0.45));
+          const glyphBrightness = isGlyph ? 1 + lowerFieldProgress * 0.16 : 1;
+          ctx.globalAlpha = clamp01(alpha * glyphBrightness);
 
-          if (p.glyph?.complete && p.glyph.naturalWidth > 0) {
+          if (isGlyph && p.glyph) {
             ctx.translate(p.x, p.y);
             if (p.rotation !== undefined) ctx.rotate(p.rotation);
             const glyphSize = Math.max(22, p.size * 2.4) * scale;
