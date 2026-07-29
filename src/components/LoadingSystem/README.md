@@ -13,6 +13,7 @@
 - **2026-07-29:** Consolidated the AILoadingVeil's two duplicated presentations into one reusable loading system with a normalized task-card format and two visual modes (primary veil / compact indicator).
 - **2026-07-29:** Refined the simulator page layout: one primary-veil button with phase selector, and two compact-indicator buttons (Versa background, Scout retrieval).
 - **2026-07-29:** `LoadingVeil` now hides the atmospheric phrase block when the task card's `description` is empty, hides the phase marker pill when `operationTitle` is empty, and accepts an optional `emblemClassName` spacing override (threaded through `LoadingSystem`) — the hooks the DEV veil uses for its compact layout.
+- **2026-07-29:** Forked `LoadingVeil`/`LoadingSystem` into `DevLoadingVeilCard`/`DevLoadingSystem` so the DEV veil can iterate on Versa's presence without touching the reference. DEV veil now shows a live "Manifesting N/20" tracker detail (was "N passages formed", incrementing as passages stream in) and gives Versa's floating emblem visual justification: a grounded violet pool breathing independently beneath her, a slow-rotating violet cloak-energy ring, and qi motes rising past her. The reference "Versa" veil is untouched.
 
 ## What this is
 
@@ -63,6 +64,9 @@ render, because they complete too quickly to communicate useful information.
 - `src/components/LoadingSystem/CompactIndicator.tsx`
 - `src/components/LoadingSystem/LoadingSystem.tsx`
 - Agent profiles from `src/lib/agents.ts` (already present in the source app)
+- `DevLoadingVeilCard.tsx` / `DevLoadingSystem.tsx` are Workshop-only forks under
+  active iteration — do not transfer until their changes are approved and
+  merged back into the reference files above.
 
 ## Transfer notes
 
