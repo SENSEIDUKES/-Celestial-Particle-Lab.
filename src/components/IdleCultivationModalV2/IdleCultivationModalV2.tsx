@@ -197,7 +197,7 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
   const [isClaiming, setIsClaiming] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flight, setFlight] = useState<Flight | null>(null);
-  const bubbleRef = useRef<HTMLButtonElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
   const figureRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudGradId = `cdc-cloud-${useId()}`;
@@ -261,6 +261,25 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
     <>
       {flight && <QiFlight flight={flight} />}
       <AnimatePresence>
+        {/* Full-viewport dim + soften: the Library stays visible enough to place the user, */}
+        {/* not readable enough to compete, and stays up until claimed or minimized. */}
+        {qiEarned !== null && !collapsed && (
+          <motion.div
+            key="cdc-scrim"
+            aria-hidden="true"
+            className="fixed inset-0 z-[95] pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse at 50% 62%, rgba(2,5,12,0.55) 0%, rgba(2,5,12,0.72) 55%, rgba(2,5,12,0.82) 100%)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+          />
+        )}
         {qiEarned !== null &&
           (collapsed && !isClaiming ? (
             <motion.button
@@ -303,7 +322,7 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
               exit={{ opacity: 0, y: 12 }}
               className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:inset-x-auto sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] flex justify-center sm:justify-end pointer-events-none"
             >
-              {/* Only the cloud is interactive — swipes everywhere else pass through to the page. */}
+              {/* The cloud and the cultivator's body are one tap target — swipes everywhere else pass through to the page. */}
               <div className="relative pointer-events-none flex flex-col items-center px-6">
                 {/* soft dark ink aura: gently obscures whatever is underneath, no hard box */}
                 <div
@@ -318,14 +337,18 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
                   }}
                 />
 
-                {/* thought cloud of condensed qi — tap to claim */}
-                <motion.button
-                  ref={bubbleRef}
+                {/* single hit area spanning the cloud down through the cultivator's body — tap either to claim */}
+                <button
                   type="button"
                   onClick={handleClaim}
                   disabled={isClaiming}
                   aria-label={isClaiming ? 'Absorbing Qi...' : 'Claim & Awaken'}
-                  className="relative block rounded-2xl pointer-events-auto touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-portal/60"
+                  className="relative flex flex-col items-center rounded-[2rem] pointer-events-auto touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-portal/60"
+                >
+                {/* thought cloud of condensed qi */}
+                <motion.div
+                  ref={bubbleRef}
+                  className="relative block rounded-2xl"
                   animate={
                     isClaiming
                       ? { scale: 0.15, opacity: 0, y: 6 }
@@ -390,7 +413,7 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
                   >
                     {`+${qiEarned} QI`}
                   </span>
-                </motion.button>
+                </motion.div>
 
                 {/* trailing wisps as the cultivator dissolves */}
                 {isClaiming &&
@@ -409,9 +432,10 @@ export function IdleCultivationModalV2({ qiEarned, onClose, onClaim, targetEleme
                     />
                   ))}
 
-                <div ref={figureRef} className="relative">
-                  <CultivatorFigure claiming={isClaiming} calm={!!reduceMotion} />
-                </div>
+                  <div ref={figureRef} className="relative">
+                    <CultivatorFigure claiming={isClaiming} calm={!!reduceMotion} />
+                  </div>
+                </button>
 
                 <span
                   id="idle-cultivation-v2-title"
