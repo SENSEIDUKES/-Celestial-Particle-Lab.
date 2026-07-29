@@ -1,9 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Minimize2, Maximize2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type { LoadingTaskCard } from '../shared/taskCard';
 import SwordCultivatorClash from './SwordCultivatorClash';
-import CelestialChannel from './CelestialChannel';
 
 const ACCENT = {
   versa: '#8B0000',
@@ -71,9 +70,50 @@ const CelestialSigil: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
   );
 };
 
+/**
+ * Chamber rings — the large circular portal frame that turns the animation
+ * area into one continuous magical chamber. Fills its square parent.
+ */
+const ChamberRings: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
+  const accent = isVersa ? ACCENT.versa : ACCENT.scout;
+  return (
+    <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+      {/* Outermost dashed ring, slow drift */}
+      <motion.g
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 140, ease: 'linear' }}
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+      >
+        <circle cx="200" cy="200" r="194" fill="none" stroke={accent} strokeWidth="0.8" strokeDasharray="1 7" opacity="0.35" />
+        {[0, 90, 180, 270].map((deg) => (
+          <path
+            key={deg}
+            d="M200 0 L203.5 6 L200 12 L196.5 6 Z"
+            fill={accent}
+            opacity="0.6"
+            transform={`rotate(${deg} 200 200)`}
+          />
+        ))}
+      </motion.g>
+
+      {/* Solid rim + inner arcs, counter drift */}
+      <motion.g
+        animate={{ rotate: -360 }}
+        transition={{ repeat: Infinity, duration: 200, ease: 'linear' }}
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+      >
+        <circle cx="200" cy="200" r="180" fill="none" stroke={accent} strokeWidth="0.7" opacity="0.22" />
+        <circle cx="200" cy="200" r="150" fill="none" stroke={accent} strokeWidth="0.6" strokeDasharray="4 8" opacity="0.2" />
+      </motion.g>
+
+      {/* Static mid rim that grounds the portal */}
+      <circle cx="200" cy="200" r="166" fill="none" stroke={accent} strokeWidth="1" opacity="0.3" />
+    </svg>
+  );
+};
+
 export interface LoadingVeilCardProps {
   task: LoadingTaskCard;
-  onMinimize: () => void;
   /**
    * Optional cinematic backdrop (e.g. the celestial particle field) rendered
    * behind the veil content. When present, the veil's dark wash lightens so
@@ -86,46 +126,38 @@ export interface LoadingVeilCardProps {
   emblemClassName?: string;
 }
 
-/** Manifestation animation scenes available in the carousel. */
-const SCENES = [
-  { id: 'channel', title: 'Celestial Channel', node: <CelestialChannel /> },
-  { id: 'clash', title: 'Sword Cultivator Clash', node: <SwordCultivatorClash /> },
-] as const;
-
-const sceneVariants = {
-  enter: (dir: number) => ({ x: dir >= 0 ? 70 : -70, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir >= 0 ? -70 : 70, opacity: 0 }),
-};
-
 /**
- * DEV copy of LoadingVeil — rebuilt 2026-07-30 as a single 100dvh mobile
- * composition with three zones, no vertical scrolling:
- * 1. Versa hero — emblem + refined violet aura, overlapping the card's top
- * 2. Compact chapter status — VERSA, rotating quote, Chapter · time row,
- *    Manifesting N/20, progress bar; collapses to one thin row when the
- *    animation is expanded
- * 3. Animation area — flex-grows into the remaining viewport, scenes scale
- *    with contain, swipe horizontally between manifestation animations
+ * DEV copy of LoadingVeil — rebuilt 2026-07-30 as one continuous circular
+ * chamber, replacing the stacked rectangular card:
+ * 1. Versa hero — emblem + refined violet aura at the top, sized to fill
+ *    her zone naturally with less dead space around her
+ * 2. Compact chapter status — one always-visible line
+ *    ("Chapter 1 · Manifesting 9/20 · ~23s") with a thin progress bar
+ *    directly beneath it
+ * 3. Circular chamber — a large concentric portal ring filling the remaining
+ *    viewport; the manifestation animation (Sword Cultivator Clash) lives
+ *    inside the ring as the visual focus. No carousel, dots, scene titles,
+ *    or expand controls — the system picks the scene.
+ * 4. Versa's evolving line — the rotating quote rests at the bottom of the
+ *    chamber, italic and atmospheric.
+ *
+ * There is deliberately no manual minimize control: while a chapter is
+ * generating the veil stays immersive, and background minimization happens
+ * through navigation (the caller flips `minimized`), not a button here.
  *
  * Aura work (kept from the previous pass): saturated violet nebula with a
  * bright core, twin counter-rotating cloak wisps, grounded pool, six motes.
  * Workshop-only: do not wire this into production flows.
  */
-export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClassName }: LoadingVeilCardProps) {
+export default function LoadingVeilCard({ task, backdrop, emblemClassName }: LoadingVeilCardProps) {
   const isVersa = task.agentId === 'versa';
   const progressWidth = task.progress;
-
-  const [expanded, setExpanded] = React.useState(false);
-  const [[sceneIndex, sceneDir], setScene] = React.useState<[number, number]>([1, 0]);
-
-  const goScene = (dir: number) =>
-    setScene(([i]) => [(i + dir + SCENES.length) % SCENES.length, dir]);
 
   const estimate =
     task.estimatedSecondsRemaining !== null ? `~${task.estimatedSecondsRemaining}s` : null;
 
-  const compactStatusLine = [task.trackerTitle, task.trackerDetail, estimate]
+  // "Chapter 1 · Manifesting 9/20 · ~23s" — one compact line, always visible.
+  const statusLine = [task.trackerTitle, task.trackerDetail, estimate]
     .filter(Boolean)
     .join(' · ');
 
@@ -144,25 +176,11 @@ export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClas
         </div>
       )}
 
-      {/* Top-right icon-only minimize control */}
-      <button
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
-        onClick={onMinimize}
-        title="Minimize to Background"
-        aria-label="Minimize to Background"
-        className="absolute z-20 top-5 right-5 sm:top-6 sm:right-6 w-10 h-10 rounded-full border border-portal/35 bg-portal/10 hover:bg-portal/20 text-portal flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(4,172,255,0.1)] hover:shadow-[0_0_20px_rgba(4,172,255,0.3)] cursor-pointer"
-      >
-        <Minimize2 size={15} />
-      </button>
-
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[420px] h-[420px] rounded-full bg-radial-gradient from-portal/10 via-human/5 to-transparent blur-3xl pointer-events-none"></div>
-
       {/* ── Zone 1 · Versa hero ─────────────────────────────────────────────
-          Emblem + aura. Sits low with a negative bottom margin so the aura
-          spills over the card's top edge and the two zones feel connected. */}
-      <div className="relative z-0 flex-none h-[26dvh] min-h-[148px] -mb-7 flex items-end justify-center pointer-events-none">
-        <div className={`relative w-28 h-28 sm:w-32 sm:h-32 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
+          Emblem + aura, sized up to fill her zone naturally. The aura layers
+          are unchanged — only the footprint is tighter. */}
+      <div className="relative z-0 flex-none h-[27dvh] min-h-[168px] flex items-end justify-center pointer-events-none">
+        <div className={`relative w-32 h-32 sm:w-36 sm:h-36 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
           <CelestialSigil isVersa={isVersa} />
 
           {/* Ground pool — a grounded shadow that doesn't rise with her */}
@@ -285,173 +303,74 @@ export default function LoadingVeilCard({ task, onMinimize, backdrop, emblemClas
         </div>
       </div>
 
-      {/* ── Zones 2 + 3 · Manifestation card ────────────────────────────────
-          flex-1 + min-h-0: the card claims the remaining viewport and the
-          animation grows into whatever is left after the compact status. */}
-      <div className="relative z-10 flex-1 min-h-0 w-full max-w-md mx-auto px-4 pb-4 flex">
-        <div
-          data-celestial-foreground
-          className={`flex-1 min-h-0 flex flex-col bg-neutral-950/80 border ${isVersa ? 'border-human/25' : 'border-portal/25'} rounded-xl px-5 pt-4 pb-3 shadow-[0_0_40px_rgba(0,0,0,0.6)]`}
-        >
-          {/* ── Zone 2 · Compact chapter status ── */}
-          {expanded && isVersa ? (
-            /* Collapsed thin row while the animation takes over */
-            <div className="flex-none mb-2">
-              <span className="font-sans text-[11px] text-neutral-300 tracking-wide">
-                {compactStatusLine}
-              </span>
-            </div>
+      {/* ── Zone 2 · Compact chapter status ─────────────────────────────────
+          One line, always visible: Chapter 1 · Manifesting 9/20 · ~23s.
+          A thin progress bar sits directly beneath it. */}
+      <div className="relative z-10 flex-none px-6 pt-3">
+        <p className="font-sans text-xs sm:text-sm text-neutral-200 tracking-wide">
+          {statusLine}
+        </p>
+        <div className="mt-1.5 mx-auto w-full max-w-[260px] h-[3px] rounded-full bg-neutral-800/80 overflow-hidden">
+          {progressWidth !== null ? (
+            <motion.div
+              className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
+              initial={{ width: '6%' }}
+              animate={{ width: `${progressWidth}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            />
           ) : (
-            <>
-              {/* Card header — the agent's name alone carries the hierarchy */}
-              <div className="flex-none mb-1.5">
-                <span className={`font-display font-bold text-xl tracking-[0.35em] ${task.colorClass}`}>
-                  {task.operationName}
-                </span>
-              </div>
-
-              {/* Ornamented divider */}
-              <div className="flex-none flex items-center gap-3 mb-2">
-                <div className={`h-px flex-1 ${isVersa ? 'bg-human/20' : 'bg-portal/20'}`} />
-                <Sparkles size={10} className={isVersa ? 'text-human/60' : 'text-portal/60'} />
-                <div className={`h-px flex-1 ${isVersa ? 'bg-human/20' : 'bg-portal/20'}`} />
-              </div>
-
-              {/* Rotating status quote — soft crossfade, the only text allowed to change */}
-              <div className="flex-none min-h-[20px] flex items-center justify-center mb-2.5">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={task.status}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.45, ease: 'easeInOut' }}
-                    className="font-serif italic text-sm text-neutral-300 leading-snug"
-                  >
-                    {task.status}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-
-              {/* Chapter data — tight rows: title + estimate, manifesting, bar */}
-              <div className="flex-none text-left mb-2.5">
-                <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                  <span className="font-display text-sm text-signal tracking-wide">
-                    {task.trackerTitle}
-                  </span>
-                  {estimate && (
-                    <span className="font-mono text-[10px] text-neutral-400 shrink-0">{estimate}</span>
-                  )}
-                </div>
-                <div className="mb-1.5">
-                  <span className="font-sans text-[11px] text-neutral-400">
-                    {task.trackerDetail}
-                  </span>
-                </div>
-                <div className="h-1 rounded-full bg-neutral-800/90 overflow-hidden">
-                  {progressWidth !== null ? (
-                    <motion.div
-                      className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
-                      initial={{ width: '6%' }}
-                      animate={{ width: `${progressWidth}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                    />
-                  ) : (
-                    <motion.div
-                      className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
-                      animate={{ width: ['12%', '55%', '12%'] }}
-                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Divider above the animation */}
-              {isVersa && (
-                <div className="flex-none flex items-center gap-3 mb-1">
-                  <div className="h-px flex-1 bg-human/20" />
-                  <Sparkles size={10} className="text-human/60" />
-                  <div className="h-px flex-1 bg-human/20" />
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── Zone 3 · Animation area — grows into the remaining space ── */}
-          {isVersa && (
-            <>
-              <div className="relative flex-1 min-h-0 overflow-hidden">
-                <AnimatePresence custom={sceneDir} initial={false} mode="popLayout">
-                  <motion.div
-                    key={SCENES[sceneIndex].id}
-                    custom={sceneDir}
-                    variants={sceneVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.25}
-                    onDragEnd={(_e, info) => {
-                      if (info.offset.x < -60 || info.velocity.x < -400) goScene(1);
-                      else if (info.offset.x > 60 || info.velocity.x > 400) goScene(-1);
-                    }}
-                    className="h-full w-full cursor-grab active:cursor-grabbing"
-                    style={{ touchAction: 'pan-y' }}
-                  >
-                    {SCENES[sceneIndex].node}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* Footer — compact scene title, dots, expand toggle */}
-              <div className="flex-none relative flex items-center justify-center pt-2">
-                <div className="text-center">
-                  <p className="font-serif text-xs text-signal leading-tight mb-1">
-                    {SCENES[sceneIndex].title}
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    {SCENES.map((scene, i) => (
-                      <button
-                        key={scene.id}
-                        onClick={() => setScene([i, i > sceneIndex ? 1 : -1])}
-                        aria-label={`Show ${scene.title}`}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                          i === sceneIndex
-                            ? 'bg-human shadow-[0_0_6px_rgba(139,0,0,0.8)]'
-                            : 'bg-neutral-700 hover:bg-neutral-500'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setExpanded((v) => !v)}
-                  title={expanded ? 'Show chapter status' : 'Expand animation'}
-                  aria-label={expanded ? 'Show chapter status' : 'Expand animation'}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 mt-1 w-7 h-7 rounded-full border border-human/30 bg-human/10 hover:bg-human/20 text-human/90 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  {expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Atmospheric phrase — hidden entirely when the card has no description */}
-          {task.description && (
-            <>
-              <div className="flex-none flex items-center gap-3 mb-3 mt-3">
-                <div className="h-px flex-1 bg-neutral-800" />
-                <Sparkles size={10} className={isVersa ? 'text-human/60' : 'text-portal/60'} />
-                <div className="h-px flex-1 bg-neutral-800" />
-              </div>
-              <p className="flex-none font-serif italic text-sm text-neutral-300 leading-relaxed max-w-sm mx-auto">
-                {task.description}
-              </p>
-            </>
+            <motion.div
+              className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
+              animate={{ width: ['12%', '55%', '12%'] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            />
           )}
         </div>
+      </div>
+
+      {/* ── Zone 3 · Circular chamber ───────────────────────────────────────
+          One continuous portal ring; the manifestation animation lives inside
+          it as the visual focus. No scene-selection UI — the system chooses. */}
+      {isVersa && (
+        <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+          <div className="relative aspect-square w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)]">
+            {/* Inner violet glow pooling inside the ring */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-[6%] rounded-full"
+              style={{
+                background:
+                  'radial-gradient(circle at 50% 55%, rgba(147,51,234,0.14) 0%, rgba(88,28,135,0.08) 45%, transparent 72%)',
+              }}
+            />
+            <ChamberRings isVersa={isVersa} />
+            {/* The scene, inset so it breathes inside the ring */}
+            <div className="absolute inset-[9%] flex items-center justify-center">
+              <SwordCultivatorClash />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Zone 4 · Versa's evolving line ──────────────────────────────────
+          The rotating quote rests at the bottom of the chamber where the
+          scene title used to be — elegant, atmospheric, the only text that
+          changes. */}
+      <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex items-center justify-center gap-3 min-h-[44px]">
+        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={task.status}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.45, ease: 'easeInOut' }}
+            className="font-serif italic text-sm text-neutral-300 leading-snug"
+          >
+            {task.status}
+          </motion.span>
+        </AnimatePresence>
+        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
       </div>
     </motion.div>
   );

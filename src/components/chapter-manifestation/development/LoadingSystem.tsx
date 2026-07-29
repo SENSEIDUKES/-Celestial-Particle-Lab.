@@ -37,6 +37,11 @@ const DEFAULT_COMPACT_GRACE_MS = 1200;
  * development/LoadingVeilCard (the veil under active iteration) instead of
  * reference/LoadingVeil, so the two stay comparable in the Workshop. Compact
  * mode is unchanged and still shares shared/CompactIndicator.
+ *
+ * 2026-07-30: the primary veil no longer exposes a manual minimize control.
+ * Minimization is navigation-driven — the caller flips `minimized` when the
+ * user leaves the generation page — so LoadingVeilCard's `onMinimize` prop
+ * is gone. `onMinimizedChange` still drives the compact indicator's expand.
  * Workshop-only: do not wire this into production flows.
  */
 export default function LoadingSystem({
@@ -76,7 +81,6 @@ export default function LoadingSystem({
         <LoadingVeilCard
           key="primary-veil"
           task={task}
-          onMinimize={() => onMinimizedChange(true)}
           backdrop={backdrop}
           emblemClassName={emblemClassName}
         />
