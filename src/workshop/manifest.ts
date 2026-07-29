@@ -37,4 +37,11 @@ export const workshopEntries: WorkshopEntry[] = [
     category: 'rewards',
     status: 'refining',
   },
+  {
+    id: 'relics-gallery',
+    title: 'Relics Gallery',
+    description: 'Visual development preview for Cosmic Artifacts separated by rarity rank.',
+    category: 'rewards',
+    status: 'refining',
+  },
 ];
