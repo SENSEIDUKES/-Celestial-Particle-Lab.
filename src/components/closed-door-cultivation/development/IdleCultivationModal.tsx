@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 const PORTAL_RGB = '4,172,255';
 const COLLAPSE_AFTER_MS = 7000;
-const CLAIM_CLOSE_MS = 2400;
+const CLAIM_CLOSE_MS = 1900;
 
 /** Heuristic for weaker hardware: trim effect density instead of dropping atmosphere. */
 function isLowPowerDevice(): boolean {
