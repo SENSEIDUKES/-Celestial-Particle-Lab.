@@ -26,6 +26,11 @@ import { motion, useReducedMotion } from 'motion/react';
  * the marker rises upward (negative y), ~30px tall, centered on x=0.
  * Geometry and spacing never change between families.
  *
+ * Every family renders the shared DestinationGround beneath its marker
+ * (2026-07-30): a violet bed echoing the path's glow bed plus a lit
+ * terminus mote at the exact path end point, so the destination reads as
+ * the trail's final milestone instead of a separate pasted-on icon.
+ *
  * Every destination must: stay readable at tiny scale, use accent /
  * accentSoft / destinationAccent only, render calm normal and arrived
  * states, react on arrival, and go static under reduced motion.
@@ -68,17 +73,38 @@ const ArrivalRing: React.FC<{
 };
 
 /**
+ * Shared destination ground — anchors every family to the scrubber it ends.
+ * A soft bed in the journey accent (same language as the path's glow bed
+ * beneath the trail) seats the marker on the ground plane, and a lit
+ * terminus mote at the exact path end point (0,0) reads as the trail's
+ * final milestone, so the destination belongs to the scrubber family
+ * instead of floating beside it.
+ */
+const DestinationGround: React.FC<{
+  accent: string;
+  accentSoft: string;
+  arrived: boolean;
+  glowId: string;
+  softId: string;
+}> = ({ accent, accentSoft, arrived, glowId, softId }) => (
+  <>
+    <ellipse cx="0" cy="1.5" rx="16" ry="3.4" fill={accent} opacity={arrived ? 0.32 : 0.16} filter={`url(#${softId})`} />
+    <circle cx="0" cy="0" r={arrived ? 2.2 : 1.8} fill={accentSoft} opacity={arrived ? 1 : 0.6} filter={`url(#${glowId})`} />
+  </>
+);
+
+/**
  * door — the Door / Gate family: twin pillars, an arch, and a sealed orb.
  * A direct threshold for portal users and travelers. This preserves the
  * original scrubber gate rendering exactly.
  */
 const DoorDestination: DestinationComponent = ({
-  arrived, accentSoft, destinationAccent, glowId, softId,
+  arrived, accent, accentSoft, destinationAccent, glowId, softId,
 }) => {
   const reduceMotion = useReducedMotion();
   return (
     <>
-      <ellipse cx="0" cy="1" rx="12" ry="2.2" fill={destinationAccent} opacity={arrived ? 0.3 : 0.12} filter={`url(#${softId})`} />
+      <DestinationGround accent={accent} accentSoft={accentSoft} arrived={arrived} glowId={glowId} softId={softId} />
       <g
         stroke={destinationAccent} strokeWidth="1.6" strokeLinecap="round" fill="none"
         opacity={arrived ? 1 : 0.7}
@@ -111,12 +137,12 @@ const DoorDestination: DestinationComponent = ({
  * a hanging lantern. For cultivators, scholars, warriors, sect members.
  */
 const SectDestination: DestinationComponent = ({
-  arrived, accentSoft, destinationAccent, glowId, softId,
+  arrived, accent, accentSoft, destinationAccent, glowId, softId,
 }) => {
   const reduceMotion = useReducedMotion();
   return (
     <>
-      <ellipse cx="0" cy="1" rx="13" ry="2.2" fill={destinationAccent} opacity={arrived ? 0.3 : 0.12} filter={`url(#${softId})`} />
+      <DestinationGround accent={accent} accentSoft={accentSoft} arrived={arrived} glowId={glowId} softId={softId} />
       <g
         stroke={destinationAccent} strokeWidth="1.6" strokeLinecap="round" fill="none"
         opacity={arrived ? 1 : 0.7}
@@ -158,12 +184,12 @@ const SectDestination: DestinationComponent = ({
  * base. For beasts, spirit animals, monsters, creature travelers.
  */
 const CaveDestination: DestinationComponent = ({
-  arrived, accentSoft, destinationAccent, glowId, softId,
+  arrived, accent, accentSoft, destinationAccent, glowId, softId,
 }) => {
   const reduceMotion = useReducedMotion();
   return (
     <>
-      <ellipse cx="0" cy="1" rx="13" ry="2.2" fill={destinationAccent} opacity={arrived ? 0.3 : 0.12} filter={`url(#${softId})`} />
+      <DestinationGround accent={accent} accentSoft={accentSoft} arrived={arrived} glowId={glowId} softId={softId} />
       {/* Rocky mouth — an irregular arch with a dark inner opening */}
       <g
         stroke={destinationAccent} strokeWidth="1.6" strokeLinecap="round" fill="none"
