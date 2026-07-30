@@ -77,9 +77,9 @@ export function CelestialBackdropWorkspace() {
   const entry = workshopEntries.find((e) => e.id === 'celestial-backdrop')!;
   const [accent, setAccent] = useState('#f5b942');
   // Veil tuning from the Chapter Generation Manifestation dev
-  // (AILoadingVeil passes speedScale 0.82 / dispersion 0.35).
-  const [speedScale, setSpeedScale] = useState(0.82);
-  const [dispersion, setDispersion] = useState(0.35);
+  // (AILoadingVeil passes speedScale 0.70 / dispersion 0.96).
+  const [speedScale, setSpeedScale] = useState(0.7);
+  const [dispersion, setDispersion] = useState(0.96);
 
   const demoProps = {
     accent,
