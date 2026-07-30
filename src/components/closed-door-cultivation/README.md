@@ -4,7 +4,7 @@
 - **Source location:** `src/components/IdleCultivationModal.tsx`
 - **Workshop preview:** `?preview=idle-cultivation`
 - **Replica created:** 2026-07-29
-- **Last Workshop update:** 2026-07-29
+- **Last Workshop update:** 2026-07-30
 - **Last source comparison:** 2026-07-29
 - **Replica status:** under refinement
 
@@ -14,6 +14,8 @@
 - **2026-07-29:** Duplicated into a second variant to redesign the idle Qi reward's protected visual space, safe-area anchoring, swipe pass-through, collect cues, and ascending claim particles.
 - **2026-07-29:** Redrew the cultivator silhouette as a seated meditator with distinct neck, shoulders, and folded hands, and added a full-viewport dim + blur scrim behind the expanded vignette.
 - **2026-07-29:** Reorganized into the standard feature workspace layout — `reference/` (untouched replica) and `development/` (the redesigned variant, formerly a separate "V2" duplicate) under one `?preview=idle-cultivation` route, switched with the Original Reference / Development / Compare control instead of a second homepage card.
+- **2026-07-30:** Layout optimization pass (SEIHouse Layout Optimization): tablet now anchors bottom-right while keeping the 6rem bottom-nav clearance (desktop's 1.5rem corner offset moves to `lg:`), and the cloud, cultivator figure, ink aura, QI text, label, and collapsed orb scale up fluidly across `sm`/`lg` instead of staying at mobile pixel sizes.
+- **2026-07-30:** Performance pass (SEIHouse Components Performance): added a low-power heuristic (reduced motion or ≤4 CPU cores) that skips the full-viewport backdrop blur and trims the claim particle burst from 26 to 12; a failed `onClaim` now restores the vignette for retry instead of closing and silently losing the reward; pending close timers are cleared when a reward cycle resets or a new claim starts.
 
 ## Folder layout
 

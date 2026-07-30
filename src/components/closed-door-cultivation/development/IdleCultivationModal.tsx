@@ -5,6 +5,11 @@ const PORTAL_RGB = '4,172,255';
 const COLLAPSE_AFTER_MS = 7000;
 const CLAIM_CLOSE_MS = 2400;
 
+/** Heuristic for weaker hardware: trim effect density instead of dropping atmosphere. */
+function isLowPowerDevice(): boolean {
+  return typeof navigator !== 'undefined' && (navigator.hardwareConcurrency ?? 8) <= 4;
+}
+
 interface Flight {
   sx: number;
   sy: number;
@@ -55,7 +60,7 @@ function CultivatorSvg({ className, style }: { className?: string; style?: React
 function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?: boolean }) {
   return (
     <motion.div
-      className="relative w-28 h-24"
+      className="relative w-28 h-24 sm:w-32 sm:h-28 lg:w-40 lg:h-[8.5rem]"
       animate={
         claiming
           ? { opacity: 0, y: -14, filter: 'blur(6px)' }
@@ -112,6 +117,7 @@ function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?
  */
 function QiFlight({ flight }: { flight: Flight }) {
   const { sx, sy, ex, ey } = flight;
+  const lowPower = useReducedMotion() || isLowPowerDevice();
   // Freeze the random particle paths per claim so unrelated re-renders don't retarget the burst.
   const particles = useMemo(() => {
     const dx = ex - sx;
@@ -119,7 +125,7 @@ function QiFlight({ flight }: { flight: Flight }) {
     const len = Math.hypot(dx, dy) || 1;
     const px = -dy / len;
     const py = dx / len;
-    return Array.from({ length: 26 }).map((_, i) => {
+    return Array.from({ length: lowPower ? 12 : 26 }).map((_, i) => {
       const sign = i % 2 === 0 ? 1 : -1;
       const sway1 = (50 + Math.random() * 70) * sign;
       const sway2 = (25 + Math.random() * 40) * -sign;
@@ -138,7 +144,7 @@ function QiFlight({ flight }: { flight: Flight }) {
         size: 2 + Math.random() * 3,
       };
     });
-  }, [flight]);
+  }, [flight, lowPower]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
@@ -204,6 +210,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
   const cloudClipId = `cdc-cloudclip-${useId()}`;
   const shimmerGradId = `cdc-shimmer-${useId()}`;
   const reduceMotion = useReducedMotion();
+  const lowPower = reduceMotion || isLowPowerDevice();
 
   // If the reward sits unclaimed, fold the vignette away into a tiny waiting icon.
   useEffect(() => {
@@ -215,6 +222,10 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
   // Start each new reward cycle fresh.
   useEffect(() => {
     if (qiEarned === null) {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
       setCollapsed(false);
       setIsClaiming(false);
     }
@@ -248,13 +259,18 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
       await onClaim(qiEarned);
     } catch (e) {
       console.error("Failed to claim idle qi:", e);
-    } finally {
-      closeTimeoutRef.current = setTimeout(() => {
-        setIsClaiming(false);
-        setFlight(null);
-        onClose();
-      }, CLAIM_CLOSE_MS);
+      // The claim did not land (offline, timeout, server error): restore the
+      // vignette so the user can retry instead of silently losing the reward.
+      setIsClaiming(false);
+      setFlight(null);
+      return;
     }
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsClaiming(false);
+      setFlight(null);
+      onClose();
+    }, CLAIM_CLOSE_MS);
   };
 
   return (
@@ -271,8 +287,11 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
             style={{
               background:
                 'radial-gradient(ellipse at 50% 62%, rgba(2,5,12,0.55) 0%, rgba(2,5,12,0.72) 55%, rgba(2,5,12,0.82) 100%)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              // Full-viewport backdrop blur is the costliest effect here; weak
+              // devices and reduced-motion users keep the dim but skip the blur.
+              ...(lowPower
+                ? {}
+                : { backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }),
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -289,7 +308,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
-              className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] w-12 h-12 rounded-full bg-[#05080f]/95 backdrop-blur-lg border border-portal/40 shadow-[0_8px_24px_rgba(0,0,0,0.65),0_0_0_1px_rgba(4,172,255,0.12)] flex items-center justify-center overflow-visible touch-manipulation"
+              className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:right-6 lg:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#05080f]/95 backdrop-blur-lg border border-portal/40 shadow-[0_8px_24px_rgba(0,0,0,0.65),0_0_0_1px_rgba(4,172,255,0.12)] flex items-center justify-center overflow-visible touch-manipulation"
               aria-label="Open closed-door cultivation reward"
             >
               {/* soft ink aura so the orb sits on shadow instead of competing artwork */}
@@ -307,8 +326,8 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                 animate={reduceMotion ? { opacity: 0.7 } : { opacity: [0.4, 1, 0.4] }}
                 transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               />
-              <CultivatorSvg className="w-8 h-7" style={{ filter: `drop-shadow(0 0 4px rgba(${PORTAL_RGB},0.5))` }} />
-              <span className="absolute -top-1.5 -right-1.5 px-1 rounded-full bg-portal/25 border border-portal/50 text-[8px] font-bold text-cyan-100">
+              <CultivatorSvg className="w-8 h-7 sm:w-9 sm:h-8" style={{ filter: `drop-shadow(0 0 4px rgba(${PORTAL_RGB},0.5))` }} />
+              <span className="absolute -top-1.5 -right-1.5 px-1 rounded-full bg-portal/25 border border-portal/50 text-[8px] sm:text-[9px] font-bold text-cyan-100">
                 +{qiEarned}
               </span>
             </motion.button>
@@ -320,17 +339,15 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
-              className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:inset-x-auto sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] flex justify-center sm:justify-end pointer-events-none"
+              className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:inset-x-auto sm:right-6 sm:justify-end lg:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] flex justify-center pointer-events-none"
             >
               {/* The cloud and the cultivator's body are one tap target — swipes everywhere else pass through to the page. */}
               <div className="relative pointer-events-none flex flex-col items-center px-6">
                 {/* soft dark ink aura: gently obscures whatever is underneath, no hard box */}
                 <div
                   aria-hidden="true"
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(92vw,380px)] h-80 sm:w-[min(80vw,440px)] sm:h-[22rem] lg:w-[min(60vw,520px)] lg:h-[26rem]"
                   style={{
-                    width: 'min(92vw, 380px)',
-                    height: 320,
                     background:
                       'radial-gradient(ellipse at 50% 55%, rgba(2,5,12,0.92) 0%, rgba(2,5,12,0.7) 42%, rgba(2,5,12,0.35) 62%, transparent 78%)',
                     filter: 'blur(10px)',
@@ -375,7 +392,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                   />
                   <svg
                     viewBox="0 0 130 64"
-                    className="w-28 h-14"
+                    className="w-28 h-14 sm:w-32 sm:h-16 lg:w-40 lg:h-20"
                     style={{ filter: `drop-shadow(0 0 12px rgba(${PORTAL_RGB},0.65))` }}
                     aria-hidden="true"
                   >
@@ -408,7 +425,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                     )}
                   </svg>
                   <span
-                    className="absolute inset-0 flex items-center justify-center font-display font-bold text-sm text-cyan-100 tracking-wider"
+                    className="absolute inset-0 flex items-center justify-center font-display font-bold text-sm sm:text-base lg:text-lg text-cyan-100 tracking-wider whitespace-nowrap"
                     style={{ textShadow: `0 0 10px rgba(${PORTAL_RGB},1), 0 0 22px rgba(${PORTAL_RGB},0.55)` }}
                   >
                     {`+${qiEarned} QI`}
@@ -439,7 +456,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
 
                 <span
                   id="idle-cultivation-title"
-                  className="relative mt-1 text-[9px] font-sc uppercase tracking-[0.35em] text-portal/60"
+                  className="relative mt-1 text-[9px] sm:text-[10px] lg:text-[11px] font-sc uppercase tracking-[0.35em] text-portal/60"
                 >
                   Closed-Door Cultivation
                 </span>
