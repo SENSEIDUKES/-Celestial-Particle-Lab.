@@ -71,10 +71,18 @@ export const MEDIA_KIND_LABEL: Record<MediaKind, string> = {
 };
 
 /**
- * Media reveal progression inside the media active zone:
- *   sealed    — the celestial scroll is closed, its seal intact
- *   unsealing — generation in flight: the seal breaks, the scroll parts
- *   revealed  — the scroll hangs open with the finished asset inside
+ * Media reveal progression inside the media active zone (tap-to-unseal):
+ *   sealed    — the celestial scroll is closed, its ornate seal intact;
+ *               when the caller enables it (the dev chain's `onUnseal` /
+ *               `onMediaUnseal` props), this is the tap target — the user's
+ *               tap is what unseals the scroll
+ *   unsealing — the portal-opening transition: the scroll splits around a
+ *               white-gold core while generation is still in flight
+ *   revealed  — the reward plainly shown: the scroll hangs fully open with
+ *               the finished asset framed between its rods
+ *
+ * The scene component never advances this progression itself — the caller
+ * owns every transition.
  */
 export type MediaRevealState = 'sealed' | 'unsealing' | 'revealed';
 
