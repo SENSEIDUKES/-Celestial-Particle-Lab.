@@ -28,6 +28,13 @@ export interface LoadingSystemProps {
   backdrop?: React.ReactNode;
   /** Optional spacing override for the primary veil's agent emblem container. */
   emblemClassName?: string;
+  /**
+   * Workshop-only scrubber cosmetics pass-through (traveler / trail /
+   * destination ids), forwarded to the primary veil's JourneyScrubber.
+   */
+  travelerId?: string;
+  trailStyle?: string;
+  destinationId?: string;
 }
 
 const DEFAULT_COMPACT_GRACE_MS = 1200;
@@ -53,6 +60,9 @@ export default function LoadingSystem({
   compactGraceMs = DEFAULT_COMPACT_GRACE_MS,
   backdrop,
   emblemClassName,
+  travelerId,
+  trailStyle,
+  destinationId,
 }: LoadingSystemProps) {
   const resolvedMode: Exclude<LoadingSystemMode, 'auto'> =
     mode === 'auto' ? (task?.preferredMode ?? 'primary') : mode;
@@ -83,6 +93,9 @@ export default function LoadingSystem({
           task={task}
           backdrop={backdrop}
           emblemClassName={emblemClassName}
+          travelerId={travelerId}
+          trailStyle={trailStyle}
+          destinationId={destinationId}
         />
       )}
       {showCompact && (

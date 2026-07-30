@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReferenceAILoadingVeil from '../../../components/chapter-manifestation/reference/AILoadingVeil';
 import DevelopmentAILoadingVeil from '../../../components/chapter-manifestation/development/AILoadingVeil';
+import { defaultDestinationFor } from '../../../components/chapter-manifestation/development/journey-scrubber/destinations';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
-import { Square, Sparkles, Minimize2, Compass, Layers, ChevronUp } from 'lucide-react';
+import { Square, Sparkles, Minimize2, Compass, Layers, ChevronUp, Wand2 } from 'lucide-react';
 
 type GenerationPhase = 'blueprint' | 'initial-arc' | 'steer' | 'cover' | 'chapter' | null;
 
@@ -14,6 +15,51 @@ const VEIL_PHASES: { id: Exclude<GenerationPhase, null>; label: string }[] = [
   { id: 'cover', label: 'Cover Art' },
   { id: 'chapter', label: 'Chapter' },
 ];
+
+/**
+ * Journey scrubber cosmetics — Workshop-only preview state for the
+ * Development veil's cosmetic slots. Picking a traveler also applies its
+ * recommended destination family, but the destination stays independently
+ * selectable so every traveler can be tested with every family.
+ */
+interface ScrubberCosmetics {
+  travelerId: string;
+  trailStyle: string;
+  destinationId: string;
+}
+
+const TRAVELER_OPTIONS = [
+  { id: 'cultivator', label: 'Cultivator' },
+  { id: 'sword-rider', label: 'Sword Rider' },
+  { id: 'spirit-beast', label: 'Spirit Beast' },
+];
+
+const TRAIL_OPTIONS = [
+  { id: 'qi-glow', label: 'Qi Glow' },
+  { id: 'mist-trail', label: 'Mist Trail' },
+  { id: 'starlight-trail', label: 'Starlight Trail' },
+];
+
+const DESTINATION_OPTIONS = [
+  { id: 'door', label: 'Door / Gate' },
+  { id: 'sect', label: 'Sect / Temple' },
+  { id: 'cave', label: 'Cave' },
+];
+
+function useScrubberCosmetics() {
+  const [travelerId, setTravelerId] = useState('cultivator');
+  const [trailStyle, setTrailStyle] = useState('qi-glow');
+  const [destinationId, setDestinationId] = useState(() => defaultDestinationFor('cultivator'));
+
+  // A traveler switch nominates its recommended destination; the
+  // destination control itself remains free, so any combination is testable.
+  const pickTraveler = (id: string) => {
+    setTravelerId(id);
+    setDestinationId(defaultDestinationFor(id));
+  };
+
+  return { travelerId, trailStyle, destinationId, pickTraveler, setTrailStyle, setDestinationId };
+}
 
 /**
  * One simulated generation run, shared by whichever veil implementation
@@ -100,11 +146,52 @@ function useGenerationSimulation() {
   };
 }
 
-function SimulationControls({ sim }: { sim: ReturnType<typeof useGenerationSimulation> }) {
+function SimulationControls({
+  sim,
+  cosmetics,
+}: {
+  sim: ReturnType<typeof useGenerationSimulation>;
+  cosmetics: ReturnType<typeof useScrubberCosmetics>;
+}) {
   const [showPhases, setShowPhases] = useState(false);
+
+  const optionRow = (
+    label: string,
+    options: { id: string; label: string }[],
+    selected: string,
+    onPick: (id: string) => void,
+  ) => (
+    <div>
+      <p className="text-[11px] text-neutral-500 mb-2">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => onPick(o.id)}
+            className={`px-3 py-1.5 text-[11px] rounded-full border transition-colors ${
+              selected === o.id
+                ? 'bg-portal/15 border-portal/40 text-portal'
+                : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-300'
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-2xl bg-neutral-900/50 border border-neutral-800 rounded-xl divide-y divide-neutral-800/80">
+      <section className="p-5 sm:p-6 space-y-4">
+        <h2 className="text-xs font-semibold text-neutral-300 flex items-center gap-2 uppercase tracking-widest">
+          <Wand2 size={14} className="text-portal" /> Journey Scrubber — Development only
+        </h2>
+        {optionRow('Traveler', TRAVELER_OPTIONS, cosmetics.travelerId, cosmetics.pickTraveler)}
+        {optionRow('Aura Trail', TRAIL_OPTIONS, cosmetics.trailStyle, cosmetics.setTrailStyle)}
+        {optionRow('Destination', DESTINATION_OPTIONS, cosmetics.destinationId, cosmetics.setDestinationId)}
+      </section>
+
       <section className="p-5 sm:p-6 space-y-4">
         <h2 className="text-xs font-semibold text-neutral-300 flex items-center gap-2 uppercase tracking-widest">
           <Layers size={14} className="text-human" /> Primary Veil
@@ -198,16 +285,51 @@ function VeilCanvas({ Veil, sim }: { Veil: typeof ReferenceAILoadingVeil; sim: R
   );
 }
 
+/**
+ * Development-only canvas: identical simulation state, plus the scrubber
+ * cosmetics from the Workshop controls forwarded into the Development veil.
+ */
+function DevelopmentVeilCanvas({
+  sim,
+  cosmetics,
+}: {
+  sim: ReturnType<typeof useGenerationSimulation>;
+  cosmetics: ScrubberCosmetics;
+}) {
+  return (
+    <div className="relative min-h-[calc(100vh-11rem)] bg-neutral-950 p-4 sm:p-8 font-sans text-neutral-200">
+      <div className="p-6 border border-neutral-800/50 rounded-lg text-neutral-500 text-sm">
+        Background app content... (Testing minimize state visibility)
+      </div>
+      <DevelopmentAILoadingVeil
+        isGenerating={sim.isGenerating}
+        generationPhase={sim.phase}
+        generationProgressMessage={sim.progressMessage}
+        estimatedSecondsRemaining={sim.estimatedSecondsRemaining}
+        activeAgentId={sim.activeAgentId}
+        streamingBlocksCount={sim.streamingBlocksCount}
+        isVeilMinimized={sim.isVeilMinimized}
+        setIsVeilMinimized={sim.setIsVeilMinimized}
+        generatingChapterNum={sim.generatingChapterNum}
+        travelerId={cosmetics.travelerId}
+        trailStyle={cosmetics.trailStyle}
+        destinationId={cosmetics.destinationId}
+      />
+    </div>
+  );
+}
+
 export function ChapterManifestationWorkspace() {
   const entry = workshopEntries.find((e) => e.id === 'chapter-generation-manifestation')!;
   const sim = useGenerationSimulation();
+  const cosmetics = useScrubberCosmetics();
 
   return (
     <FeatureWorkspace
       entry={entry}
-      controls={<SimulationControls sim={sim} />}
+      controls={<SimulationControls sim={sim} cosmetics={cosmetics} />}
       renderReference={() => <VeilCanvas Veil={ReferenceAILoadingVeil} sim={sim} />}
-      renderDevelopment={() => <VeilCanvas Veil={DevelopmentAILoadingVeil} sim={sim} />}
+      renderDevelopment={() => <DevelopmentVeilCanvas sim={sim} cosmetics={cosmetics} />}
     />
   );
 }
