@@ -63,13 +63,13 @@ const QiGlowTrail: TrailComponent = ({
 
 /**
  * mist-trail — softer, wider, more diffuse drifting energy: a thick blurred
- * bed with a slow opacity shimmer and a few calm mist puffs riding the lit
- * stretch.
+ * bed under a crisp lit core (so the traveled portion stays readable), a
+ * slow breathing shimmer, and a few calm mist puffs riding the lit stretch.
  */
 const MIST_PUFF_T = [0.2, 0.45, 0.7, 0.95];
 
 const MistTrail: TrailComponent = ({
-  pathD, progress, accent, accentSoft, softId, glowId, pointAt,
+  pathD, progress, accent, accentSoft, softId, glowId, trailGradId, pointAt,
 }) => {
   const reduceMotion = useReducedMotion();
   return (
@@ -78,14 +78,20 @@ const MistTrail: TrailComponent = ({
       <path
         d={pathD} fill="none" pathLength={1}
         stroke={accent} strokeWidth="7" strokeLinecap="round"
-        strokeDasharray={`${progress} 1`} opacity="0.16" filter={`url(#${softId})`}
+        strokeDasharray={`${progress} 1`} opacity="0.22" filter={`url(#${softId})`}
       />
-      {/* Soft core with a slow breathing shimmer */}
+      {/* Crisp lit core — the readability anchor, shared with qi-glow */}
+      <path
+        d={pathD} fill="none" pathLength={1}
+        stroke={`url(#${trailGradId})`} strokeWidth="1.6" strokeLinecap="round"
+        strokeDasharray={`${progress} 1`} opacity="0.85" filter={`url(#${glowId})`}
+      />
+      {/* Diffuse breathing veil over the lit stretch */}
       <motion.path
         d={pathD} fill="none" pathLength={1}
-        stroke={accentSoft} strokeWidth="2.6" strokeLinecap="round"
+        stroke={accentSoft} strokeWidth="3" strokeLinecap="round"
         strokeDasharray={`${progress} 1`} filter={`url(#${softId})`}
-        animate={reduceMotion ? { opacity: 0.4 } : { opacity: [0.28, 0.48, 0.28] }}
+        animate={reduceMotion ? { opacity: 0.45 } : { opacity: [0.25, 0.5, 0.25] }}
         transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
       />
       {/* Mist puffs drifting along the lit stretch */}
@@ -96,12 +102,12 @@ const MistTrail: TrailComponent = ({
         return (
           <motion.circle
             key={f}
-            cx={p.x} cy={p.y} r="3.2"
-            fill={accentSoft} filter={`url(#${softId})`}
+            cx={p.x} cy={p.y} r="3.4"
+            fill={accentSoft} filter={`url(#${glowId})`}
             animate={
               reduceMotion
-                ? { opacity: 0.3 }
-                : { opacity: [0.15, 0.4, 0.15], cy: [p.y, p.y - 1.6, p.y] }
+                ? { opacity: 0.5 }
+                : { opacity: [0.3, 0.7, 0.3], cy: [p.y, p.y - 1.6, p.y] }
             }
             transition={{ duration: 3.6 + i * 0.7, repeat: Infinity, ease: 'easeInOut', delay: i * 0.9 }}
           />
@@ -113,14 +119,14 @@ const MistTrail: TrailComponent = ({
 
 /**
  * starlight-trail — the completed path left with tiny celestial sparks: a
- * subtler base line with small twinkling star points sprinkled along the
- * lit portion.
+ * quiet but readable base line with small twinkling star points sprinkled
+ * along the lit portion.
  */
 const SPARK_T = [
   0.06, 0.14, 0.23, 0.31, 0.4, 0.48, 0.57, 0.65, 0.74, 0.82, 0.9, 0.97,
 ];
 
-const STAR_D = 'M 0 -2.1 L 0.55 -0.55 L 2.1 0 L 0.55 0.55 L 0 2.1 L -0.55 0.55 L -2.1 0 L -0.55 -0.55 Z';
+const STAR_D = 'M 0 -2.6 L 0.7 -0.7 L 2.6 0 L 0.7 0.7 L 0 2.6 L -0.7 0.7 L -2.6 0 L -0.7 -0.7 Z';
 
 const StarlightTrail: TrailComponent = ({
   pathD, progress, accent, accentSoft, softId, glowId, trailGradId, pointAt,
@@ -128,22 +134,23 @@ const StarlightTrail: TrailComponent = ({
   const reduceMotion = useReducedMotion();
   return (
     <>
-      {/* Subtler base — a thin, quiet light under the sparks */}
+      {/* Subtler base — a thin, quiet light under the sparks, still bright
+          enough to read as the traveled portion */}
       <path
         d={pathD} fill="none" pathLength={1}
-        stroke={accent} strokeWidth="3" strokeLinecap="round"
-        strokeDasharray={`${progress} 1`} opacity="0.14" filter={`url(#${softId})`}
+        stroke={accent} strokeWidth="3.5" strokeLinecap="round"
+        strokeDasharray={`${progress} 1`} opacity="0.2" filter={`url(#${softId})`}
       />
       <path
         d={pathD} fill="none" pathLength={1}
-        stroke={`url(#${trailGradId})`} strokeWidth="1.1" strokeLinecap="round"
-        strokeDasharray={`${progress} 1`} opacity="0.65"
+        stroke={`url(#${trailGradId})`} strokeWidth="1.3" strokeLinecap="round"
+        strokeDasharray={`${progress} 1`} opacity="0.9" filter={`url(#${glowId})`}
       />
       {/* Celestial sparks along the lit portion — each twinkles on its own calm phase */}
       {SPARK_T.map((t, i) => {
         if (t > progress) return null;
         const p = pointAt(t);
-        const scale = i % 3 === 0 ? 1 : 0.7;
+        const scale = i % 3 === 0 ? 1.25 : 0.9;
         return (
           <motion.path
             key={t}
@@ -152,8 +159,8 @@ const StarlightTrail: TrailComponent = ({
             fill={accentSoft} filter={`url(#${glowId})`}
             animate={
               reduceMotion
-                ? { opacity: 0.8 }
-                : { opacity: [0.25, 0.95, 0.25] }
+                ? { opacity: 0.85 }
+                : { opacity: [0.5, 1, 0.5] }
             }
             transition={{ duration: 2.6 + (i % 4) * 0.5, repeat: Infinity, ease: 'easeInOut', delay: i * 0.35 }}
           />
