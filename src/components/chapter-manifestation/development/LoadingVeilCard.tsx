@@ -180,13 +180,16 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
 
           {isVersa ? (
             <>
-              {/* Nebula heart — saturated violet mass, breathing slowly */}
+              {/* Nebula heart — saturated violet mass, breathing slowly.
+                  Radius pulled in ~20% and glow softened ~15% so the aura
+                  stays wrapped around Versa instead of bleeding onto the
+                  scrubber beneath her. */}
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-55%] rounded-full"
+                className="absolute inset-[-34%] rounded-full"
                 style={{
                   background:
-                    'radial-gradient(circle at 50% 52%, rgba(233,213,255,0.5) 0%, rgba(192,132,252,0.45) 22%, rgba(147,51,234,0.38) 45%, rgba(88,28,135,0.28) 66%, transparent 82%)',
+                    'radial-gradient(circle at 50% 52%, rgba(233,213,255,0.42) 0%, rgba(192,132,252,0.38) 22%, rgba(147,51,234,0.32) 45%, rgba(88,28,135,0.24) 66%, transparent 82%)',
                   filter: 'blur(26px)',
                   mixBlendMode: 'screen',
                 }}
@@ -199,7 +202,7 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
                 className="absolute inset-[-6%] rounded-full"
                 style={{
                   background:
-                    'radial-gradient(circle at 50% 58%, rgba(243,232,255,0.65) 0%, rgba(216,180,254,0.4) 40%, transparent 70%)',
+                    'radial-gradient(circle at 50% 58%, rgba(243,232,255,0.55) 0%, rgba(216,180,254,0.34) 40%, transparent 70%)',
                   filter: 'blur(12px)',
                   mixBlendMode: 'screen',
                 }}
@@ -221,10 +224,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
             <>
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-10%] rounded-full"
+                className="absolute inset-[-8%] rounded-full"
                 style={{
                   background:
-                    'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.55) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.45) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
+                    'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.47) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.38) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
                   filter: 'blur(8px)',
                   mixBlendMode: 'screen',
                 }}
@@ -233,10 +236,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
               />
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-22%] rounded-full"
+                className="absolute inset-[-17%] rounded-full"
                 style={{
                   background:
-                    'conic-gradient(from 180deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.35) 22%, rgba(216,180,254,0) 46%, rgba(147,51,234,0.3) 70%, rgba(216,180,254,0) 92%, rgba(216,180,254,0) 100%)',
+                    'conic-gradient(from 180deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.3) 22%, rgba(216,180,254,0) 46%, rgba(147,51,234,0.26) 70%, rgba(216,180,254,0) 92%, rgba(216,180,254,0) 100%)',
                   filter: 'blur(14px)',
                   mixBlendMode: 'screen',
                 }}
@@ -324,16 +327,29 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
         </div>
       )}
 
-      {/* ── Zone 4 · Chapter line + Versa's evolving line ───────────────────
+      {/* ── Zone 4 · Chapter pill + Versa's evolving line ───────────────────
           Consolidated status hierarchy at the bottom of the chamber: a
-          persistent chapter line ("Chapter 1 | 42%") above the rotating
-          quote — the only text that changes. Indeterminate operations
-          (no progress) render the quote alone. */}
+          persistent chapter pill ("Chapter 1 ｜ 42%") in a softly glowing
+          accent-tinted capsule above the rotating quote — the only text
+          that changes. Indeterminate operations (no progress) render the
+          quote alone. */}
       <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex flex-col items-center justify-center min-h-[44px]">
         {task.progress !== null && (
-          <p className="font-sans text-xs sm:text-sm tracking-wide text-neutral-100 font-medium mb-1.5">
-            {task.trackerTitle} | {Math.round(task.progress)}%
-          </p>
+          <div
+            className={`mb-2 inline-flex items-center gap-2.5 rounded-full border px-4 py-1 backdrop-blur-sm ${
+              isVersa
+                ? 'border-purple-300/25 bg-gradient-to-b from-purple-400/15 to-purple-500/5 shadow-[0_0_20px_rgba(168,85,247,0.22),inset_0_1px_0_rgba(233,213,255,0.14)]'
+                : 'border-sky-300/25 bg-gradient-to-b from-sky-400/15 to-sky-500/5 shadow-[0_0_20px_rgba(4,172,255,0.22),inset_0_1px_0_rgba(224,242,254,0.14)]'
+            }`}
+          >
+            <span className={`font-sans text-xs sm:text-sm tracking-wide font-medium ${isVersa ? 'text-purple-100/90' : 'text-sky-100/90'}`}>
+              {task.trackerTitle}
+            </span>
+            <span aria-hidden="true" className={`h-3 w-px ${isVersa ? 'bg-purple-300/35' : 'bg-sky-300/35'}`} />
+            <span className={`font-sans text-xs sm:text-sm tracking-wide font-semibold ${isVersa ? 'text-purple-50' : 'text-sky-50'}`}>
+              {Math.round(task.progress)}%
+            </span>
+          </div>
         )}
         <div className="flex items-center justify-center gap-3">
           <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />

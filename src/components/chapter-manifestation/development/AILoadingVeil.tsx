@@ -101,7 +101,7 @@ export default function AILoadingVeil({
 
   const statusQuote = rotatesQuotes
     ? statusLines[quoteIndex]
-    : (generationProgressMessage || 'Manifesting spiritual matrices...');
+    : (generationProgressMessage || 'Manifesting spiritual matrices');
 
   const task = {
     ...buildAILoadingTaskCard({
