@@ -4,6 +4,17 @@ import { buildAILoadingTaskCard } from '../shared/taskCard';
 import { CelestialParticleShower } from '../../../CelestialParticleShower';
 import type { AILoadingVeilProps } from '../reference/AILoadingVeil';
 
+/**
+ * Development-only extension of the shared veil props: optional journey
+ * scrubber cosmetics (Workshop simulator controls). Production callers omit
+ * them and get the registry defaults.
+ */
+interface DevelopmentAILoadingVeilProps extends AILoadingVeilProps {
+  travelerId?: string;
+  trailStyle?: string;
+  destinationId?: string;
+}
+
 // Short atmospheric status lines Versa cycles through while a chapter is forged.
 const VERSA_QUOTES = [
   'Cooking the chapter...',
@@ -40,8 +51,11 @@ export default function AILoadingVeil({
   streamingBlocksCount,
   isVeilMinimized,
   setIsVeilMinimized,
-  generatingChapterNum
-}: AILoadingVeilProps) {
+  generatingChapterNum,
+  travelerId,
+  trailStyle,
+  destinationId
+}: DevelopmentAILoadingVeilProps) {
   const [quoteIndex, setQuoteIndex] = React.useState(0);
 
   const isChapterPhase = generationPhase === 'chapter';
@@ -97,6 +111,9 @@ export default function AILoadingVeil({
       mode="auto"
       minimized={isVeilMinimized}
       onMinimizedChange={setIsVeilMinimized}
+      travelerId={travelerId}
+      trailStyle={trailStyle}
+      destinationId={destinationId}
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
