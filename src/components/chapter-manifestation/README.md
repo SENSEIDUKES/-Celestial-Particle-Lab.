@@ -18,6 +18,7 @@
 - **2026-07-30:** Rebuilt the Development veil as a single 100dvh mobile composition — no vertical scrolling. Three zones: Versa hero (aura kept, tighter footprint, spills over the card's top edge), compact chapter status (Chapter · ~Ns row, Manifesting N/20, progress bar; library seal and continuity note removed from the default layout; workshop-only "Animation Concept 2" copy dropped), and an animation area that flex-grows into the remaining viewport with scenes scaled contain. The animation area is a swipeable carousel (`SwordCultivatorClash` + new `CelestialChannel` scene) with compact title, dot navigation, and an expand toggle that collapses chapter status to one thin row.
 - **2026-07-30:** Rebuilt the Development veil as one continuous circular chamber — the rectangular card is gone. Four zones: Versa hero on top (aura unchanged, emblem sized up slightly to fill her zone with less dead space), a compact always-visible status line ("Chapter 1 · Manifesting 9/20 · ~23s") with a thin progress bar directly beneath it, a large concentric circular portal ring filling the remaining viewport with `SwordCultivatorClash` living inside it as the visual focus, and Versa's rotating evolving line at the bottom where the scene title used to be. Removed the VERSA heading, scene title, carousel dots, swipe, and both minimize/expand controls — the system chooses the scene, and minimization is now navigation-driven only (the caller flips `minimized`; `LoadingVeilCard`'s `onMinimize` prop is gone). `CelestialChannel` remains in the folder as a stage-only scene for future system-chosen selection.
 - **2026-07-30:** Added `development/ManifestationChamber.tsx` — the chamber now owns an explicit three-layer stacking contract inside an `isolate`d stacking context: Layer 0 (z-0) holds the portal rings, inner glow, and any shared ambient effects (particles, bubbles, symbols) always behind the scene; Layer 1 (z-10) is the scene itself, kept visually clear; Layer 2 (z-20) allows only a capped set of scene-specific foreground particles (`CHAMBER_FOREGROUND_MOTE_LIMIT = 6`, standard set: `ChamberForegroundMotes`). Future scenes are passed as `scene` and inherit the behavior with no per-scene layering fixes. Veil-level stacking made explicit to match: root `isolate`, cinematic backdrop pinned to z-0, all content zones at z-10.
+- **2026-07-30:** Layering cleanup — shared particles were visibly swarming the battle scene. Root cause: the old rectangular card carried `data-celestial-foreground`, the marker the shared `CelestialParticleShower` uses to dim its particles around foreground content; the circular-chamber rebuild dropped it. The marker now lives on the `ManifestationChamber` root so every current and future scene inherits the shower's calm-zone behavior, and a soft dark occlusion disc in the chamber's Layer 0 absorbs any remaining backdrop glow behind the scene. The scene stays clear in Layer 1; only the capped Layer 2 motes render above it.
 
 ## Folder layout
 
@@ -52,11 +53,11 @@ Two visual modes render the same card:
 
 Every manifestation scene renders inside `ManifestationChamber`, which enforces:
 
-- **Layer 0 (z-0, behind):** portal rings, inner glow, and shared ambient effects passed as `ambient`. Shared particles/bubbles/symbols never cover the scene.
+- **Layer 0 (z-0, behind):** occlusion disc, portal rings, inner glow, and shared ambient effects passed as `ambient`. Shared particles/bubbles/symbols never cover the scene.
 - **Layer 1 (z-10, scene):** the scene itself — characters, trails, rings, core effects — always visually clear.
 - **Layer 2 (z-20, above):** a small controlled amount of scene-specific foreground particles, capped by `CHAMBER_FOREGROUND_MOTE_LIMIT` (6). `ChamberForegroundMotes` is the standard set.
 
-The chamber is `isolate`d, so no effect — inside or outside — can slip between layers. New scenes inherit this by being passed as `scene`; do not add z-index workarounds inside scene components.
+The chamber is `isolate`d, so no effect — inside or outside — can slip between layers. The chamber root carries `data-celestial-foreground`, so the shared `CelestialParticleShower` dims its particles around whatever scene is inside. New scenes inherit all of this by being passed as `scene`; do not add z-index or particle workarounds inside scene components.
 
 ## What changed in Development vs Reference
 
@@ -92,4 +93,4 @@ No stores, auth, Firebase, or generation callbacks. Operation logic stays in the
 - Callers keep their own operation state; they only build a `LoadingTaskCard` (or reuse `buildAILoadingTaskCard`) and pass `active`, `minimized`, and `onMinimizedChange`. Minimizing the veil is navigation-driven: flip `minimized` when the user leaves the generation page; the veil itself renders no minimize control.
 - Route short/background tasks with `preferredMode: 'compact'` on the card.
 - The veil assumes a `100dvh` viewport container and `overflow: hidden` at the root; host pages must not add their own vertical scroll inside the manifestation experience.
-- Manifestation scenes go through `ManifestationChamber`'s `scene`/`ambient`/`foreground` slots; respect the Layer 2 particle cap instead of layering inside scenes.
+- Manifestation scenes go through `ManifestationChamber`'s `scene`/`ambient`/`foreground` slots; respect the Layer 2 particle cap instead of layering inside scenes. The chamber's `data-celestial-foreground` marker only works while the shared `CelestialParticleShower` keeps its foreground-zone behavior — do not strip that selector when transferring.
