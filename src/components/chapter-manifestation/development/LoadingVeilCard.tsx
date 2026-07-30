@@ -51,6 +51,13 @@ export interface LoadingVeilCardProps {
   travelerId?: string;
   trailStyle?: string;
   destinationId?: string;
+  /**
+   * Workshop-only media unseal pass-through (same pattern as the scrubber
+   * cosmetics above): called when the user taps the sealed scroll in the
+   * media manifestation zone. Production callers omit it and the sealed
+   * scroll renders non-interactive.
+   */
+  onMediaUnseal?: () => void;
 }
 
 /**
@@ -88,7 +95,7 @@ export interface LoadingVeilCardProps {
  * bright core, twin counter-rotating cloak wisps, grounded pool, six motes.
  * Workshop-only: do not wire this into production flows.
  */
-export default function LoadingVeilCard({ task, backdrop, emblemClassName, travelerId, trailStyle, destinationId }: LoadingVeilCardProps) {
+export default function LoadingVeilCard({ task, backdrop, emblemClassName, travelerId, trailStyle, destinationId, onMediaUnseal }: LoadingVeilCardProps) {
   const isVersa = task.agentId === 'versa';
 
   // Normalize the task card's 0–100 progress onto the scrubber's 0–1 range;
@@ -275,7 +282,7 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
       {isVersa && (
         <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
           {task.manifestation.mode === 'media' ? (
-            <MediaManifestationZone isVersa={isVersa} spec={task.manifestation} />
+            <MediaManifestationZone isVersa={isVersa} spec={task.manifestation} onUnseal={onMediaUnseal} />
           ) : (
             <NarrativeManifestationZone
               isVersa={isVersa}

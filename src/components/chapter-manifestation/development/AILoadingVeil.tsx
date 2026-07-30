@@ -25,6 +25,11 @@ interface DevelopmentAILoadingVeilProps extends AILoadingVeilProps {
   mediaReveal?: MediaRevealState;
   /** Workshop-only: the finished asset the media scroll reveals. */
   mediaAsset?: RevealedMediaAsset | null;
+  /**
+   * Workshop-only: tap handler for the sealed media scroll (tap-to-unseal).
+   * Reveal progression stays caller-owned — the veil only reports the tap.
+   */
+  onMediaUnseal?: () => void;
 }
 
 /**
@@ -67,7 +72,8 @@ export default function AILoadingVeil({
   trailStyle,
   destinationId,
   mediaReveal,
-  mediaAsset
+  mediaAsset,
+  onMediaUnseal
 }: DevelopmentAILoadingVeilProps) {
   const [quoteIndex, setQuoteIndex] = React.useState(0);
 
@@ -134,6 +140,7 @@ export default function AILoadingVeil({
       travelerId={travelerId}
       trailStyle={trailStyle}
       destinationId={destinationId}
+      onMediaUnseal={onMediaUnseal}
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
