@@ -4,7 +4,7 @@
 - **Source location:** `src/components/AILoadingVeil.tsx`
 - **Workshop preview:** `?preview=chapter-generation-manifestation`
 - **Replica created:** 2026-07-29
-- **Last Workshop update:** 2026-07-30
+- **Last Workshop update:** 2026-07-31
 - **Last source comparison:** 2026-07-29
 - **Replica status:** under refinement
 
@@ -19,6 +19,7 @@
 - **2026-07-30:** Rebuilt the Development veil as one continuous circular chamber — the rectangular card is gone. Four zones: Versa hero on top (aura unchanged, emblem sized up slightly to fill her zone with less dead space), a compact always-visible status line ("Chapter 1 · Manifesting 9/20 · ~23s") with a thin progress bar directly beneath it, a large concentric circular portal ring filling the remaining viewport with `SwordCultivatorClash` living inside it as the visual focus, and Versa's rotating evolving line at the bottom where the scene title used to be. Removed the VERSA heading, scene title, carousel dots, swipe, and both minimize/expand controls — the system chooses the scene, and minimization is now navigation-driven only (the caller flips `minimized`; `LoadingVeilCard`'s `onMinimize` prop is gone). `CelestialChannel` remains in the folder as a stage-only scene for future system-chosen selection.
 - **2026-07-30:** Added `development/ManifestationChamber.tsx` — the chamber now owns an explicit three-layer stacking contract inside an `isolate`d stacking context: Layer 0 (z-0) holds the portal rings, inner glow, and any shared ambient effects (particles, bubbles, symbols) always behind the scene; Layer 1 (z-10) is the scene itself, kept visually clear; Layer 2 (z-20) allows only a capped set of scene-specific foreground particles (`CHAMBER_FOREGROUND_MOTE_LIMIT = 6`, standard set: `ChamberForegroundMotes`). Future scenes are passed as `scene` and inherit the behavior with no per-scene layering fixes. Veil-level stacking made explicit to match: root `isolate`, cinematic backdrop pinned to z-0, all content zones at z-10.
 - **2026-07-30:** Layering cleanup — shared particles were visibly swarming the battle scene. Root cause: the old rectangular card carried `data-celestial-foreground`, the marker the shared `CelestialParticleShower` uses to dim its particles around foreground content; the circular-chamber rebuild dropped it. The marker now lives on the `ManifestationChamber` root so every current and future scene inherits the shower's calm-zone behavior, and a soft dark occlusion disc in the chamber's Layer 0 absorbs any remaining backdrop glow behind the scene. The scene stays clear in Layer 1; only the capped Layer 2 motes render above it.
+- **2026-07-31:** Replaced the thin progress bar in the Development veil with `development/journey-scrubber/` — a journey-style scrubber: a subtly curved qi path, a tiny cultivator traveler whose looping run cycle is decoupled from its progress-driven position, an illuminated trail behind the traveler, milestone motes, and a celestial destination gate that glows on arrival (the traveler plays a small hop). Status text is layered (identity · state on one line, live detail beneath) instead of one hard-coded string. Progress is a normalized 0–1 prop — the veil maps the task card's 0–100 value onto it, so any passage count or flow works unchanged. Travelers come from a registry (`journey-scrubber/travelers.ts`) with the cultivator as default, so future skins (beasts, spirit pets, sword riders, avatars) swap in via a `travelerId` prop without touching path, trail, marker, or status layers. The task-card data contract is untouched; `progress: null` keeps an indeterminate drift, and reduced-motion users get static, calm presentation.
 
 ## Folder layout
 
@@ -33,6 +34,9 @@ development/LoadingVeilCard.tsx — active veil presentation: circular-chamber c
 development/ManifestationChamber.tsx — circular portal + three-layer stacking contract every scene inherits
 development/SwordCultivatorClash.tsx — stage-only looping clash diorama (active scene)
 development/CelestialChannel.tsx     — stage-only calm orbit diorama (held for system-chosen scenes)
+development/journey-scrubber/JourneyScrubber.tsx     — journey progress presentation: curved qi path, trail, milestones, gate, status layers
+development/journey-scrubber/CultivatorTraveler.tsx  — default traveler (running hooded cultivator)
+development/journey-scrubber/travelers.ts            — traveler registry + swap contract
 
 shared/taskCard.ts          — LoadingTaskCard format + buildAILoadingTaskCard, used by both versions
 shared/CompactIndicator.tsx — floating corner widget, identical in both versions
@@ -59,12 +63,21 @@ Every manifestation scene renders inside `ManifestationChamber`, which enforces:
 
 The chamber is `isolate`d, so no effect — inside or outside — can slip between layers. The chamber root carries `data-celestial-foreground`, so the shared `CelestialParticleShower` dims its particles around whatever scene is inside. New scenes inherit all of this by being passed as `scene`; do not add z-index or particle workarounds inside scene components.
 
+### Journey scrubber contract
+
+Progress in the Development veil renders as `journey-scrubber/JourneyScrubber`:
+
+- **Progress:** one normalized 0–1 prop (`null` = indeterminate drift). Callers map their own units (passages, steps, bytes) onto the range; nothing in the scrubber knows about passage counts.
+- **Layers:** status (`title` / `state` / `detail`), path + illuminated trail, milestone motes, destination gate, and the traveler are separable — each can change without touching the others.
+- **Travelers:** swappable through `travelerId` and the registry in `journey-scrubber/travelers.ts`. A traveler honors `TravelerRenderProps` (accents, `moving`, `arrived`, glow filter) and a local-space contract (feet at (0,0), ~30–40px tall, facing right). The cultivator is the default and fallback.
+- **Motion:** the run loop is decoupled from position; position eases from progress. Reduced-motion users get a static traveler and calm, non-looping glows.
+
 ## What changed in Development vs Reference
 
 - Compact card: no atmospheric phrase, no phase marker pill.
 - Live "Manifesting N/20" tracker detail (was "N passages formed") while a chapter streams in.
 - Versa's floating emblem inside a deepened violet aura (saturated nebula + bright core + counter-rotating wisps) and a `CelestialParticleShower` backdrop tinted to the active agent.
-- The whole veil is a locked 100dvh circular-chamber composition: Versa hero on top, one compact status line with a thin progress bar, a `ManifestationChamber` holding the manifestation scene with its enforced layering contract, and Versa's rotating evolving line at the bottom. No card, no carousel, no scene-selection UI, no manual minimize control.
+- The whole veil is a locked 100dvh circular-chamber composition: Versa hero on top, a journey scrubber (layered status + curved qi path with a cultivator traveler, lit trail, and destination gate) instead of the thin progress bar, a `ManifestationChamber` holding the manifestation scene with its enforced layering contract, and Versa's rotating evolving line at the bottom. No card, no carousel, no scene-selection UI, no manual minimize control.
 - Scout's presentation stays a compact card without the animation zone.
 
 ## What was mocked
@@ -84,7 +97,7 @@ No stores, auth, Firebase, or generation callbacks. Operation logic stays in the
 ### Files needed for transfer
 
 - `shared/taskCard.ts`, `shared/CompactIndicator.tsx`
-- `development/LoadingVeilCard.tsx`, `development/LoadingSystem.tsx`, `development/AILoadingVeil.tsx`, `development/ManifestationChamber.tsx`, `development/SwordCultivatorClash.tsx`, `development/CelestialChannel.tsx` (once approved, transfer as the new reference implementation)
+- `development/LoadingVeilCard.tsx`, `development/LoadingSystem.tsx`, `development/AILoadingVeil.tsx`, `development/ManifestationChamber.tsx`, `development/SwordCultivatorClash.tsx`, `development/CelestialChannel.tsx`, and the `development/journey-scrubber/` folder (once approved, transfer as the new reference implementation)
 - Agent profiles from `src/lib/agents.ts` (already present in the source app)
 
 ### Transfer notes
@@ -94,3 +107,4 @@ No stores, auth, Firebase, or generation callbacks. Operation logic stays in the
 - Route short/background tasks with `preferredMode: 'compact'` on the card.
 - The veil assumes a `100dvh` viewport container and `overflow: hidden` at the root; host pages must not add their own vertical scroll inside the manifestation experience.
 - Manifestation scenes go through `ManifestationChamber`'s `scene`/`ambient`/`foreground` slots; respect the Layer 2 particle cap instead of layering inside scenes. The chamber's `data-celestial-foreground` marker only works while the shared `CelestialParticleShower` keeps its foreground-zone behavior — do not strip that selector when transferring.
+- The journey scrubber expects a normalized 0–1 `progress` prop; keep the caller-side normalization (`task.progress / 100`) when transferring, and pass `travelerId` only when a non-default skin is registered.
