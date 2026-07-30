@@ -18,6 +18,7 @@
 - **2026-07-30:** Added a progression block above the Qi cloud in Development — "DAYS CULTIVATING", the day count, and a quote that escalates through 20 tenure milestones (under 1 day → 180 days) via the new optional `daysCultivating` prop, with five timeless quotes mixed in at a 25% roll per reward cycle. The block fades out with the claim animation. Preview mocks `daysCultivating={7}`.
 - **2026-07-30:** Shortened the post-claim hold from 2.4s to 1.9s (`CLAIM_CLOSE_MS`) so the scrim and vignette release about half a second sooner once the qi flight and emblem glow have finished.
 - **2026-07-30:** Performance pass (SEIHouse Components Performance): added a low-power heuristic (reduced motion or ≤4 CPU cores) that skips the full-viewport backdrop blur and trims the claim particle burst from 26 to 12; a failed `onClaim` now restores the vignette for retry instead of closing and silently losing the reward; pending close timers are cleared when a reward cycle resets or a new claim starts.
+- **2026-07-30:** Final production pass (SEIHouse Components Performance + SEIHouse Layout Optimization) before transfer back to Light-Novels: the qi motes and the SMIL shimmer sweep are now also skipped on low-power devices (main-thread cost), the dialog's label ID is generated per instance with `useId` (no duplicate IDs when two modals coexist, e.g. Compare mode), and the whole vignette column scales to 85% from its bottom anchor on viewports under 480px tall so mobile landscape no longer risks clipping the progression block.
 
 ## Folder layout
 

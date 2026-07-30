@@ -103,6 +103,7 @@ function CultivatorSvg({ className, style }: { className?: string; style?: React
 
 /** The meditating figure with its breathing aura. Dissolves into mist while claiming. */
 function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?: boolean }) {
+  const lowPower = useReducedMotion() || isLowPowerDevice();
   return (
     <motion.div
       className="relative w-28 h-24 sm:w-32 sm:h-28 lg:w-40 lg:h-[8.5rem]"
@@ -137,8 +138,8 @@ function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?
         className="relative w-full h-full"
         style={{ filter: `drop-shadow(0 0 6px rgba(${PORTAL_RGB},0.35))` }}
       />
-      {/* qi motes drifting up from the cultivator */}
-      {!claiming && !calm &&
+      {/* qi motes drifting up from the cultivator (skipped on weak hardware) */}
+      {!claiming && !lowPower &&
         [0, 1, 2].map(i => (
           <motion.span
             key={i}
@@ -256,6 +257,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
   const cloudGradId = `cdc-cloud-${useId()}`;
   const cloudClipId = `cdc-cloudclip-${useId()}`;
   const shimmerGradId = `cdc-shimmer-${useId()}`;
+  const titleId = `cdc-title-${useId()}`;
   const reduceMotion = useReducedMotion();
   const lowPower = reduceMotion || isLowPowerDevice();
   const days = Math.max(1, Math.floor(daysCultivating));
@@ -393,14 +395,15 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
             <motion.div
               key="cdc-vignette"
               role="dialog"
-              aria-labelledby="idle-cultivation-title"
+              aria-labelledby={titleId}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               className="fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:inset-x-auto sm:right-6 sm:justify-end lg:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-[100] flex justify-center pointer-events-none"
             >
               {/* The cloud and the cultivator's body are one tap target — swipes everywhere else pass through to the page. */}
-              <div className="relative pointer-events-none flex flex-col items-center px-6">
+              {/* Short viewports (mobile landscape, split-screen) compress the whole column from the bottom anchor. */}
+              <div className="relative pointer-events-none flex flex-col items-center px-6 origin-bottom [@media(max-height:480px)]:scale-[0.85]">
                 {/* soft dark ink aura: gently obscures whatever is underneath, no hard box */}
                 <div
                   aria-hidden="true"
@@ -513,8 +516,8 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                       d="M32 50 C16 50 10 39 19 31 C14 20 27 13 36 18 C41 8 57 6 65 14 C73 6 89 8 94 18 C103 13 116 20 111 31 C120 39 114 50 98 50 Z"
                       fill={`url(#${cloudGradId})`}
                     />
-                    {/* shimmer sweep inviting the tap */}
-                    {!reduceMotion && (
+                    {/* shimmer sweep inviting the tap (skipped on weak hardware: SMIL runs on the main thread) */}
+                    {!lowPower && (
                       <g clipPath={`url(#${cloudClipId})`}>
                         <rect x="-46" y="0" width="26" height="64" fill={`url(#${shimmerGradId})`} transform="skewX(-18)">
                           <animate attributeName="x" from="-46" to="150" dur="2.6s" repeatCount="indefinite" />
@@ -553,7 +556,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                 </button>
 
                 <span
-                  id="idle-cultivation-title"
+                  id={titleId}
                   className="relative mt-1 text-[9px] sm:text-[10px] lg:text-[11px] font-sc uppercase tracking-[0.35em] text-portal/60"
                 >
                   Closed-Door Cultivation
