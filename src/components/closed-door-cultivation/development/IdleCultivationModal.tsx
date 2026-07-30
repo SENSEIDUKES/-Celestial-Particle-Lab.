@@ -5,6 +5,51 @@ const PORTAL_RGB = '4,172,255';
 const COLLAPSE_AFTER_MS = 7000;
 const CLAIM_CLOSE_MS = 1900;
 
+/**
+ * Progression lines keyed by days spent in the Library. The highest reached
+ * threshold wins, so the message grows more prestigious the longer the path.
+ */
+const PROGRESSION_QUOTES: ReadonlyArray<readonly [minDays: number, quote: string]> = [
+  [0, 'Your cultivation begins.'],
+  [1, 'The first step has been taken.'],
+  [3, 'Still finding your footing.'],
+  [7, 'Just getting your feet wet.'],
+  [10, 'The Library is becoming familiar.'],
+  [14, 'Two weeks upon the path.'],
+  [21, 'Your roots are beginning to take hold.'],
+  [30, 'One month of steady cultivation.'],
+  [40, 'The path no longer feels foreign.'],
+  [50, 'Your foundation grows stronger.'],
+  [60, 'Two months within the Library.'],
+  [70, 'Consistency has become discipline.'],
+  [80, 'Your presence has taken root.'],
+  [90, 'A full season of cultivation.'],
+  [105, 'The novice days are behind you.'],
+  [120, 'Your foundation is firmly established.'],
+  [135, 'The Library remembers your footsteps.'],
+  [150, 'Few paths are walked this faithfully.'],
+  [165, 'Your dedication speaks for itself.'],
+  [180, 'Half a year upon the path.'],
+];
+
+/** Timeless lines occasionally mixed in between the progression quotes. */
+const TIMELESS_QUOTES: readonly string[] = [
+  'Even the longest paths begin in silence.',
+  'The heavens favor those who return.',
+  'A quiet mind gathers boundless Qi.',
+  "Today's effort shapes tomorrow's realm.",
+  'Some breakthroughs happen when no one is watching.',
+];
+
+function progressionQuote(days: number): string {
+  let quote = PROGRESSION_QUOTES[0][1];
+  for (const [minDays, q] of PROGRESSION_QUOTES) {
+    if (days < minDays) break;
+    quote = q;
+  }
+  return quote;
+}
+
 /** Heuristic for weaker hardware: trim effect density instead of dropping atmosphere. */
 function isLowPowerDevice(): boolean {
   return typeof navigator !== 'undefined' && (navigator.hardwareConcurrency ?? 8) <= 4;
@@ -197,9 +242,11 @@ export interface IdleCultivationModalProps {
   onClose: () => void;
   onClaim: (qi: number) => Promise<void>;
   targetElementId?: string; // e.g. 'celestial-library-emblem'
+  /** Days the user has been in the Library; drives the progression line. */
+  daysCultivating?: number;
 }
 
-export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem' }: IdleCultivationModalProps) {
+export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem', daysCultivating = 1 }: IdleCultivationModalProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flight, setFlight] = useState<Flight | null>(null);
@@ -211,6 +258,17 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
   const shimmerGradId = `cdc-shimmer-${useId()}`;
   const reduceMotion = useReducedMotion();
   const lowPower = reduceMotion || isLowPowerDevice();
+  const days = Math.max(1, Math.floor(daysCultivating));
+
+  // Rolled once per reward cycle: mostly the progression line for the user's
+  // Library tenure, occasionally one of the timeless lines mixed in.
+  const quote = useMemo(() => {
+    if (qiEarned === null) return progressionQuote(days);
+    if (Math.random() < 0.25) {
+      return TIMELESS_QUOTES[Math.floor(Math.random() * TIMELESS_QUOTES.length)];
+    }
+    return progressionQuote(days);
+  }, [qiEarned, days]);
 
   // If the reward sits unclaimed, fold the vignette away into a tiny waiting icon.
   useEffect(() => {
@@ -353,6 +411,46 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                     filter: 'blur(10px)',
                   }}
                 />
+
+                {/* progression block: how long the user has walked the Library's path */}
+                <motion.div
+                  aria-hidden="true"
+                  className="relative flex flex-col items-center mb-1 sm:mb-2 pointer-events-none"
+                  animate={isClaiming ? { opacity: 0, y: -8 } : { opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                >
+                  <span className="text-[8px] sm:text-[9px] lg:text-[10px] font-sc uppercase tracking-[0.4em] text-portal/70">
+                    Days Cultivating
+                  </span>
+                  <span
+                    className="mt-1 font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-cyan-50 tracking-[0.15em] whitespace-nowrap"
+                    style={{ textShadow: `0 0 12px rgba(${PORTAL_RGB},0.9), 0 0 32px rgba(${PORTAL_RGB},0.45)` }}
+                  >
+                    {days === 1 ? '1 DAY' : `${days} DAYS`}
+                  </span>
+                  <span className="mt-1.5 flex items-center gap-2.5" aria-hidden="true">
+                    <span
+                      className="block w-8 sm:w-10 h-px"
+                      style={{ background: `linear-gradient(to right, transparent, rgba(${PORTAL_RGB},0.6))` }}
+                    />
+                    <span
+                      className="text-[8px] leading-none"
+                      style={{ color: `rgba(${PORTAL_RGB},0.9)`, textShadow: `0 0 6px rgba(${PORTAL_RGB},0.8)` }}
+                    >
+                      ✦
+                    </span>
+                    <span
+                      className="block w-8 sm:w-10 h-px"
+                      style={{ background: `linear-gradient(to left, transparent, rgba(${PORTAL_RGB},0.6))` }}
+                    />
+                  </span>
+                  <span
+                    className="mt-1.5 font-display italic text-xs sm:text-sm lg:text-base text-cyan-200/90"
+                    style={{ textShadow: `0 0 10px rgba(${PORTAL_RGB},0.5)` }}
+                  >
+                    {quote}
+                  </span>
+                </motion.div>
 
                 {/* single hit area spanning the cloud down through the cultivator's body — tap either to claim */}
                 <button

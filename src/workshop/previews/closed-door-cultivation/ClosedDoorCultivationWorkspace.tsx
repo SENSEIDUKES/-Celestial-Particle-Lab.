@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IdleCultivationModal as ReferenceIdleCultivationModal } from '../../../components/closed-door-cultivation/reference/IdleCultivationModal';
 import { IdleCultivationModal as DevelopmentIdleCultivationModal } from '../../../components/closed-door-cultivation/development/IdleCultivationModal';
+import type { IdleCultivationModalProps } from '../../../components/closed-door-cultivation/development/IdleCultivationModal';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
 import { scenarios, PreviewState } from './previewStates';
@@ -34,7 +35,7 @@ function MockBookCard({ book }: { book: (typeof mockLibrary)[number] }) {
   );
 }
 
-function PreviewCanvas({ Modal, emblemId }: { Modal: typeof ReferenceIdleCultivationModal; emblemId: string }) {
+function PreviewCanvas({ Modal, emblemId, daysCultivating }: { Modal: React.ComponentType<IdleCultivationModalProps>; emblemId: string; daysCultivating?: number }) {
   const [activeState, setActiveState] = useState<PreviewState>('idle');
   const [qiEarned, setQiEarned] = useState<number | null>(null);
 
@@ -87,7 +88,7 @@ function PreviewCanvas({ Modal, emblemId }: { Modal: typeof ReferenceIdleCultiva
         Target
       </div>
 
-      <Modal qiEarned={qiEarned} onClose={() => handleStateChange('idle')} onClaim={handleClaim} targetElementId={emblemId} />
+      <Modal qiEarned={qiEarned} onClose={() => handleStateChange('idle')} onClaim={handleClaim} targetElementId={emblemId} daysCultivating={daysCultivating} />
     </div>
   );
 }
@@ -98,7 +99,7 @@ export function ClosedDoorCultivationWorkspace() {
     <FeatureWorkspace
       entry={entry}
       renderReference={() => <PreviewCanvas Modal={ReferenceIdleCultivationModal} emblemId="cdc-emblem-reference" />}
-      renderDevelopment={() => <PreviewCanvas Modal={DevelopmentIdleCultivationModal} emblemId="cdc-emblem-development" />}
+      renderDevelopment={() => <PreviewCanvas Modal={DevelopmentIdleCultivationModal} emblemId="cdc-emblem-development" daysCultivating={7} />}
     />
   );
 }
