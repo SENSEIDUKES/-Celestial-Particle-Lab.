@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 const PORTAL_RGB = '4,172,255';
 const COLLAPSE_AFTER_MS = 7000;
-const CLAIM_CLOSE_MS = 1900;
+const CLAIM_CLOSE_MS = 1500;
 
 /**
  * Progression lines keyed by days spent in the Library. The highest reached
@@ -55,9 +55,12 @@ function isLowPowerDevice(): boolean {
   return typeof navigator !== 'undefined' && (navigator.hardwareConcurrency ?? 8) <= 4;
 }
 
-interface Flight {
+interface Absorb {
+  /** cloud center + size (particle spawn area) and dantian point, in viewport coords */
   sx: number;
   sy: number;
+  sw: number;
+  sh: number;
   ex: number;
   ey: number;
 }
@@ -101,19 +104,19 @@ function CultivatorSvg({ className, style }: { className?: string; style?: React
   );
 }
 
-/** The meditating figure with its breathing aura. Dissolves into mist while claiming. */
+/** The meditating figure with its breathing aura. Holds its seat and flares once as the claimed qi pours into its dantian. */
 function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?: boolean }) {
   return (
     <motion.div
-      className="relative w-28 h-24 sm:w-32 sm:h-28 lg:w-40 lg:h-[8.5rem]"
+      className="relative w-32 h-28 sm:w-36 sm:h-32 lg:w-48 lg:h-40"
       animate={
         claiming
-          ? { opacity: 0, y: -14, filter: 'blur(6px)' }
-          : { opacity: 1, y: 0, filter: 'blur(0px)' }
+          ? { opacity: 1, y: 0, filter: ['brightness(1) blur(0px)', 'brightness(1.8) blur(0px)', 'brightness(1.1) blur(0px)'] }
+          : { opacity: 1, y: 0, filter: 'brightness(1) blur(0px)' }
       }
-      transition={claiming ? { duration: 1.2, delay: 0.55, ease: 'easeOut' } : { duration: 0.6 }}
+      transition={claiming ? { duration: 1.1, delay: 0.45, times: [0, 0.4, 1], ease: 'easeOut' } : { duration: 0.6 }}
     >
-      {/* soft cyan aura breathing around the body; flashes once on claim */}
+      {/* soft cyan aura breathing around the body; flashes once as the qi lands */}
       <motion.div
         className="absolute -inset-[18%] rounded-full pointer-events-none"
         style={{
@@ -129,7 +132,7 @@ function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?
         }
         transition={
           claiming
-            ? { duration: 1.0, delay: 0.25, times: [0, 0.35, 1] }
+            ? { duration: 1.0, delay: 0.5, times: [0, 0.35, 1] }
             : { duration: 4.2, repeat: Infinity, ease: 'easeInOut' }
         }
       />
@@ -157,81 +160,89 @@ function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?
 }
 
 /**
- * Glowing qi particles visibly ascending from the cultivator first,
- * then spiraling up into the target emblem.
+ * The qi cloud breaking apart on claim: particles scatter for an instant,
+ * then stream downward and converge into the cultivator's dantian, which
+ * answers with one soft pulse of light. ~1s of motion, then the veil lifts.
  */
-function QiFlight({ flight }: { flight: Flight }) {
-  const { sx, sy, ex, ey } = flight;
+function CloudAbsorb({ absorb }: { absorb: Absorb }) {
+  const { sx, sy, sw, sh, ex, ey } = absorb;
   const lowPower = useReducedMotion() || isLowPowerDevice();
   // Freeze the random particle paths per claim so unrelated re-renders don't retarget the burst.
   const particles = useMemo(() => {
-    const dx = ex - sx;
-    const dy = ey - sy;
-    const len = Math.hypot(dx, dy) || 1;
-    const px = -dy / len;
-    const py = dx / len;
-    return Array.from({ length: lowPower ? 12 : 26 }).map((_, i) => {
-      const sign = i % 2 === 0 ? 1 : -1;
-      const sway1 = (50 + Math.random() * 70) * sign;
-      const sway2 = (25 + Math.random() * 40) * -sign;
-      const ascend = 100 + Math.random() * 40;
+    return Array.from({ length: lowPower ? 14 : 30 }).map((_, i) => {
+      const startX = sx + (Math.random() - 0.5) * sw * 0.9;
+      const startY = sy + (Math.random() - 0.5) * sh * 0.8;
+      // brief outward scatter before the suction pulls everything down
+      const scatterX = startX + (Math.random() - 0.5) * 44;
+      const scatterY = startY - 6 - Math.random() * 14;
+      // bend toward the dantian through a point partway down
+      const bendX = startX + (ex - startX) * 0.55 + (Math.random() - 0.5) * 26;
+      const bendY = startY + (ey - startY) * 0.55;
       return {
-        // phase 1: rise straight up from the cultivator
-        ax: sx + (Math.random() - 0.5) * 30,
-        ay: sy - ascend,
-        // phase 2: curve from the top of the ascent toward the emblem
-        m1x: sx + dx * 0.35 + px * sway1,
-        m1y: sy - ascend + dy * 0.3 + py * sway1 - 20,
-        m2x: sx + dx * 0.72 + px * sway2,
-        m2y: sy + dy * 0.72 + py * sway2 - 24,
-        duration: 1.05 + Math.random() * 0.3,
-        delay: 0.2 + i * 0.02 + Math.random() * 0.08,
+        startX, startY, scatterX, scatterY, bendX, bendY,
+        duration: 0.5 + Math.random() * 0.2,
+        delay: i * 0.008 + Math.random() * 0.1,
         size: 2 + Math.random() * 3,
       };
     });
-  }, [flight, lowPower]);
+  }, [absorb, lowPower]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
-      {particles.map((p, i) => {
-        return (
-          <motion.span
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: p.size,
-              height: p.size,
-              background: '#a5f3fc',
-              boxShadow: `0 0 8px rgba(${PORTAL_RGB},1), 0 0 16px rgba(${PORTAL_RGB},0.6)`,
-              filter: 'blur(0.5px)',
-            }}
-            initial={{ x: sx, y: sy, opacity: 0, scale: 0.4 }}
-            animate={{
-              x: [sx, p.ax, p.m1x, p.m2x, ex],
-              y: [sy, p.ay, p.m1y, p.m2y, ey],
-              opacity: [0, 1, 1, 1, 0],
-              scale: [0.4, 1, 1, 0.9, 0.2],
-            }}
-            transition={{ duration: p.duration, delay: p.delay, ease: 'easeIn', times: [0, 0.32, 0.58, 0.8, 1] }}
-          />
-        );
-      })}
-      {/* the emblem briefly glows as it absorbs the qi */}
+      {particles.map((p, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: p.size,
+            height: p.size,
+            background: '#a5f3fc',
+            boxShadow: `0 0 8px rgba(${PORTAL_RGB},1), 0 0 16px rgba(${PORTAL_RGB},0.6)`,
+            filter: 'blur(0.5px)',
+          }}
+          initial={{ x: p.startX, y: p.startY, opacity: 0, scale: 0.4 }}
+          animate={{
+            x: [p.startX, p.scatterX, p.bendX, ex],
+            y: [p.startY, p.scatterY, p.bendY, ey],
+            opacity: [0, 1, 1, 0],
+            scale: [0.4, 1, 0.9, 0.3],
+          }}
+          transition={{ duration: p.duration, delay: p.delay, ease: 'easeIn', times: [0, 0.22, 0.72, 1] }}
+        />
+      ))}
+      {/* dantian flare as the qi lands */}
       <motion.div
         className="absolute rounded-full"
         style={{
           left: ex,
           top: ey,
-          width: 64,
-          height: 64,
+          width: 72,
+          height: 72,
           x: '-50%',
           y: '-50%',
-          background: `radial-gradient(circle, rgba(${PORTAL_RGB},0.8) 0%, rgba(${PORTAL_RGB},0.25) 45%, transparent 70%)`,
-          filter: 'blur(4px)',
+          background: `radial-gradient(circle, rgba(${PORTAL_RGB},0.9) 0%, rgba(${PORTAL_RGB},0.3) 45%, transparent 70%)`,
+          filter: 'blur(5px)',
         }}
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: [0, 0.95, 0], scale: [0.5, 1.5, 1.9] }}
-        transition={{ duration: 0.8, delay: 1.15, times: [0, 0.35, 1] }}
+        initial={{ opacity: 0, scale: 0.4 }}
+        animate={{ opacity: [0, 1, 0], scale: [0.4, 1.25, 1.7] }}
+        transition={{ duration: 0.8, delay: 0.55, times: [0, 0.3, 1] }}
+      />
+      {/* one soft expanding ring — the cultivator's answering pulse */}
+      <motion.div
+        className="absolute rounded-full border"
+        style={{
+          left: ex,
+          top: ey,
+          width: 56,
+          height: 56,
+          x: '-50%',
+          y: '-50%',
+          borderColor: `rgba(${PORTAL_RGB},0.7)`,
+          boxShadow: `0 0 12px rgba(${PORTAL_RGB},0.5), inset 0 0 12px rgba(${PORTAL_RGB},0.35)`,
+        }}
+        initial={{ opacity: 0, scale: 0.35 }}
+        animate={{ opacity: [0, 0.8, 0], scale: [0.35, 1.6, 2.6] }}
+        transition={{ duration: 0.85, delay: 0.6, times: [0, 0.25, 1], ease: 'easeOut' }}
       />
     </div>
   );
@@ -241,15 +252,16 @@ export interface IdleCultivationModalProps {
   qiEarned: number | null;
   onClose: () => void;
   onClaim: (qi: number) => Promise<void>;
-  targetElementId?: string; // e.g. 'celestial-library-emblem'
+  /** @deprecated claim now absorbs into the cultivator; kept for API compatibility. */
+  targetElementId?: string;
   /** Days the user has been in the Library; drives the progression line. */
   daysCultivating?: number;
 }
 
-export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem', daysCultivating = 1 }: IdleCultivationModalProps) {
+export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivating = 1 }: IdleCultivationModalProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [flight, setFlight] = useState<Flight | null>(null);
+  const [absorb, setAbsorb] = useState<Absorb | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const figureRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -299,20 +311,19 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
     if (isClaiming || !qiEarned) return;
     setIsClaiming(true);
 
-    // Particles ascend from the cultivator itself, not the popped cloud.
-    const figure = figureRef.current?.getBoundingClientRect();
+    // Particles pour from the cloud down into the cultivator's dantian (~62% down the figure).
     const bubble = bubbleRef.current?.getBoundingClientRect();
-    const origin = figure ?? bubble;
-    const emblem = document.getElementById(targetElementId)?.getBoundingClientRect();
-
-    // In workshop preview, the target element might not exist, so fallback to top right corner.
-    setFlight({
-      sx: origin ? origin.left + origin.width / 2 : window.innerWidth / 2,
-      sy: origin ? origin.top + origin.height * 0.55 : window.innerHeight - 140,
-      ex: emblem ? emblem.left + emblem.width / 2 : window.innerWidth - 64,
-      ey: emblem ? emblem.top + emblem.height / 2 : 64,
+    const figure = figureRef.current?.getBoundingClientRect();
+    setAbsorb({
+      sx: bubble ? bubble.left + bubble.width / 2 : window.innerWidth / 2,
+      sy: bubble ? bubble.top + bubble.height / 2 : window.innerHeight - 220,
+      sw: bubble?.width ?? 128,
+      sh: bubble?.height ?? 64,
+      ex: figure ? figure.left + figure.width / 2 : window.innerWidth / 2,
+      ey: figure ? figure.top + figure.height * 0.62 : window.innerHeight - 120,
     });
 
+    const claimStart = performance.now();
     try {
       await onClaim(qiEarned);
     } catch (e) {
@@ -320,20 +331,23 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
       // The claim did not land (offline, timeout, server error): restore the
       // vignette so the user can retry instead of silently losing the reward.
       setIsClaiming(false);
-      setFlight(null);
+      setAbsorb(null);
       return;
     }
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    // Close CLAIM_CLOSE_MS after the claim STARTED so the absorb sequence
+    // always gets its full moment regardless of network latency.
+    const remaining = Math.max(0, CLAIM_CLOSE_MS - (performance.now() - claimStart));
     closeTimeoutRef.current = setTimeout(() => {
       setIsClaiming(false);
-      setFlight(null);
+      setAbsorb(null);
       onClose();
-    }, CLAIM_CLOSE_MS);
+    }, remaining);
   };
 
   return (
     <>
-      {flight && <QiFlight flight={flight} />}
+      {absorb && <CloudAbsorb absorb={absorb} />}
       <AnimatePresence>
         {/* Full-viewport dim + soften: the Library stays visible enough to place the user, */}
         {/* not readable enough to compete, and stays up until claimed or minimized. */}
@@ -404,7 +418,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                 {/* soft dark ink aura: gently obscures whatever is underneath, no hard box */}
                 <div
                   aria-hidden="true"
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(92vw,380px)] h-80 sm:w-[min(80vw,440px)] sm:h-[22rem] lg:w-[min(60vw,520px)] lg:h-[26rem]"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(92vw,440px)] h-[22rem] sm:w-[min(80vw,500px)] sm:h-[24rem] lg:w-[min(60vw,600px)] lg:h-[28rem]"
                   style={{
                     background:
                       'radial-gradient(ellipse at 50% 55%, rgba(2,5,12,0.92) 0%, rgba(2,5,12,0.7) 42%, rgba(2,5,12,0.35) 62%, transparent 78%)',
@@ -419,11 +433,11 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                   animate={isClaiming ? { opacity: 0, y: -8 } : { opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
-                  <span className="text-[8px] sm:text-[9px] lg:text-[10px] font-sc uppercase tracking-[0.4em] text-portal/70">
+                  <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-sc uppercase tracking-[0.4em] text-portal/70">
                     Days Cultivating
                   </span>
                   <span
-                    className="mt-1 font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-cyan-50 tracking-[0.15em] whitespace-nowrap"
+                    className="mt-1 font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-cyan-50 tracking-[0.15em] whitespace-nowrap"
                     style={{ textShadow: `0 0 12px rgba(${PORTAL_RGB},0.9), 0 0 32px rgba(${PORTAL_RGB},0.45)` }}
                   >
                     {days === 1 ? '1 DAY' : `${days} DAYS`}
@@ -444,12 +458,14 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                       style={{ background: `linear-gradient(to left, transparent, rgba(${PORTAL_RGB},0.6))` }}
                     />
                   </span>
-                  <span
-                    className="mt-1.5 font-display italic text-xs sm:text-sm lg:text-base text-cyan-200/90"
+                  <motion.span
+                    className="mt-1.5 font-display italic text-sm sm:text-base lg:text-lg text-cyan-200/90"
                     style={{ textShadow: `0 0 10px rgba(${PORTAL_RGB},0.5)` }}
+                    animate={reduceMotion ? { opacity: 0.9 } : { opacity: [0.72, 1, 0.72] }}
+                    transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
                   >
                     {quote}
-                  </span>
+                  </motion.span>
                 </motion.div>
 
                 {/* single hit area spanning the cloud down through the cultivator's body — tap either to claim */}
@@ -466,14 +482,14 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                   className="relative block rounded-2xl"
                   animate={
                     isClaiming
-                      ? { scale: 0.15, opacity: 0, y: 6 }
+                      ? { scale: 1.2, opacity: 0, filter: 'blur(8px)' }
                       : reduceMotion
-                        ? { y: 0, scale: 1, opacity: 1 }
-                        : { y: [0, -6, 0], scale: 1, opacity: 1 }
+                        ? { y: 0, scale: 1, opacity: 1, filter: 'blur(0px)' }
+                        : { y: [0, -6, 0], scale: 1, opacity: 1, filter: 'blur(0px)' }
                   }
                   transition={
                     isClaiming
-                      ? { duration: 0.35, ease: 'easeIn' }
+                      ? { duration: 0.3, ease: 'easeOut' }
                       : { duration: 3.6, repeat: Infinity, ease: 'easeInOut' }
                   }
                 >
@@ -490,7 +506,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                   />
                   <svg
                     viewBox="0 0 130 64"
-                    className="w-28 h-14 sm:w-32 sm:h-16 lg:w-40 lg:h-20"
+                    className="w-32 h-16 sm:w-[9.5rem] sm:h-[4.5rem] lg:w-48 lg:h-24"
                     style={{ filter: `drop-shadow(0 0 12px rgba(${PORTAL_RGB},0.65))` }}
                     aria-hidden="true"
                   >
@@ -523,29 +539,12 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
                     )}
                   </svg>
                   <span
-                    className="absolute inset-0 flex items-center justify-center font-display font-bold text-sm sm:text-base lg:text-lg text-cyan-100 tracking-wider whitespace-nowrap"
+                    className="absolute inset-0 flex items-center justify-center font-display font-bold text-base sm:text-lg lg:text-xl text-cyan-100 tracking-wider whitespace-nowrap"
                     style={{ textShadow: `0 0 10px rgba(${PORTAL_RGB},1), 0 0 22px rgba(${PORTAL_RGB},0.55)` }}
                   >
                     {`+${qiEarned} QI`}
                   </span>
                 </motion.div>
-
-                {/* trailing wisps as the cultivator dissolves */}
-                {isClaiming &&
-                  [0, 1, 2].map(i => (
-                    <motion.span
-                      key={i}
-                      className="absolute bottom-8 w-6 h-6 rounded-full pointer-events-none"
-                      style={{
-                        left: `${42 + i * 8}%`,
-                        background: 'rgba(180,240,255,0.35)',
-                        filter: 'blur(6px)',
-                      }}
-                      initial={{ opacity: 0, y: 0, scale: 0.6 }}
-                      animate={{ opacity: [0, 0.7, 0], y: -46, x: (i - 1) * 14, scale: 1.3 }}
-                      transition={{ duration: 1.4, delay: 0.55 + i * 0.18, ease: 'easeOut' }}
-                    />
-                  ))}
 
                   <div ref={figureRef} className="relative">
                     <CultivatorFigure claiming={isClaiming} calm={!!reduceMotion} />
@@ -554,7 +553,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElement
 
                 <span
                   id="idle-cultivation-title"
-                  className="relative mt-1 text-[9px] sm:text-[10px] lg:text-[11px] font-sc uppercase tracking-[0.35em] text-portal/60"
+                  className="relative mt-1 text-[10px] sm:text-[11px] lg:text-xs font-sc uppercase tracking-[0.35em] text-portal/60"
                 >
                   Closed-Door Cultivation
                 </span>
