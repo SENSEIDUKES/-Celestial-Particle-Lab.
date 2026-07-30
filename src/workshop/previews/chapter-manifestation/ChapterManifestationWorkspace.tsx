@@ -86,7 +86,11 @@ function useScrubberCosmetics() {
 /**
  * Media manifestation preview state — Workshop-only. Drives the media
  * zone's scroll reveal progression and whether the revealed scroll frames
- * the mock asset or the celestial vista placeholder.
+ * the mock asset or the celestial vista placeholder. Defaults to `sealed`
+ * so the tap-to-unseal flow is the first thing experienced: tapping the
+ * sealed scroll in the veil flips to `unsealing` and auto-advances to
+ * `revealed` after ~1.6s. The reveal pills stay as manual overrides and
+ * cancel any pending auto-advance.
  */
 const REVEAL_OPTIONS: { id: MediaRevealState; label: string }[] = [
   { id: 'sealed', label: 'Sealed' },
@@ -105,10 +109,39 @@ const MOCK_REVEALED_ASSET: RevealedMediaAsset = {
 };
 
 function useMediaPreview() {
-  const [reveal, setReveal] = useState<MediaRevealState>('unsealing');
+  const [reveal, setRevealState] = useState<MediaRevealState>('sealed');
   const [revealedContent, setRevealedContent] = useState('mock');
+  const unsealTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingUnseal = () => {
+    if (unsealTimer.current !== null) {
+      clearTimeout(unsealTimer.current);
+      unsealTimer.current = null;
+    }
+  };
+
+  // No pending timer may outlive the preview hook.
+  useEffect(() => clearPendingUnseal, []);
+
+  // Manual override from the reveal pills — cancels any auto-advance.
+  const setReveal = (next: MediaRevealState) => {
+    clearPendingUnseal();
+    setRevealState(next);
+  };
+
+  // Tap-to-unseal: sealed → unsealing → (after ~1.6s) revealed.
+  const unsealScroll = () => {
+    if (reveal !== 'sealed') return;
+    clearPendingUnseal();
+    setRevealState('unsealing');
+    unsealTimer.current = setTimeout(() => {
+      unsealTimer.current = null;
+      setRevealState('revealed');
+    }, 1600);
+  };
+
   const asset = revealedContent === 'mock' ? MOCK_REVEALED_ASSET : null;
-  return { reveal, setReveal, revealedContent, setRevealedContent, asset };
+  return { reveal, setReveal, unsealScroll, revealedContent, setRevealedContent, asset };
 }
 
 /**
@@ -282,6 +315,8 @@ function SimulationControls({
         {optionRow('Revealed Content', REVEALED_CONTENT_OPTIONS, media.revealedContent, media.setRevealedContent)}
         <p className="text-[10px] text-neutral-600">
           Applies when the selected operation is a media operation (Cover Art, Image, Audio, Visual / Motion).
+          With the veil open on Sealed, tap the scroll itself to unseal it — the reveal auto-advances
+          Unsealing → Revealed after ~1.6s; the pills above remain manual overrides.
         </p>
       </section>
 
@@ -401,6 +436,7 @@ function DevelopmentVeilCanvas({
         destinationId={cosmetics.destinationId}
         mediaReveal={media.reveal}
         mediaAsset={media.asset}
+        onMediaUnseal={media.unsealScroll}
       />
     </div>
   );
