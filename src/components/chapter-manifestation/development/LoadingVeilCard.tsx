@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import type { LoadingTaskCard } from '../shared/taskCard';
 import SwordCultivatorClash from './SwordCultivatorClash';
 import ManifestationChamber, { ChamberForegroundMotes } from './ManifestationChamber';
+import JourneyScrubber from './journey-scrubber/JourneyScrubber';
 
 const ACCENT = {
   versa: '#8B0000',
@@ -90,9 +91,10 @@ export interface LoadingVeilCardProps {
  * chamber, replacing the stacked rectangular card:
  * 1. Versa hero — emblem + refined violet aura at the top, sized to fill
  *    her zone naturally with less dead space around her
- * 2. Compact chapter status — one always-visible line
- *    ("Chapter 1 · Manifesting 9/20 · ~23s") with a thin progress bar
- *    directly beneath it
+ * 2. Journey scrubber — layered status (identity / state / live detail)
+ *    above a curved qi path: a cultivator traveler runs toward a
+ *    destination gate as normalized progress advances, with an illuminated
+ *    trail behind it (replaces the old thin progress bar)
  * 3. Circular chamber — ManifestationChamber owns an isolated three-layer
  *    stacking contract (shared ambient effects behind, the scene clear in
  *    the foreground, a capped set of foreground motes above), and the
@@ -115,15 +117,14 @@ export interface LoadingVeilCardProps {
  */
 export default function LoadingVeilCard({ task, backdrop, emblemClassName }: LoadingVeilCardProps) {
   const isVersa = task.agentId === 'versa';
-  const progressWidth = task.progress;
+
+  // Normalize the task card's 0–100 progress onto the scrubber's 0–1 range;
+  // null (indeterminate) passes through unchanged.
+  const normalizedProgress =
+    task.progress === null ? null : Math.min(1, Math.max(0, task.progress / 100));
 
   const estimate =
     task.estimatedSecondsRemaining !== null ? `~${task.estimatedSecondsRemaining}s` : null;
-
-  // "Chapter 1 · Manifesting 9/20 · ~23s" — one compact line, always visible.
-  const statusLine = [task.trackerTitle, task.trackerDetail, estimate]
-    .filter(Boolean)
-    .join(' · ');
 
   return (
     <motion.div
@@ -269,29 +270,22 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName }: Loa
         </div>
       </div>
 
-      {/* ── Zone 2 · Compact chapter status ─────────────────────────────────
-          One line, always visible: Chapter 1 · Manifesting 9/20 · ~23s.
-          A thin progress bar sits directly beneath it. */}
+      {/* ── Zone 2 · Journey scrubber ───────────────────────────────────────
+          Layered status (identity · state, live detail beneath) above a
+          curved qi path the cultivator traveler walks toward the gate.
+          Progress arrives as the task card's 0–100 value, normalized here
+          to the scrubber's 0–1 contract; null keeps the indeterminate drift. */}
       <div className="relative z-10 flex-none px-6 pt-3">
-        <p className="font-sans text-xs sm:text-sm text-neutral-200 tracking-wide">
-          {statusLine}
-        </p>
-        <div className="mt-1.5 mx-auto w-full max-w-[260px] h-[3px] rounded-full bg-neutral-800/80 overflow-hidden">
-          {progressWidth !== null ? (
-            <motion.div
-              className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
-              initial={{ width: '6%' }}
-              animate={{ width: `${progressWidth}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            />
-          ) : (
-            <motion.div
-              className={`h-full rounded-full ${isVersa ? 'bg-human shadow-[0_0_8px_rgba(139,0,0,0.6)]' : 'bg-portal shadow-[0_0_8px_rgba(4,172,255,0.6)]'}`}
-              animate={{ width: ['12%', '55%', '12%'] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            />
-          )}
-        </div>
+        <JourneyScrubber
+          progress={normalizedProgress}
+          status={{
+            title: task.trackerTitle,
+            state: task.trackerDetail,
+            detail: estimate ?? undefined,
+          }}
+          accent={isVersa ? '#a855f7' : '#04ACFF'}
+          accentSoft={isVersa ? '#d8b4fe' : '#7dd3fc'}
+        />
       </div>
 
       {/* ── Zone 3 · Circular chamber ───────────────────────────────────────
