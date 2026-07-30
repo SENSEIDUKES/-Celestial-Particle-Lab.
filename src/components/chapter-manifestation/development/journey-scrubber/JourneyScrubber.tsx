@@ -20,8 +20,8 @@ export interface JourneyScrubberProps {
    * passage count or flow. Null renders an indeterminate drift.
    */
   progress: number | null;
-  /** Layered status text rendered above the path. */
-  status: JourneyScrubberStatus;
+  /** Layered status text rendered above the path. Omit for a path-only scrubber. */
+  status?: JourneyScrubberStatus;
   /** Traveler skin id — see travelers.ts registry. Defaults to the cultivator. */
   travelerId?: string;
   /**
@@ -119,22 +119,26 @@ export default function JourneyScrubber({
   return (
     <div className={`flex flex-col items-center ${className ?? ''}`}>
       {/* Layered status — identity / current state / live detail.
-          Wraps naturally; no fixed single-line contract to break. */}
-      <p className="font-sans text-xs sm:text-sm tracking-wide text-center">
-        <span className="text-neutral-100 font-medium">{status.title}</span>
-        {status.state ? <span className="text-neutral-300"> · {status.state}</span> : null}
-      </p>
-      {status.detail ? (
-        <p className="font-sans text-[11px] text-neutral-500 tracking-wide text-center">
-          {status.detail}
-        </p>
-      ) : null}
+          Optional: a path-only scrubber renders no text block. */}
+      {status && (
+        <>
+          <p className="font-sans text-xs sm:text-sm tracking-wide text-center">
+            <span className="text-neutral-100 font-medium">{status.title}</span>
+            {status.state ? <span className="text-neutral-300"> · {status.state}</span> : null}
+          </p>
+          {status.detail ? (
+            <p className="font-sans text-[11px] text-neutral-500 tracking-wide text-center">
+              {status.detail}
+            </p>
+          ) : null}
+        </>
+      )}
 
       <svg
         viewBox="0 0 400 116"
         className="mt-1 w-full max-w-[300px] block overflow-visible"
         role="progressbar"
-        aria-label={`${status.title}${status.state ? `, ${status.state}` : ''}`}
+        aria-label={status ? `${status.title}${status.state ? `, ${status.state}` : ''}` : 'Manifestation journey progress'}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={clamped === null ? undefined : Math.round(clamped * 100)}

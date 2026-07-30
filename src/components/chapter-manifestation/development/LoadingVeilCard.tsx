@@ -99,18 +99,20 @@ export interface LoadingVeilCardProps {
  * shell hosting two manifestation modes. The shell is identical across both:
  * 1. Versa hero — emblem + refined violet aura at the top, sized to fill
  *    her zone naturally with less dead space around her
- * 2. Journey scrubber — layered status (identity / state / live detail)
- *    above a curved qi path: a cultivator traveler runs toward a
- *    destination gate as normalized progress advances, with an illuminated
- *    trail behind it (replaces the old thin progress bar)
+ * 2. Journey scrubber — a path-only curved qi path: a cultivator traveler
+ *    runs toward a destination gate as normalized progress advances, with
+ *    an illuminated trail behind it (replaces the old thin progress bar).
+ *    No status text above the arc — chapter identity and progress live with
+ *    the quote at the bottom.
  * 3. Active manifestation zone — the ONLY zone that changes by mode
  *    (task.manifestation, resolved from the operation via the taxonomy in
  *    shared/manifestation.ts): NarrativeManifestationZone renders the
  *    chamber with a system-selected omen scene; MediaManifestationZone
  *    renders the same chamber with the agnostic celestial scroll reveal.
  *    Both inherit the chamber's isolated three-layer stacking contract.
- * 4. Versa's evolving line — the rotating quote rests at the bottom of the
- *    chamber, italic and atmospheric; the language set changes per mode.
+ * 4. Chapter line + Versa's evolving line — a persistent "Chapter N | X%"
+ *    line above the rotating quote at the bottom of the chamber; the quote
+ *    is the only text that changes, and the language set changes per mode.
  *
  * Explicitly excluded: Reader Chamber, Codex, and Narration manifestations
  * never route through these modes — they own dedicated manifestation logic.
@@ -135,9 +137,6 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
   const normalizedProgress =
     task.progress === null ? null : Math.min(1, Math.max(0, task.progress / 100));
 
-  const estimate =
-    task.estimatedSecondsRemaining !== null ? `~${task.estimatedSecondsRemaining}s` : null;
-
   return (
     <motion.div
       key="fullscreen-veil"
@@ -156,9 +155,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
       )}
 
       {/* ── Zone 1 · Versa hero ─────────────────────────────────────────────
-          Emblem + aura, sized up to fill her zone naturally. The aura layers
-          are unchanged — only the footprint is tighter. */}
-      <div className="relative z-10 flex-none h-[27dvh] min-h-[168px] flex items-end justify-center pointer-events-none">
+          Emblem + aura, sized up to fill her zone naturally. The zone grew
+          into the space the scrubber status text used to occupy, so Versa
+          sits lower and more centered instead of cramped at the top. */}
+      <div className="relative z-10 flex-none h-[32dvh] min-h-[196px] flex items-end justify-center pointer-events-none">
         <div className={`relative w-32 h-32 sm:w-36 sm:h-36 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
           <CelestialSigil isVersa={isVersa} />
 
@@ -180,13 +180,16 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
 
           {isVersa ? (
             <>
-              {/* Nebula heart — saturated violet mass, breathing slowly */}
+              {/* Nebula heart — saturated violet mass, breathing slowly.
+                  Radius pulled in ~20% and glow softened ~15% so the aura
+                  stays wrapped around Versa instead of bleeding onto the
+                  scrubber beneath her. */}
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-55%] rounded-full"
+                className="absolute inset-[-34%] rounded-full"
                 style={{
                   background:
-                    'radial-gradient(circle at 50% 52%, rgba(233,213,255,0.5) 0%, rgba(192,132,252,0.45) 22%, rgba(147,51,234,0.38) 45%, rgba(88,28,135,0.28) 66%, transparent 82%)',
+                    'radial-gradient(circle at 50% 52%, rgba(233,213,255,0.42) 0%, rgba(192,132,252,0.38) 22%, rgba(147,51,234,0.32) 45%, rgba(88,28,135,0.24) 66%, transparent 82%)',
                   filter: 'blur(26px)',
                   mixBlendMode: 'screen',
                 }}
@@ -199,7 +202,7 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
                 className="absolute inset-[-6%] rounded-full"
                 style={{
                   background:
-                    'radial-gradient(circle at 50% 58%, rgba(243,232,255,0.65) 0%, rgba(216,180,254,0.4) 40%, transparent 70%)',
+                    'radial-gradient(circle at 50% 58%, rgba(243,232,255,0.55) 0%, rgba(216,180,254,0.34) 40%, transparent 70%)',
                   filter: 'blur(12px)',
                   mixBlendMode: 'screen',
                 }}
@@ -221,10 +224,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
             <>
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-10%] rounded-full"
+                className="absolute inset-[-8%] rounded-full"
                 style={{
                   background:
-                    'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.55) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.45) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
+                    'conic-gradient(from 0deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.47) 18%, rgba(168,85,247,0) 40%, rgba(139,92,246,0.38) 65%, rgba(168,85,247,0) 88%, rgba(168,85,247,0) 100%)',
                   filter: 'blur(8px)',
                   mixBlendMode: 'screen',
                 }}
@@ -233,10 +236,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
               />
               <motion.div
                 aria-hidden="true"
-                className="absolute inset-[-22%] rounded-full"
+                className="absolute inset-[-17%] rounded-full"
                 style={{
                   background:
-                    'conic-gradient(from 180deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.35) 22%, rgba(216,180,254,0) 46%, rgba(147,51,234,0.3) 70%, rgba(216,180,254,0) 92%, rgba(216,180,254,0) 100%)',
+                    'conic-gradient(from 180deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.3) 22%, rgba(216,180,254,0) 46%, rgba(147,51,234,0.26) 70%, rgba(216,180,254,0) 92%, rgba(216,180,254,0) 100%)',
                   filter: 'blur(14px)',
                   mixBlendMode: 'screen',
                 }}
@@ -283,18 +286,14 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
       </div>
 
       {/* ── Zone 2 · Journey scrubber ───────────────────────────────────────
-          Layered status (identity · state, live detail beneath) above a
-          curved qi path the cultivator traveler walks toward the gate.
+          Path-only presentation — no status text above the arc. The chapter
+          identity and progress now live with the quote at the bottom (Zone 4),
+          so the traveler walks the curved qi path toward the gate on its own.
           Progress arrives as the task card's 0–100 value, normalized here
           to the scrubber's 0–1 contract; null keeps the indeterminate drift. */}
       <div className="relative z-10 flex-none px-6 pt-3">
         <JourneyScrubber
           progress={normalizedProgress}
-          status={{
-            title: task.trackerTitle,
-            state: task.trackerDetail,
-            detail: estimate ?? undefined,
-          }}
           travelerId={travelerId}
           trailStyle={trailStyle}
           destinationId={destinationId}
@@ -328,25 +327,46 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
         </div>
       )}
 
-      {/* ── Zone 4 · Versa's evolving line ──────────────────────────────────
-          The rotating quote rests at the bottom of the chamber where the
-          scene title used to be — elegant, atmospheric, the only text that
-          changes. */}
-      <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex items-center justify-center gap-3 min-h-[44px]">
-        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={task.status}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.45, ease: 'easeInOut' }}
-            className="font-serif italic text-sm text-neutral-300 leading-snug"
+      {/* ── Zone 4 · Chapter pill + Versa's evolving line ───────────────────
+          Consolidated status hierarchy at the bottom of the chamber: a
+          persistent chapter pill ("Chapter 1 ｜ 42%") in a softly glowing
+          accent-tinted capsule above the rotating quote — the only text
+          that changes. Indeterminate operations (no progress) render the
+          quote alone. */}
+      <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex flex-col items-center justify-center min-h-[44px]">
+        {task.progress !== null && (
+          <div
+            className={`mb-2 inline-flex items-center gap-2.5 rounded-full border px-4 py-1 backdrop-blur-sm ${
+              isVersa
+                ? 'border-purple-300/25 bg-gradient-to-b from-purple-400/15 to-purple-500/5 shadow-[0_0_20px_rgba(168,85,247,0.22),inset_0_1px_0_rgba(233,213,255,0.14)]'
+                : 'border-sky-300/25 bg-gradient-to-b from-sky-400/15 to-sky-500/5 shadow-[0_0_20px_rgba(4,172,255,0.22),inset_0_1px_0_rgba(224,242,254,0.14)]'
+            }`}
           >
-            {task.status}
-          </motion.span>
-        </AnimatePresence>
-        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+            <span className={`font-sans text-xs sm:text-sm tracking-wide font-medium ${isVersa ? 'text-purple-100/90' : 'text-sky-100/90'}`}>
+              {task.trackerTitle}
+            </span>
+            <span aria-hidden="true" className={`h-3 w-px ${isVersa ? 'bg-purple-300/35' : 'bg-sky-300/35'}`} />
+            <span className={`font-sans text-xs sm:text-sm tracking-wide font-semibold ${isVersa ? 'text-purple-50' : 'text-sky-50'}`}>
+              {Math.round(task.progress)}%
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-center gap-3">
+          <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={task.status}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              className="font-serif italic text-sm text-neutral-300 leading-snug"
+            >
+              &ldquo;{task.status}&rdquo;
+            </motion.span>
+          </AnimatePresence>
+          <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+        </div>
       </div>
     </motion.div>
   );
