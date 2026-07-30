@@ -144,7 +144,7 @@ export default function AILoadingVeil({
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
-          speedScale={0.7}
+          speedScale={0.47}
           dispersion={0.96}
         />
       }
