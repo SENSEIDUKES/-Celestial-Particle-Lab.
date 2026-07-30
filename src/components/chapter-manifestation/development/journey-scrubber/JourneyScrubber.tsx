@@ -25,9 +25,10 @@ export interface JourneyScrubberProps {
   /** Traveler skin id — see travelers.ts registry. Defaults to the cultivator. */
   travelerId?: string;
   /**
-   * Aura trail preset id — see trails.tsx registry (`qi-glow`, `mist-trail`,
-   * `starlight-trail`). Defaults to `qi-glow`. Presets change only the
-   * traveled-portion rendering; geometry and every other layer stay shared.
+   * Aura trail preset id — see trails.tsx registry (`qi-glow`,
+   * `starlight-trail`, `scroll-trail`). Defaults to `qi-glow`. Presets
+   * change only the milestone markers along the path; geometry and every
+   * other layer stay shared.
    */
   trailStyle?: string;
   /**
@@ -48,14 +49,14 @@ export interface JourneyScrubberProps {
 
 /**
  * Journey Scrubber — the manifestation progress presentation as a small
- * celestial journey: a curved qi path, an illuminated trail, milestone
- * motes, a traveler walking the arc, and a destination gate that glows on
- * arrival.
+ * celestial journey: a curved qi path, an illuminated traveled portion,
+ * milestone markers that light as the journey advances, a traveler walking
+ * the arc, and a destination gate that glows on arrival.
  *
  * Progress is a normalized 0–1 prop; the run loop is decoupled from path
  * position (the cycle loops continuously, position is eased from progress).
  * Every layer is separable: path/milestones/marker/status live here, the
- * traveler comes from the registry in travelers.ts, the completed-trail
+ * traveler comes from the registry in travelers.ts, the milestone marker
  * rendering comes from the preset registry in trails.tsx, the destination
  * marker comes from the family registry in destinations.tsx, and the status
  * layers are plain props — future skins, presets, or text layouts touch
@@ -99,7 +100,7 @@ export default function JourneyScrubber({
   const arrived = clamped !== null && clamped >= 1;
 
   const Traveler = resolveTraveler(travelerId);
-  const Trail = resolveTrail(trailStyle);
+  const TrailMarker = resolveTrail(trailStyle);
   // Destination is independent from traveler selection; when the caller
   // doesn't pick one, the traveler's recommended family applies.
   const Destination = resolveDestination(destinationId ?? defaultDestinationFor(travelerId));
@@ -163,21 +164,27 @@ export default function JourneyScrubber({
         <path d={PATH_D} fill="none" stroke={accent} strokeWidth="3.5" opacity="0.1" filter={`url(#${softId})`} />
         <path d={PATH_D} fill="none" stroke="#8b8b9e" strokeWidth="1" opacity="0.28" />
 
-        {/* Illuminated trail — the completed portion behind the traveler,
-            rendered by the selected preset (trails.tsx). Geometry is always
-            the shared curve; only the traveled-portion styling varies. */}
-        {clamped !== null ? (
-          <Trail
-            pathD={PATH_D}
-            progress={clamped}
-            accent={accent}
-            accentSoft={accentSoft}
-            glowId={glowId}
-            softId={softId}
-            trailGradId={trailGradId}
-            pointAt={pointAt}
-          />
-        ) : (
+        {/* Lit path — the completed portion behind the traveler. Shared
+            across presets (the qi-glow rendering); presets only restyle
+            the milestone markers. */}
+        {clamped !== null && (
+          <>
+            <path
+              d={PATH_D} fill="none" pathLength={1}
+              stroke={accent} strokeWidth="4" strokeLinecap="round"
+              strokeDasharray={`${clamped} 1`} opacity="0.3" filter={`url(#${softId})`}
+            />
+            <path
+              d={PATH_D} fill="none" pathLength={1}
+              stroke={`url(#${trailGradId})`} strokeWidth="1.8" strokeLinecap="round"
+              strokeDasharray={`${clamped} 1`} filter={`url(#${glowId})`}
+            />
+          </>
+        )}
+
+        {/* Indeterminate drift — a calm pulse over the first stretch of the
+            path so the veil still breathes when progress is unknown */}
+        {clamped === null && (
           <motion.path
             d={PATH_D} fill="none" pathLength={1}
             stroke={accent} strokeWidth="1.6" strokeLinecap="round"
@@ -187,20 +194,22 @@ export default function JourneyScrubber({
           />
         )}
 
-        {/* Milestone motes — light as the traveler passes */}
-        {MILESTONES.map((t) => {
+        {/* Milestone markers — rendered by the selected preset (trails.tsx),
+            each lights as the traveler passes. Marker shape is the preset's
+            whole job; position and lit state stay shared. */}
+        {MILESTONES.map((t, i) => {
           const p = pointAt(t);
           const lit = clamped !== null && clamped >= t;
           return (
-            <circle
-              key={t}
-              cx={p.x} cy={p.y} r={lit ? 2 : 1.4}
-              fill={lit ? accentSoft : 'none'}
-              stroke={lit ? 'none' : '#8b8b9e'}
-              strokeWidth="0.8"
-              opacity={lit ? 0.95 : 0.45}
-              filter={lit ? `url(#${glowId})` : undefined}
-            />
+            <g key={t} transform={`translate(${p.x} ${p.y})`}>
+              <TrailMarker
+                lit={lit}
+                accent={accent}
+                accentSoft={accentSoft}
+                glowId={glowId}
+                index={i}
+              />
+            </g>
           );
         })}
 
