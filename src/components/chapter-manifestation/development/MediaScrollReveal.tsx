@@ -464,7 +464,7 @@ const VistaPlaceholder: React.FC<{ mediaKind: MediaKind; calm: boolean }> = ({ m
     )}
 
     <text
-      x="200" y="210" textAnchor="middle" fontSize="10" letterSpacing="2"
+      x="200" y="198" textAnchor="middle" fontSize="10" letterSpacing="2"
       fill="#e9d5ff" opacity="0.7" fontFamily="serif" fontStyle="italic"
     >
       {MEDIA_KIND_LABEL[mediaKind]}
