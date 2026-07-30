@@ -141,12 +141,18 @@ export interface ManifestationChamberProps {
  * cinematic backdrop, hero aura, status UI) can slip between them. Future
  * scenes are dropped in as `scene` and inherit the same behavior with no
  * per-scene layering fixes.
+ *
+ * Sizing contract: the chamber is a square sized to 88% of its host zone's
+ * smaller dimension (`w-[88cqmin]`, container query units). The host — the
+ * veil's active manifestation zone — provides `container-type: size`, so the
+ * chamber always fits inside the zone on any viewport instead of guessing
+ * from viewport units and getting hard-clipped by the zone's overflow.
  */
 export default function ManifestationChamber({ isVersa, scene, ambient, foreground }: ManifestationChamberProps) {
   return (
     <div
       data-celestial-foreground
-      className="relative aspect-square w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)] isolate"
+      className="relative aspect-square w-[88cqmin] isolate"
     >
       {/* ── Layer 0 · chamber frame + shared ambient effects (behind) ── */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
