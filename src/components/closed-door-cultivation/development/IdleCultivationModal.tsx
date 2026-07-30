@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 const PORTAL_RGB = '4,172,255';
 const COLLAPSE_AFTER_MS = 7000;
-const CLAIM_CLOSE_MS = 1500;
+const CLAIM_CLOSE_MS = 2500;
 
 /**
  * Progression lines keyed by days spent in the Library. The highest reached
@@ -65,6 +65,14 @@ interface Absorb {
   ey: number;
 }
 
+interface Flight {
+  /** cultivator center + target emblem point, in viewport coords */
+  sx: number;
+  sy: number;
+  ex: number;
+  ey: number;
+}
+
 /** Silhouette of a cross-legged cultivator: deep navy robes, thin cyan rim light, no face. */
 function CultivatorSvg({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const robeGradId = `cdc-robe-${useId()}`;
@@ -104,17 +112,21 @@ function CultivatorSvg({ className, style }: { className?: string; style?: React
   );
 }
 
-/** The meditating figure with its breathing aura. Holds its seat and flares once as the claimed qi pours into its dantian. */
+/** The meditating figure with its breathing aura. Flares once as the claimed qi pours into its dantian, then disperses upward toward the target emblem. */
 function CultivatorFigure({ claiming, calm = false }: { claiming: boolean; calm?: boolean }) {
   return (
     <motion.div
       className="relative w-32 h-28 sm:w-36 sm:h-32 lg:w-48 lg:h-40"
       animate={
         claiming
-          ? { opacity: 1, y: 0, filter: ['brightness(1) blur(0px)', 'brightness(1.8) blur(0px)', 'brightness(1.1) blur(0px)'] }
+          ? {
+              opacity: [1, 1, 1, 0],
+              y: [0, 0, 0, -14],
+              filter: ['brightness(1) blur(0px)', 'brightness(1.8) blur(0px)', 'brightness(1.1) blur(0px)', 'brightness(1) blur(6px)'],
+            }
           : { opacity: 1, y: 0, filter: 'brightness(1) blur(0px)' }
       }
-      transition={claiming ? { duration: 1.1, delay: 0.45, times: [0, 0.4, 1], ease: 'easeOut' } : { duration: 0.6 }}
+      transition={claiming ? { duration: 2.0, delay: 0.4, times: [0, 0.25, 0.55, 1], ease: 'easeOut' } : { duration: 0.6 }}
     >
       {/* soft cyan aura breathing around the body; flashes once as the qi lands */}
       <motion.div
@@ -248,20 +260,96 @@ function CloudAbsorb({ absorb }: { absorb: Absorb }) {
   );
 }
 
+/**
+ * Final claim phase: the charged cultivator disperses into qi that spirals
+ * up into the target emblem. Starts after the dantian absorption (~1s in).
+ */
+function QiFlight({ flight }: { flight: Flight }) {
+  const { sx, sy, ex, ey } = flight;
+  const lowPower = useReducedMotion() || isLowPowerDevice();
+  // Freeze the random particle paths per claim so unrelated re-renders don't retarget the burst.
+  const particles = useMemo(() => {
+    const dx = ex - sx;
+    const dy = ey - sy;
+    const len = Math.hypot(dx, dy) || 1;
+    const px = -dy / len;
+    const py = dx / len;
+    return Array.from({ length: lowPower ? 12 : 26 }).map((_, i) => {
+      const sign = i % 2 === 0 ? 1 : -1;
+      const sway1 = (50 + Math.random() * 70) * sign;
+      const sway2 = (25 + Math.random() * 40) * -sign;
+      return {
+        m1x: sx + dx * 0.35 + px * sway1,
+        m1y: sy + dy * 0.35 + py * sway1 - 50,
+        m2x: sx + dx * 0.72 + px * sway2,
+        m2y: sy + dy * 0.72 + py * sway2 - 24,
+        duration: 0.8 + Math.random() * 0.2,
+        delay: 1.0 + i * 0.014 + Math.random() * 0.06,
+        size: 2 + Math.random() * 3,
+      };
+    });
+  }, [flight, lowPower]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
+      {particles.map((p, i) => {
+        return (
+          <motion.span
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: p.size,
+              height: p.size,
+              background: '#a5f3fc',
+              boxShadow: `0 0 8px rgba(${PORTAL_RGB},1), 0 0 16px rgba(${PORTAL_RGB},0.6)`,
+              filter: 'blur(0.5px)',
+            }}
+            initial={{ x: sx, y: sy, opacity: 0, scale: 0.4 }}
+            animate={{
+              x: [sx, p.m1x, p.m2x, ex],
+              y: [sy, p.m1y, p.m2y, ey],
+              opacity: [0, 1, 1, 0],
+              scale: [0.4, 1, 0.9, 0.2],
+            }}
+            transition={{ duration: p.duration, delay: p.delay, ease: 'easeIn', times: [0, 0.4, 0.75, 1] }}
+          />
+        );
+      })}
+      {/* the emblem briefly glows as it absorbs the qi */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          left: ex,
+          top: ey,
+          width: 64,
+          height: 64,
+          x: '-50%',
+          y: '-50%',
+          background: `radial-gradient(circle, rgba(${PORTAL_RGB},0.8) 0%, rgba(${PORTAL_RGB},0.25) 45%, transparent 70%)`,
+          filter: 'blur(4px)',
+        }}
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: [0, 0.95, 0], scale: [0.5, 1.5, 1.9] }}
+        transition={{ duration: 0.55, delay: 1.85, times: [0, 0.35, 1] }}
+      />
+    </div>
+  );
+}
+
 export interface IdleCultivationModalProps {
   qiEarned: number | null;
   onClose: () => void;
   onClaim: (qi: number) => Promise<void>;
-  /** @deprecated claim now absorbs into the cultivator; kept for API compatibility. */
-  targetElementId?: string;
+  targetElementId?: string; // e.g. 'celestial-library-emblem'
   /** Days the user has been in the Library; drives the progression line. */
   daysCultivating?: number;
 }
 
-export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivating = 1 }: IdleCultivationModalProps) {
+export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem', daysCultivating = 1 }: IdleCultivationModalProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [absorb, setAbsorb] = useState<Absorb | null>(null);
+  const [flight, setFlight] = useState<Flight | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const figureRef = useRef<HTMLDivElement | null>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -311,7 +399,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivati
     if (isClaiming || !qiEarned) return;
     setIsClaiming(true);
 
-    // Particles pour from the cloud down into the cultivator's dantian (~62% down the figure).
+    // Phase 1: particles pour from the cloud down into the cultivator's dantian (~62% down the figure).
     const bubble = bubbleRef.current?.getBoundingClientRect();
     const figure = figureRef.current?.getBoundingClientRect();
     setAbsorb({
@@ -323,6 +411,15 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivati
       ey: figure ? figure.top + figure.height * 0.62 : window.innerHeight - 120,
     });
 
+    // Phase 2: once charged, the cultivator disperses up into the target emblem.
+    const emblem = document.getElementById(targetElementId)?.getBoundingClientRect();
+    setFlight({
+      sx: figure ? figure.left + figure.width / 2 : window.innerWidth / 2,
+      sy: figure ? figure.top + figure.height * 0.55 : window.innerHeight - 140,
+      ex: emblem ? emblem.left + emblem.width / 2 : window.innerWidth - 64,
+      ey: emblem ? emblem.top + emblem.height / 2 : 64,
+    });
+
     const claimStart = performance.now();
     try {
       await onClaim(qiEarned);
@@ -332,15 +429,17 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivati
       // vignette so the user can retry instead of silently losing the reward.
       setIsClaiming(false);
       setAbsorb(null);
+      setFlight(null);
       return;
     }
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    // Close CLAIM_CLOSE_MS after the claim STARTED so the absorb sequence
+    // Close CLAIM_CLOSE_MS after the claim STARTED so the claim sequence
     // always gets its full moment regardless of network latency.
     const remaining = Math.max(0, CLAIM_CLOSE_MS - (performance.now() - claimStart));
     closeTimeoutRef.current = setTimeout(() => {
       setIsClaiming(false);
       setAbsorb(null);
+      setFlight(null);
       onClose();
     }, remaining);
   };
@@ -348,6 +447,7 @@ export function IdleCultivationModal({ qiEarned, onClose, onClaim, daysCultivati
   return (
     <>
       {absorb && <CloudAbsorb absorb={absorb} />}
+      {flight && <QiFlight flight={flight} />}
       <AnimatePresence>
         {/* Full-viewport dim + soften: the Library stays visible enough to place the user, */}
         {/* not readable enough to compete, and stays up until claimed or minimized. */}
