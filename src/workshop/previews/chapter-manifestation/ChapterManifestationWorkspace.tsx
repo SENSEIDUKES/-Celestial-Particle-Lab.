@@ -36,7 +36,7 @@ const TRAVELER_OPTIONS = [
 
 const TRAIL_OPTIONS = [
   { id: 'qi-glow', label: 'Qi Glow' },
-  { id: 'mist-trail', label: 'Mist Trail' },
+  { id: 'scroll-trail', label: 'Scroll Trail' },
   { id: 'starlight-trail', label: 'Starlight Trail' },
 ];
 
