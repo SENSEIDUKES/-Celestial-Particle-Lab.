@@ -35,6 +35,11 @@ export interface LoadingSystemProps {
   travelerId?: string;
   trailStyle?: string;
   destinationId?: string;
+  /**
+   * Workshop-only media unseal pass-through, forwarded to the primary
+   * veil's media manifestation zone (tap-to-unseal on the sealed scroll).
+   */
+  onMediaUnseal?: () => void;
 }
 
 const DEFAULT_COMPACT_GRACE_MS = 1200;
@@ -63,6 +68,7 @@ export default function LoadingSystem({
   travelerId,
   trailStyle,
   destinationId,
+  onMediaUnseal,
 }: LoadingSystemProps) {
   const resolvedMode: Exclude<LoadingSystemMode, 'auto'> =
     mode === 'auto' ? (task?.preferredMode ?? 'primary') : mode;
@@ -96,6 +102,7 @@ export default function LoadingSystem({
           travelerId={travelerId}
           trailStyle={trailStyle}
           destinationId={destinationId}
+          onMediaUnseal={onMediaUnseal}
         />
       )}
       {showCompact && (

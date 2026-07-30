@@ -57,6 +57,12 @@ export interface MediaManifestationZoneProps {
   isVersa: boolean;
   /** The media variant of the card's ManifestationSpec. */
   spec: MediaManifestation;
+  /**
+   * Optional tap handler for the sealed scroll (tap-to-unseal). When
+   * omitted, the sealed state renders non-interactive. Reveal progression
+   * stays caller-owned — this only reports the tap.
+   */
+  onUnseal?: () => void;
 }
 
 /**
@@ -66,7 +72,7 @@ export interface MediaManifestationZoneProps {
  * layering contract as the narrative zone; what changes is the scene: an
  * agnostic celestial scroll reveal instead of narrative omen scenes.
  */
-export default function MediaManifestationZone({ isVersa, spec }: MediaManifestationZoneProps) {
+export default function MediaManifestationZone({ isVersa, spec, onUnseal }: MediaManifestationZoneProps) {
   return (
     <ManifestationChamber
       isVersa={isVersa}
@@ -76,6 +82,7 @@ export default function MediaManifestationZone({ isVersa, spec }: MediaManifesta
           mediaKind={spec.mediaKind}
           reveal={spec.reveal}
           asset={spec.asset}
+          onUnseal={onUnseal}
         />
       }
       foreground={<ChamberForegroundMotes isVersa={isVersa} />}
