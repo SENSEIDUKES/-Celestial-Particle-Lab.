@@ -118,12 +118,23 @@ export interface ManifestationChamberProps {
  * ManifestationChamber — the circular portal every manifestation scene lives
  * inside. It owns the stacking contract so individual scenes never have to:
  *
- *   Layer 0 (z-0)  · inner glow, portal rings, and shared `ambient` effects
- *                    — always behind the scene
+ *   Layer 0 (z-0)  · occlusion disc, inner glow, portal rings, and shared
+ *                    `ambient` effects — always behind the scene
  *   Layer 1 (z-10) · the `scene` itself — characters, trails, core effects;
  *                    visually clear in the foreground
  *   Layer 2 (z-20) · a small, controlled amount of scene-specific
  *                    `foreground` particles (see CHAMBER_FOREGROUND_MOTE_LIMIT)
+ *
+ * Two guarantees keep shared background effects (the celestial particle
+ * shower, bubbles, glyphs) from ever washing over the scene:
+ *
+ *   1. `data-celestial-foreground` on the chamber root — the shared
+ *      CelestialParticleShower treats marked regions as calm zones and
+ *      dims its particles to a whisper inside them (+padding). Because the
+ *      marker lives on the chamber, every scene placed here inherits it.
+ *   2. A soft occlusion disc in Layer 0 — a dark radial that sits behind the
+ *      scene and quietly absorbs any backdrop glow bleeding through the
+ *      veil's translucent wash, so the scene reads on a clean dark field.
  *
  * `isolate` gives the chamber its own stacking context: nothing inside can
  * escape above or below these layers, and nothing outside (the veil's
@@ -133,9 +144,21 @@ export interface ManifestationChamberProps {
  */
 export default function ManifestationChamber({ isVersa, scene, ambient, foreground }: ManifestationChamberProps) {
   return (
-    <div className="relative aspect-square w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)] isolate">
+    <div
+      data-celestial-foreground
+      className="relative aspect-square w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)] isolate"
+    >
       {/* ── Layer 0 · chamber frame + shared ambient effects (behind) ── */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
+        {/* Occlusion disc — absorbs backdrop particles/glow behind the scene
+            so the battle reads on a clean dark field */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 52%, rgba(2,0,8,0.72) 0%, rgba(2,0,8,0.55) 55%, rgba(2,0,8,0.25) 78%, transparent 96%)',
+          }}
+        />
         {/* Inner violet glow pooling inside the ring */}
         <div
           className="absolute inset-[6%] rounded-full"
