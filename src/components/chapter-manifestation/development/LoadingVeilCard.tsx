@@ -84,6 +84,14 @@ export interface LoadingVeilCardProps {
    * Optional spacing override for the agent emblem container (margins only).
    */
   emblemClassName?: string;
+  /**
+   * Workshop-only scrubber cosmetics pass-through (traveler / trail /
+   * destination ids). Production callers omit these and get the defaults;
+   * the Workshop simulator uses them to preview cosmetic combinations.
+   */
+  travelerId?: string;
+  trailStyle?: string;
+  destinationId?: string;
 }
 
 /**
@@ -115,7 +123,7 @@ export interface LoadingVeilCardProps {
  * bright core, twin counter-rotating cloak wisps, grounded pool, six motes.
  * Workshop-only: do not wire this into production flows.
  */
-export default function LoadingVeilCard({ task, backdrop, emblemClassName }: LoadingVeilCardProps) {
+export default function LoadingVeilCard({ task, backdrop, emblemClassName, travelerId, trailStyle, destinationId }: LoadingVeilCardProps) {
   const isVersa = task.agentId === 'versa';
 
   // Normalize the task card's 0–100 progress onto the scrubber's 0–1 range;
@@ -283,6 +291,9 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName }: Loa
             state: task.trackerDetail,
             detail: estimate ?? undefined,
           }}
+          travelerId={travelerId}
+          trailStyle={trailStyle}
+          destinationId={destinationId}
           accent={isVersa ? '#a855f7' : '#04ACFF'}
           accentSoft={isVersa ? '#d8b4fe' : '#7dd3fc'}
         />
