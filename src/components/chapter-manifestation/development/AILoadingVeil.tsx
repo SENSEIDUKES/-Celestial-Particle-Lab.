@@ -3,7 +3,6 @@ import LoadingSystem from './LoadingSystem';
 import { buildAILoadingTaskCard } from '../shared/taskCard';
 import {
   manifestationModeForOperation,
-  mediaTrackerDetail,
   NARRATIVE_STATUS_LINES,
   MEDIA_STATUS_LINES,
   type MediaRevealState,
@@ -28,11 +27,6 @@ interface DevelopmentAILoadingVeilProps extends AILoadingVeilProps {
   mediaAsset?: RevealedMediaAsset | null;
 }
 
-// DEV-only: target passage count for the live "Manifesting N/20" readout.
-// Kept local to this fork rather than the shared taskCard so the reference
-// veil's "N passages formed" copy is untouched.
-const CHAPTER_PASSAGE_TARGET = 20;
-
 /**
  * DEV copy of AILoadingVeil — the experimental veil under active iteration.
  * Diverges from the reference (AILoadingVeil) so visual changes can be
@@ -49,6 +43,11 @@ const CHAPTER_PASSAGE_TARGET = 20;
  *   chapter, media ops rotate the media lines — and the media tracker
  *   detail follows the scroll's reveal progression. Reader Chamber, Codex,
  *   and Narration never flow through here.
+ * - 2026-07-30: status consolidation. The scrubber no longer carries a
+ *   status block; the chapter identity and progress live at the bottom as
+ *   "Chapter N | X%" above the rotating quote. The live "Manifesting N/20"
+ *   readout is gone — the journey scrubber's traveler position and the
+ *   bottom percentage carry progress now.
  * Workshop-only: do not wire this into production flows.
  */
 export default function AILoadingVeil({
@@ -84,8 +83,8 @@ export default function AILoadingVeil({
   const statusLines = isMediaOperation ? MEDIA_STATUS_LINES : NARRATIVE_STATUS_LINES;
   const rotatesQuotes = isChapterPhase || isMediaOperation;
 
-  // The scroll's reveal progression, resolved once for both the card spec
-  // and the tracker language (a supplied asset implies 'revealed').
+  // The scroll's reveal progression, resolved once for the card spec
+  // (a supplied asset implies 'revealed').
   const resolvedMediaReveal: MediaRevealState =
     mediaReveal ?? (mediaAsset ? 'revealed' : 'unsealing');
 
@@ -120,15 +119,6 @@ export default function AILoadingVeil({
     // Compact card: no atmospheric phrase and no phase marker pill.
     description: '',
     operationTitle: '',
-    // Live "Manifesting N/20" instead of "N passages formed" — reads as an
-    // active process rather than a technical quantity. Chapter tracker
-    // title ("Chapter 1") stays untouched and permanently visible above it.
-    // Media operations track the scroll's reveal progression instead.
-    trackerDetail: isChapterPhase
-      ? (passagesWoven > 0 ? `Manifesting ${passagesWoven}/${CHAPTER_PASSAGE_TARGET}` : 'Initiating Cosmic Channel')
-      : isMediaOperation
-        ? mediaTrackerDetail(resolvedMediaReveal)
-        : 'Spiritual matrix forming',
   };
 
   return (

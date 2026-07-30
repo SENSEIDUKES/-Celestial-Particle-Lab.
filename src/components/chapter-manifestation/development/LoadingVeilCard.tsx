@@ -99,18 +99,20 @@ export interface LoadingVeilCardProps {
  * shell hosting two manifestation modes. The shell is identical across both:
  * 1. Versa hero — emblem + refined violet aura at the top, sized to fill
  *    her zone naturally with less dead space around her
- * 2. Journey scrubber — layered status (identity / state / live detail)
- *    above a curved qi path: a cultivator traveler runs toward a
- *    destination gate as normalized progress advances, with an illuminated
- *    trail behind it (replaces the old thin progress bar)
+ * 2. Journey scrubber — a path-only curved qi path: a cultivator traveler
+ *    runs toward a destination gate as normalized progress advances, with
+ *    an illuminated trail behind it (replaces the old thin progress bar).
+ *    No status text above the arc — chapter identity and progress live with
+ *    the quote at the bottom.
  * 3. Active manifestation zone — the ONLY zone that changes by mode
  *    (task.manifestation, resolved from the operation via the taxonomy in
  *    shared/manifestation.ts): NarrativeManifestationZone renders the
  *    chamber with a system-selected omen scene; MediaManifestationZone
  *    renders the same chamber with the agnostic celestial scroll reveal.
  *    Both inherit the chamber's isolated three-layer stacking contract.
- * 4. Versa's evolving line — the rotating quote rests at the bottom of the
- *    chamber, italic and atmospheric; the language set changes per mode.
+ * 4. Chapter line + Versa's evolving line — a persistent "Chapter N | X%"
+ *    line above the rotating quote at the bottom of the chamber; the quote
+ *    is the only text that changes, and the language set changes per mode.
  *
  * Explicitly excluded: Reader Chamber, Codex, and Narration manifestations
  * never route through these modes — they own dedicated manifestation logic.
@@ -135,9 +137,6 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
   const normalizedProgress =
     task.progress === null ? null : Math.min(1, Math.max(0, task.progress / 100));
 
-  const estimate =
-    task.estimatedSecondsRemaining !== null ? `~${task.estimatedSecondsRemaining}s` : null;
-
   return (
     <motion.div
       key="fullscreen-veil"
@@ -156,9 +155,10 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
       )}
 
       {/* ── Zone 1 · Versa hero ─────────────────────────────────────────────
-          Emblem + aura, sized up to fill her zone naturally. The aura layers
-          are unchanged — only the footprint is tighter. */}
-      <div className="relative z-10 flex-none h-[27dvh] min-h-[168px] flex items-end justify-center pointer-events-none">
+          Emblem + aura, sized up to fill her zone naturally. The zone grew
+          into the space the scrubber status text used to occupy, so Versa
+          sits lower and more centered instead of cramped at the top. */}
+      <div className="relative z-10 flex-none h-[32dvh] min-h-[196px] flex items-end justify-center pointer-events-none">
         <div className={`relative w-32 h-32 sm:w-36 sm:h-36 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
           <CelestialSigil isVersa={isVersa} />
 
@@ -283,18 +283,14 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
       </div>
 
       {/* ── Zone 2 · Journey scrubber ───────────────────────────────────────
-          Layered status (identity · state, live detail beneath) above a
-          curved qi path the cultivator traveler walks toward the gate.
+          Path-only presentation — no status text above the arc. The chapter
+          identity and progress now live with the quote at the bottom (Zone 4),
+          so the traveler walks the curved qi path toward the gate on its own.
           Progress arrives as the task card's 0–100 value, normalized here
           to the scrubber's 0–1 contract; null keeps the indeterminate drift. */}
       <div className="relative z-10 flex-none px-6 pt-3">
         <JourneyScrubber
           progress={normalizedProgress}
-          status={{
-            title: task.trackerTitle,
-            state: task.trackerDetail,
-            detail: estimate ?? undefined,
-          }}
           travelerId={travelerId}
           trailStyle={trailStyle}
           destinationId={destinationId}
@@ -328,25 +324,33 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
         </div>
       )}
 
-      {/* ── Zone 4 · Versa's evolving line ──────────────────────────────────
-          The rotating quote rests at the bottom of the chamber where the
-          scene title used to be — elegant, atmospheric, the only text that
-          changes. */}
-      <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex items-center justify-center gap-3 min-h-[44px]">
-        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={task.status}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.45, ease: 'easeInOut' }}
-            className="font-serif italic text-sm text-neutral-300 leading-snug"
-          >
-            {task.status}
-          </motion.span>
-        </AnimatePresence>
-        <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+      {/* ── Zone 4 · Chapter line + Versa's evolving line ───────────────────
+          Consolidated status hierarchy at the bottom of the chamber: a
+          persistent chapter line ("Chapter 1 | 42%") above the rotating
+          quote — the only text that changes. Indeterminate operations
+          (no progress) render the quote alone. */}
+      <div className="relative z-10 flex-none px-6 pt-3 pb-7 flex flex-col items-center justify-center min-h-[44px]">
+        {task.progress !== null && (
+          <p className="font-sans text-xs sm:text-sm tracking-wide text-neutral-100 font-medium mb-1.5">
+            {task.trackerTitle} | {Math.round(task.progress)}%
+          </p>
+        )}
+        <div className="flex items-center justify-center gap-3">
+          <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={task.status}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              className="font-serif italic text-sm text-neutral-300 leading-snug"
+            >
+              &ldquo;{task.status}&rdquo;
+            </motion.span>
+          </AnimatePresence>
+          <Sparkles size={10} className={`${isVersa ? 'text-human/60' : 'text-portal/60'} shrink-0`} />
+        </div>
       </div>
     </motion.div>
   );
