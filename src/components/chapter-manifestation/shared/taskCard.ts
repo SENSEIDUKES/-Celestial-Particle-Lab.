@@ -1,4 +1,10 @@
 import { AGENTS } from '../../../lib/agents';
+import {
+  buildManifestationSpec,
+  type ManifestationSpec,
+  type MediaRevealState,
+  type RevealedMediaAsset,
+} from './manifestation';
 
 /**
  * LoadingTaskCard — the single interchangeable format every loading
@@ -52,6 +58,15 @@ export interface LoadingTaskCard {
   colorClass: string;
   /** Where the operation prefers to render; 'compact' for short/background tasks. */
   preferredMode: 'primary' | 'compact';
+
+  /**
+   * Aura Veil manifestation spec — which manifestation mode (narrative /
+   * media) and active zone the primary veil renders, resolved from the
+   * operation via the taxonomy in shared/manifestation.ts. Reader Chamber,
+   * Codex, and Narration manifestations never appear here; they own their
+   * dedicated manifestation logic elsewhere.
+   */
+  manifestation: ManifestationSpec;
 }
 
 /** Inputs the AILoadingVeil adapter resolves before building the card. */
@@ -66,6 +81,14 @@ export interface AILoadingTaskInput {
   statusQuote: string;
   /** Resolved 0–100 progress, or null for indeterminate. */
   progress: number | null;
+  /**
+   * Optional Aura Veil overrides: an explicit narrative omen scene, or the
+   * media reveal progression / finished asset. Omit for the taxonomy
+   * defaults (system-selected omen scene; unsealing scroll).
+   */
+  omenSceneId?: string;
+  mediaReveal?: MediaRevealState;
+  mediaAsset?: RevealedMediaAsset | null;
 }
 
 /** Known AI generation phases, in narrative order. */
@@ -73,7 +96,11 @@ export const AI_PHASES: LoadingPhase[] = [
   { id: 'blueprint', label: 'Aetherial Mapping' },
   { id: 'initial-arc', label: 'Scripture Initiation' },
   { id: 'steer', label: 'Sovereign Shift' },
+  { id: 'alter-fate', label: 'Fate Alteration' },
   { id: 'cover', label: 'Cover Reforging' },
+  { id: 'image', label: 'Image Manifestation' },
+  { id: 'audio', label: 'Audio Manifestation' },
+  { id: 'visual', label: 'Motion Manifestation' },
   { id: 'chapter', label: 'Chapter Manifestation' },
 ];
 
@@ -82,7 +109,11 @@ export const AI_PHASE_PHRASES: Record<string, string> = {
   blueprint: 'Establishing foundational laws, power limitations, and planetary properties.',
   'initial-arc': 'Transcribing the grand volume ledger, compiling chapter milestones and character templates.',
   steer: 'Merging your custom instructions with fate timelines to trigger the subsequent 10 chapters.',
+  'alter-fate': 'Rebinding the threads of fate around your chosen divergence.',
   cover: 'Translating core premise variables into bespoke high-fidelity digital art.',
+  image: 'Condensing celestial pigments into a standalone vision.',
+  audio: 'Weaving ethereal resonance into a standalone soundscape.',
+  visual: 'Binding light and motion into a living tableau.',
   chapter: 'Celestial threads are being woven into narrative form.',
 };
 
@@ -128,5 +159,12 @@ export function buildAILoadingTaskCard(input: AILoadingTaskInput): LoadingTaskCa
     colorClass: agent.colorClass,
     // Scout and other short retrieval tasks never block the screen.
     preferredMode: agent.id === 'scout' ? 'compact' : 'primary',
+    // Aura Veil manifestation spec — mode and active zone resolved from the
+    // operation id via the shared taxonomy.
+    manifestation: buildManifestationSpec(phaseId, {
+      sceneId: input.omenSceneId,
+      reveal: input.mediaReveal,
+      asset: input.mediaAsset,
+    }),
   };
 }

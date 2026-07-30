@@ -1,29 +1,32 @@
 import React from 'react';
 import LoadingSystem from './LoadingSystem';
 import { buildAILoadingTaskCard } from '../shared/taskCard';
+import {
+  manifestationModeForOperation,
+  mediaTrackerDetail,
+  NARRATIVE_STATUS_LINES,
+  MEDIA_STATUS_LINES,
+  type MediaRevealState,
+  type RevealedMediaAsset,
+} from '../shared/manifestation';
 import { CelestialParticleShower } from '../../../CelestialParticleShower';
 import type { AILoadingVeilProps } from '../reference/AILoadingVeil';
 
 /**
  * Development-only extension of the shared veil props: optional journey
- * scrubber cosmetics (Workshop simulator controls). Production callers omit
- * them and get the registry defaults.
+ * scrubber cosmetics and media reveal overrides (Workshop simulator
+ * controls). Production callers omit them and get the registry/taxonomy
+ * defaults.
  */
 interface DevelopmentAILoadingVeilProps extends AILoadingVeilProps {
   travelerId?: string;
   trailStyle?: string;
   destinationId?: string;
+  /** Workshop-only: force the media scroll's reveal progression. */
+  mediaReveal?: MediaRevealState;
+  /** Workshop-only: the finished asset the media scroll reveals. */
+  mediaAsset?: RevealedMediaAsset | null;
 }
-
-// Short atmospheric status lines Versa cycles through while a chapter is forged.
-const VERSA_QUOTES = [
-  'Cooking the chapter...',
-  'Forging continuity...',
-  'Weaving celestial threads...',
-  'Condensing spiritual essence...',
-  'Consulting the Codex...',
-  'Binding narrative threads...',
-];
 
 // DEV-only: target passage count for the live "Manifesting N/20" readout.
 // Kept local to this fork rather than the shared taskCard so the reference
@@ -40,6 +43,12 @@ const CHAPTER_PASSAGE_TARGET = 20;
  *   compact chapter status, and a swipeable animation area filling the
  *   remaining viewport. The emblem spacing override is no longer needed;
  *   the hero zone manages its own footprint.
+ * - 2026-07-30: Aura Veil modes. The operation's manifestation mode
+ *   (narrative / media, resolved via shared/manifestation.ts) now selects
+ *   the status language — narrative ops rotate the narrative lines during a
+ *   chapter, media ops rotate the media lines — and the media tracker
+ *   detail follows the scroll's reveal progression. Reader Chamber, Codex,
+ *   and Narration never flow through here.
  * Workshop-only: do not wire this into production flows.
  */
 export default function AILoadingVeil({
@@ -54,11 +63,14 @@ export default function AILoadingVeil({
   generatingChapterNum,
   travelerId,
   trailStyle,
-  destinationId
+  destinationId,
+  mediaReveal,
+  mediaAsset
 }: DevelopmentAILoadingVeilProps) {
   const [quoteIndex, setQuoteIndex] = React.useState(0);
 
   const isChapterPhase = generationPhase === 'chapter';
+  const isMediaOperation = manifestationModeForOperation(generationPhase) === 'media';
 
   const shouldShowFullScreen = isGenerating && !isVeilMinimized;
 
@@ -67,19 +79,29 @@ export default function AILoadingVeil({
     ? Math.min(6 + passagesWoven * 4.5, 96)
     : null;
 
+  // Operation-specific language: narrative ops rotate the narrative lines,
+  // media ops rotate the media set; other phases keep their progress message.
+  const statusLines = isMediaOperation ? MEDIA_STATUS_LINES : NARRATIVE_STATUS_LINES;
+  const rotatesQuotes = isChapterPhase || isMediaOperation;
+
+  // The scroll's reveal progression, resolved once for both the card spec
+  // and the tracker language (a supplied asset implies 'revealed').
+  const resolvedMediaReveal: MediaRevealState =
+    mediaReveal ?? (mediaAsset ? 'revealed' : 'unsealing');
+
   React.useEffect(() => {
-    if (!shouldShowFullScreen || !isChapterPhase) {
+    if (!shouldShowFullScreen || !rotatesQuotes) {
       setQuoteIndex(0);
       return;
     }
     const id = setInterval(() => {
-      setQuoteIndex(i => (i + 1) % VERSA_QUOTES.length);
+      setQuoteIndex(i => (i + 1) % statusLines.length);
     }, 3500);
     return () => clearInterval(id);
-  }, [shouldShowFullScreen, isChapterPhase, generatingChapterNum]);
+  }, [shouldShowFullScreen, rotatesQuotes, statusLines, generatingChapterNum]);
 
-  const statusQuote = isChapterPhase
-    ? VERSA_QUOTES[quoteIndex]
+  const statusQuote = rotatesQuotes
+    ? statusLines[quoteIndex]
     : (generationProgressMessage || 'Manifesting spiritual matrices...');
 
   const task = {
@@ -92,6 +114,8 @@ export default function AILoadingVeil({
       generatingChapterNum,
       statusQuote,
       progress: progressWidth,
+      mediaReveal: resolvedMediaReveal,
+      mediaAsset,
     }),
     // Compact card: no atmospheric phrase and no phase marker pill.
     description: '',
@@ -99,9 +123,12 @@ export default function AILoadingVeil({
     // Live "Manifesting N/20" instead of "N passages formed" — reads as an
     // active process rather than a technical quantity. Chapter tracker
     // title ("Chapter 1") stays untouched and permanently visible above it.
+    // Media operations track the scroll's reveal progression instead.
     trackerDetail: isChapterPhase
       ? (passagesWoven > 0 ? `Manifesting ${passagesWoven}/${CHAPTER_PASSAGE_TARGET}` : 'Initiating Cosmic Channel')
-      : 'Spiritual matrix forming',
+      : isMediaOperation
+        ? mediaTrackerDetail(resolvedMediaReveal)
+        : 'Spiritual matrix forming',
   };
 
   return (
