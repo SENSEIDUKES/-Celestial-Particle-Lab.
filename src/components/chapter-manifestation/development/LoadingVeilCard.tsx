@@ -2,8 +2,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import type { LoadingTaskCard } from '../shared/taskCard';
-import SwordCultivatorClash from './SwordCultivatorClash';
-import ManifestationChamber, { ChamberForegroundMotes } from './ManifestationChamber';
+import NarrativeManifestationZone from './NarrativeManifestationZone';
+import MediaManifestationZone from './MediaManifestationZone';
 import JourneyScrubber from './journey-scrubber/JourneyScrubber';
 
 const ACCENT = {
@@ -95,21 +95,25 @@ export interface LoadingVeilCardProps {
 }
 
 /**
- * DEV copy of LoadingVeil — rebuilt 2026-07-30 as one continuous circular
- * chamber, replacing the stacked rectangular card:
+ * DEV copy of LoadingVeil — the Aura Veil shell: one shared manifestation
+ * shell hosting two manifestation modes. The shell is identical across both:
  * 1. Versa hero — emblem + refined violet aura at the top, sized to fill
  *    her zone naturally with less dead space around her
  * 2. Journey scrubber — layered status (identity / state / live detail)
  *    above a curved qi path: a cultivator traveler runs toward a
  *    destination gate as normalized progress advances, with an illuminated
  *    trail behind it (replaces the old thin progress bar)
- * 3. Circular chamber — ManifestationChamber owns an isolated three-layer
- *    stacking contract (shared ambient effects behind, the scene clear in
- *    the foreground, a capped set of foreground motes above), and the
- *    Sword Cultivator Clash lives inside it as the visual focus. No
- *    carousel, dots, scene titles, or expand controls.
+ * 3. Active manifestation zone — the ONLY zone that changes by mode
+ *    (task.manifestation, resolved from the operation via the taxonomy in
+ *    shared/manifestation.ts): NarrativeManifestationZone renders the
+ *    chamber with a system-selected omen scene; MediaManifestationZone
+ *    renders the same chamber with the agnostic celestial scroll reveal.
+ *    Both inherit the chamber's isolated three-layer stacking contract.
  * 4. Versa's evolving line — the rotating quote rests at the bottom of the
- *    chamber, italic and atmospheric.
+ *    chamber, italic and atmospheric; the language set changes per mode.
+ *
+ * Explicitly excluded: Reader Chamber, Codex, and Narration manifestations
+ * never route through these modes — they own dedicated manifestation logic.
  *
  * There is deliberately no manual minimize control: while a chapter is
  * generating the veil stays immersive, and background minimization happens
@@ -299,18 +303,28 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
         />
       </div>
 
-      {/* ── Zone 3 · Circular chamber ───────────────────────────────────────
-          ManifestationChamber owns the layering contract: shared ambient
-          effects behind, the scene clear in front, a capped foreground
-          mote set above. Future scenes inherit it by being passed as
-          `scene`. No scene-selection UI — the system chooses. */}
+      {/* ── Zone 3 · Active manifestation zone ──────────────────────────────
+          The only zone that swaps by manifestation mode (task.manifestation):
+          - narrative → NarrativeManifestationZone: the chamber hosting a
+            system-selected omen scene from the narrative registry
+          - media → MediaManifestationZone: the same chamber hosting the
+            agnostic celestial scroll reveal (sealed → unsealing → revealed)
+          Both zones inherit the ManifestationChamber's three-layer stacking
+          contract. No zone-selection UI — the mode resolves from the
+          operation, never the user. Reader Chamber / Codex / Narration
+          manifestations are excluded by contract (shared/manifestation.ts)
+          and never render here. */}
       {isVersa && (
         <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          <ManifestationChamber
-            isVersa={isVersa}
-            scene={<SwordCultivatorClash />}
-            foreground={<ChamberForegroundMotes isVersa={isVersa} />}
-          />
+          {task.manifestation.mode === 'media' ? (
+            <MediaManifestationZone isVersa={isVersa} spec={task.manifestation} />
+          ) : (
+            <NarrativeManifestationZone
+              isVersa={isVersa}
+              sceneId={task.manifestation.sceneId}
+              seed={task.trackerTitle}
+            />
+          )}
         </div>
       )}
 

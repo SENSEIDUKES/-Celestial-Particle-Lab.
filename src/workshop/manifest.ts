@@ -46,7 +46,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'chapter-generation-manifestation',
     title: 'Chapter Generation Manifestation',
-    description: 'Shared LoadingSystem state simulator — primary veil and compact indicator driven by one task-card format.',
+    description: 'Aura Veil state simulator — one shared manifestation shell with narrative and media manifestation modes, driven by one task-card format.',
     category: 'animations',
     status: 'refining',
     source: {
