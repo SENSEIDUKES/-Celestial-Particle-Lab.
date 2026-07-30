@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { resolveTraveler } from './travelers';
 import { resolveTrail } from './trails';
+import { defaultDestinationFor, resolveDestination } from './destinations';
 
 export interface JourneyScrubberStatus {
   /** Stable identity of the operation, e.g. 'Chapter 1'. */
@@ -29,6 +30,13 @@ export interface JourneyScrubberProps {
    * traveled-portion rendering; geometry and every other layer stay shared.
    */
   trailStyle?: string;
+  /**
+   * Destination family id — see destinations.tsx registry (`door`, `sect`,
+   * `cave`). When omitted, the selected traveler's recommended family is
+   * used. Selection is independent from the traveler: any traveler may
+   * arrive at any family. Unknown ids fall back to `door`.
+   */
+  destinationId?: string;
   /** Primary accent (trail, traveler). Violet for Versa, azure for Scout. */
   accent?: string;
   /** Softer accent for glows and highlights. */
@@ -48,7 +56,8 @@ export interface JourneyScrubberProps {
  * position (the cycle loops continuously, position is eased from progress).
  * Every layer is separable: path/milestones/marker/status live here, the
  * traveler comes from the registry in travelers.ts, the completed-trail
- * rendering comes from the preset registry in trails.tsx, and the status
+ * rendering comes from the preset registry in trails.tsx, the destination
+ * marker comes from the family registry in destinations.tsx, and the status
  * layers are plain props — future skins, presets, or text layouts touch
  * only their own layer.
  */
@@ -79,6 +88,7 @@ export default function JourneyScrubber({
   status,
   travelerId,
   trailStyle,
+  destinationId,
   accent = '#a855f7',
   accentSoft = '#d8b4fe',
   destinationAccent = '#ef4444',
@@ -90,6 +100,9 @@ export default function JourneyScrubber({
 
   const Traveler = resolveTraveler(travelerId);
   const Trail = resolveTrail(trailStyle);
+  // Destination is independent from traveler selection; when the caller
+  // doesn't pick one, the traveler's recommended family applies.
+  const Destination = resolveDestination(destinationId ?? defaultDestinationFor(travelerId));
 
   // Determinate: eased to the progress point. Indeterminate: a calm drift
   // over the first stretch of the path so the veil still breathes.
@@ -191,41 +204,18 @@ export default function JourneyScrubber({
           );
         })}
 
-        {/* Destination gate — twin pillars, arch, and a sealed orb */}
+        {/* Destination — the family marker at the path end (destinations.tsx).
+            Local space: ground at (0,0), rising upward; geometry identical
+            across families. Reacts on arrival; static under reduced motion. */}
         <g transform={`translate(${P2.x} ${P2.y})`}>
-          <ellipse cx="0" cy="1" rx="12" ry="2.2" fill={destinationAccent} opacity={arrived ? 0.3 : 0.12} filter={`url(#${softId})`} />
-          <g
-            stroke={destinationAccent} strokeWidth="1.6" strokeLinecap="round" fill="none"
-            opacity={arrived ? 1 : 0.7}
-            filter={arrived ? `url(#${glowId})` : undefined}
-          >
-            <line x1="-8" y1="0" x2="-8" y2="-22" />
-            <line x1="8" y1="0" x2="8" y2="-22" />
-            <path d="M -8 -22 Q 0 -31 8 -22" />
-          </g>
-          <motion.circle
-            cx="0" cy="-13" r="3"
-            fill={arrived ? accentSoft : destinationAccent}
-            animate={
-              reduceMotion
-                ? { opacity: arrived ? 1 : 0.55 }
-                : arrived
-                  ? { opacity: [0.7, 1, 0.7], scale: [1, 1.25, 1] }
-                  : { opacity: [0.4, 0.7, 0.4] }
-            }
-            transition={{ duration: arrived ? 1.4 : 3.4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+          <Destination
+            arrived={arrived}
+            accent={accent}
+            accentSoft={accentSoft}
+            destinationAccent={destinationAccent}
+            glowId={glowId}
+            softId={softId}
           />
-          {/* Arrival ring — breathes outward from the gate once complete */}
-          {arrived && !reduceMotion && (
-            <motion.circle
-              cx="0" cy="-13" r="9" fill="none"
-              stroke={destinationAccent} strokeWidth="1"
-              animate={{ scale: [0.4, 1.7], opacity: [0.8, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-              style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-            />
-          )}
         </g>
 
         {/* Traveler — position driven by progress; body loop runs independently */}
