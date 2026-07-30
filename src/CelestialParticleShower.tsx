@@ -15,6 +15,8 @@ interface Particle {
   outerLane?: -1 | 1;
   rotation?: number;
   rotationSpeed?: number;
+  /** Resists the center funnel and wanders laterally instead. */
+  drift?: boolean;
 }
 
 interface ForegroundZone {
@@ -102,6 +104,17 @@ export interface CelestialParticleShowerProps {
   foregroundSelector?: string;
   /** Extra breathing room, in CSS pixels, around foreground content. */
   foregroundPadding?: number;
+  /**
+   * Scales the upward draw toward the scroll (1 = default speed). Values
+   * below 1 slow the absorption stream.
+   */
+  speedScale?: number;
+  /**
+   * Fraction of particles (0–1) that resist the center funnel and wander
+   * laterally instead, keeping the outer field populated. 0 = default
+   * behavior (everything converges on the absorption point).
+   */
+  dispersion?: number;
 }
 
 export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = React.memo(
@@ -109,6 +122,8 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
     accent,
     foregroundSelector = DEFAULT_FOREGROUND_SELECTOR,
     foregroundPadding = 72,
+    speedScale = 1,
+    dispersion = 0,
   }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -223,6 +238,8 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
       const glyphShadowColor = toRgba(palette.base, 0.95);
       const glyphTintColor = toRgba(palette.bright, 1);
 
+      const driftShare = clamp01(dispersion);
+
       const createParticle = (isInitial = false): Particle => {
         const size = Math.random() * 3 + (Math.random() < 0.15 ? Math.random() * 8 + 4 : 1);
         const isGlyph = size > 4 && Math.random() < 0.42;
@@ -245,6 +262,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           outerLane,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.025,
+          drift: Math.random() < driftShare,
         };
       };
 
@@ -437,10 +455,13 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
 
           // Curve toward the center line, with a faint swirl so paths arc
           // instead of beelining. Kept loose so the stream stays spread out.
-          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.003) * frameScale;
-          p.speedX += -dy * 0.00001 * funnelT * frameScale;
+          // Drifting particles resist the funnel and wander instead, so the
+          // outer field stays populated instead of emptying into the stream.
+          const funnelPull = p.drift ? 0.22 : 1;
+          p.speedX += dx * (0.00033 + funnelT * funnelT * 0.003) * frameScale * funnelPull;
+          p.speedX += -dy * 0.00001 * funnelT * frameScale * funnelPull;
           p.speedX *= Math.pow(0.99, frameScale);
-          p.speedX += (Math.random() - 0.5) * 0.015 * frameScale;
+          p.speedX += (Math.random() - 0.5) * (p.drift ? 0.06 : 0.015) * frameScale;
 
           // Larger Library glyphs make room for foreground UI by drifting
           // toward the outer thirds. The center stream remains free to read.
@@ -450,7 +471,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
           }
 
           // Slight acceleration as the particle is drawn upward.
-          p.y += p.speedY * (1 + funnelT * 0.55) * frameScale;
+          p.y += p.speedY * (1 + funnelT * 0.55) * frameScale * speedScale;
           p.x += p.speedX * frameScale;
 
           p.opacity -= p.fadeSpeed * (1 + absorbT * 1.5) * frameScale;
@@ -531,7 +552,7 @@ export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = R
         window.removeEventListener('resize', handleResize);
         cancelAnimationFrame(animationId);
       };
-    }, [accent, foregroundPadding, foregroundSelector]);
+    }, [accent, foregroundPadding, foregroundSelector, speedScale, dispersion]);
 
     return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;
   },

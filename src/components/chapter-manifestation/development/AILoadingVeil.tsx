@@ -48,6 +48,9 @@ interface DevelopmentAILoadingVeilProps extends AILoadingVeilProps {
  *   "Chapter N | X%" above the rotating quote. The live "Manifesting N/20"
  *   readout is gone — the journey scrubber's traveler position and the
  *   bottom percentage carry progress now.
+ * - 2026-07-30: backdrop tuning — the particle shower runs ~18% slower
+ *   (speedScale 0.82) and a 35% share of particles drift laterally instead
+ *   of converging, so the sides of the veil stay populated.
  * Workshop-only: do not wire this into production flows.
  */
 export default function AILoadingVeil({
@@ -134,6 +137,8 @@ export default function AILoadingVeil({
       backdrop={
         <CelestialParticleShower
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
+          speedScale={0.82}
+          dispersion={0.35}
         />
       }
     />
