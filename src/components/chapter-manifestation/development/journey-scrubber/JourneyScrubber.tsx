@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { resolveTraveler } from './travelers';
+import { resolveTrail } from './trails';
 
 export interface JourneyScrubberStatus {
   /** Stable identity of the operation, e.g. 'Chapter 1'. */
@@ -22,6 +23,12 @@ export interface JourneyScrubberProps {
   status: JourneyScrubberStatus;
   /** Traveler skin id — see travelers.ts registry. Defaults to the cultivator. */
   travelerId?: string;
+  /**
+   * Aura trail preset id — see trails.tsx registry (`qi-glow`, `mist-trail`,
+   * `starlight-trail`). Defaults to `qi-glow`. Presets change only the
+   * traveled-portion rendering; geometry and every other layer stay shared.
+   */
+  trailStyle?: string;
   /** Primary accent (trail, traveler). Violet for Versa, azure for Scout. */
   accent?: string;
   /** Softer accent for glows and highlights. */
@@ -39,9 +46,11 @@ export interface JourneyScrubberProps {
  *
  * Progress is a normalized 0–1 prop; the run loop is decoupled from path
  * position (the cycle loops continuously, position is eased from progress).
- * Every layer is separable: path/trail/milestones/marker live here, the
- * traveler comes from the registry in travelers.ts, and the status layers
- * are plain props — future skins or text layouts touch only their own layer.
+ * Every layer is separable: path/milestones/marker/status live here, the
+ * traveler comes from the registry in travelers.ts, the completed-trail
+ * rendering comes from the preset registry in trails.tsx, and the status
+ * layers are plain props — future skins, presets, or text layouts touch
+ * only their own layer.
  */
 
 // Curved qi path — one subtle quadratic arc, start left, gate right.
@@ -69,6 +78,7 @@ export default function JourneyScrubber({
   progress,
   status,
   travelerId,
+  trailStyle,
   accent = '#a855f7',
   accentSoft = '#d8b4fe',
   destinationAccent = '#ef4444',
@@ -79,6 +89,7 @@ export default function JourneyScrubber({
   const arrived = clamped !== null && clamped >= 1;
 
   const Traveler = resolveTraveler(travelerId);
+  const Trail = resolveTrail(trailStyle);
 
   // Determinate: eased to the progress point. Indeterminate: a calm drift
   // over the first stretch of the path so the veil still breathes.
@@ -139,20 +150,20 @@ export default function JourneyScrubber({
         <path d={PATH_D} fill="none" stroke={accent} strokeWidth="3.5" opacity="0.1" filter={`url(#${softId})`} />
         <path d={PATH_D} fill="none" stroke="#8b8b9e" strokeWidth="1" opacity="0.28" />
 
-        {/* Illuminated trail — the completed portion lights up behind the traveler */}
+        {/* Illuminated trail — the completed portion behind the traveler,
+            rendered by the selected preset (trails.tsx). Geometry is always
+            the shared curve; only the traveled-portion styling varies. */}
         {clamped !== null ? (
-          <>
-            <path
-              d={PATH_D} fill="none" pathLength={1}
-              stroke={accent} strokeWidth="4" strokeLinecap="round"
-              strokeDasharray={`${clamped} 1`} opacity="0.3" filter={`url(#${softId})`}
-            />
-            <path
-              d={PATH_D} fill="none" pathLength={1}
-              stroke={`url(#${trailGradId})`} strokeWidth="1.8" strokeLinecap="round"
-              strokeDasharray={`${clamped} 1`} filter={`url(#${glowId})`}
-            />
-          </>
+          <Trail
+            pathD={PATH_D}
+            progress={clamped}
+            accent={accent}
+            accentSoft={accentSoft}
+            glowId={glowId}
+            softId={softId}
+            trailGradId={trailGradId}
+            pointAt={pointAt}
+          />
         ) : (
           <motion.path
             d={PATH_D} fill="none" pathLength={1}
