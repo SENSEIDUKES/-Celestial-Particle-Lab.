@@ -4,7 +4,7 @@
 - **Source location:** `src/components/AILoadingVeil.tsx`
 - **Workshop preview:** `?preview=chapter-generation-manifestation`
 - **Replica created:** 2026-07-29
-- **Last Workshop update:** 2026-07-30
+- **Last Workshop update:** 2026-07-31
 - **Last source comparison:** 2026-07-29
 - **Replica status:** under refinement
 
@@ -31,6 +31,7 @@
 - **2026-07-30:** Versa aura refinement — the nebula heart's radius pulled in ~20% (`inset-[-55%]` → `inset-[-34%]`) and its gradient stops softened ~15%, with matching proportional nudges to the bright core and both cloak wisps, so the aura stays wrapped around her instead of bleeding onto the journey scrubber. Layer structure, blend modes, and all breathing/rotation motion are unchanged.
 - **2026-07-30:** Backdrop tuning in the Development veil — the shared `CelestialParticleShower` gained two optional props (defaults preserve production behavior, so the reference veil, relics, and the celestial-backdrop preview are untouched): `speedScale` scales the upward absorption draw, and `dispersion` marks a share of particles as lateral drifters that resist the center funnel and wander with stronger lateral noise. The Development veil passes `speedScale={0.82}` (~18% slower suction) and `dispersion={0.35}`, so the veil's edges stay populated instead of emptying into the central stream.
 - **2026-07-30:** Pre-merge visual fixes. **Versa hero:** the `CelestialSigil`'s three spinning crimson rings (plus cardinal sparks and tick marks) were removed — they competed with the violet aura and their 240px reach overlapped the journey scrubber beneath her; the quiet static star field remains. **Destination integration:** every destination family now renders a shared `DestinationGround` beneath its marker — a soft bed in the journey accent echoing the path's glow bed, plus a lit terminus mote at the exact path end point — so the gate reads as the trail's final milestone instead of a pasted-on icon. The per-family red ground ellipses are gone; marker structures, arrival reactions, and the family registry contract are unchanged.
+- **2026-07-31:** Fixed the chamber being hard-clipped by its zone on mobile — the portal ring was visibly sliced by two horizontal seams above and below the scene. Root cause: the chamber sized itself from viewport units (`w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)]`), guessing at its host zone instead of measuring it. On phones that square came out ~1.4× taller than the real active-manifestation zone, whose `overflow-hidden` then cut the chamber's top and bottom (narrative and media zones alike, and latently on desktop, where the sm rule also over-sized the square). The zone is now a size query container (`[container-type:size]` on Zone 3 in `LoadingVeilCard`) and the chamber sizes to 88% of the zone's smaller dimension (`w-[88cqmin]` on the `ManifestationChamber` root), so it always fits the actual box on any viewport. The zone's `overflow-hidden` stays as the safety net; the chamber's three-layer stacking contract, `data-celestial-foreground` marker, and all zone content are unchanged.
 
 ## Folder layout
 

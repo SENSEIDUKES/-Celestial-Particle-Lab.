@@ -278,9 +278,13 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
           contract. No zone-selection UI — the mode resolves from the
           operation, never the user. Reader Chamber / Codex / Narration
           manifestations are excluded by contract (shared/manifestation.ts)
-          and never render here. */}
+          and never render here.
+          The zone is a size query container ([container-type:size]) so the
+          chamber sizes to this real box via cqmin — it always fits instead of
+          overflowing and being hard-clipped by overflow-hidden (kept as the
+          safety net). */}
       {isVersa && (
-        <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+        <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden [container-type:size]">
           {task.manifestation.mode === 'media' ? (
             <MediaManifestationZone isVersa={isVersa} spec={task.manifestation} onUnseal={onMediaUnseal} />
           ) : (
