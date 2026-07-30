@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import type { LoadingTaskCard } from '../shared/taskCard';
 import SwordCultivatorClash from './SwordCultivatorClash';
+import ManifestationChamber, { ChamberForegroundMotes } from './ManifestationChamber';
 
 const ACCENT = {
   versa: '#8B0000',
@@ -70,48 +71,6 @@ const CelestialSigil: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
   );
 };
 
-/**
- * Chamber rings — the large circular portal frame that turns the animation
- * area into one continuous magical chamber. Fills its square parent.
- */
-const ChamberRings: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
-  const accent = isVersa ? ACCENT.versa : ACCENT.scout;
-  return (
-    <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
-      {/* Outermost dashed ring, slow drift */}
-      <motion.g
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 140, ease: 'linear' }}
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      >
-        <circle cx="200" cy="200" r="194" fill="none" stroke={accent} strokeWidth="0.8" strokeDasharray="1 7" opacity="0.35" />
-        {[0, 90, 180, 270].map((deg) => (
-          <path
-            key={deg}
-            d="M200 0 L203.5 6 L200 12 L196.5 6 Z"
-            fill={accent}
-            opacity="0.6"
-            transform={`rotate(${deg} 200 200)`}
-          />
-        ))}
-      </motion.g>
-
-      {/* Solid rim + inner arcs, counter drift */}
-      <motion.g
-        animate={{ rotate: -360 }}
-        transition={{ repeat: Infinity, duration: 200, ease: 'linear' }}
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      >
-        <circle cx="200" cy="200" r="180" fill="none" stroke={accent} strokeWidth="0.7" opacity="0.22" />
-        <circle cx="200" cy="200" r="150" fill="none" stroke={accent} strokeWidth="0.6" strokeDasharray="4 8" opacity="0.2" />
-      </motion.g>
-
-      {/* Static mid rim that grounds the portal */}
-      <circle cx="200" cy="200" r="166" fill="none" stroke={accent} strokeWidth="1" opacity="0.3" />
-    </svg>
-  );
-};
-
 export interface LoadingVeilCardProps {
   task: LoadingTaskCard;
   /**
@@ -134,16 +93,21 @@ export interface LoadingVeilCardProps {
  * 2. Compact chapter status — one always-visible line
  *    ("Chapter 1 · Manifesting 9/20 · ~23s") with a thin progress bar
  *    directly beneath it
- * 3. Circular chamber — a large concentric portal ring filling the remaining
- *    viewport; the manifestation animation (Sword Cultivator Clash) lives
- *    inside the ring as the visual focus. No carousel, dots, scene titles,
- *    or expand controls — the system picks the scene.
+ * 3. Circular chamber — ManifestationChamber owns an isolated three-layer
+ *    stacking contract (shared ambient effects behind, the scene clear in
+ *    the foreground, a capped set of foreground motes above), and the
+ *    Sword Cultivator Clash lives inside it as the visual focus. No
+ *    carousel, dots, scene titles, or expand controls.
  * 4. Versa's evolving line — the rotating quote rests at the bottom of the
  *    chamber, italic and atmospheric.
  *
  * There is deliberately no manual minimize control: while a chapter is
  * generating the veil stays immersive, and background minimization happens
  * through navigation (the caller flips `minimized`), not a button here.
+ *
+ * Stacking at the veil level is equally explicit: the root is `isolate`,
+ * the cinematic backdrop is pinned to z-0, and all content zones sit at
+ * z-10, so shared particles can never drift above the chamber's scene.
  *
  * Aura work (kept from the previous pass): saturated violet nebula with a
  * bright core, twin counter-rotating cloak wisps, grounded pool, six motes.
@@ -168,10 +132,12 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName }: Loa
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.985, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } }}
       transition={{ duration: 0.25 }}
-      className={`fixed inset-0 h-[100dvh] ${backdrop ? 'bg-void/70' : 'bg-void/95'} backdrop-blur-md z-[9999] flex flex-col overflow-hidden text-center select-none`}
+      className={`fixed inset-0 h-[100dvh] ${backdrop ? 'bg-void/70' : 'bg-void/95'} backdrop-blur-md z-[9999] isolate flex flex-col overflow-hidden text-center select-none`}
     >
+      {/* Cinematic backdrop — pinned to z-0 so shared particles always stay
+          behind every content zone, including the chamber's scene layer. */}
       {backdrop && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
           {backdrop}
         </div>
       )}
@@ -179,7 +145,7 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName }: Loa
       {/* ── Zone 1 · Versa hero ─────────────────────────────────────────────
           Emblem + aura, sized up to fill her zone naturally. The aura layers
           are unchanged — only the footprint is tighter. */}
-      <div className="relative z-0 flex-none h-[27dvh] min-h-[168px] flex items-end justify-center pointer-events-none">
+      <div className="relative z-10 flex-none h-[27dvh] min-h-[168px] flex items-end justify-center pointer-events-none">
         <div className={`relative w-32 h-32 sm:w-36 sm:h-36 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
           <CelestialSigil isVersa={isVersa} />
 
@@ -329,26 +295,17 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName }: Loa
       </div>
 
       {/* ── Zone 3 · Circular chamber ───────────────────────────────────────
-          One continuous portal ring; the manifestation animation lives inside
-          it as the visual focus. No scene-selection UI — the system chooses. */}
+          ManifestationChamber owns the layering contract: shared ambient
+          effects behind, the scene clear in front, a capped foreground
+          mote set above. Future scenes inherit it by being passed as
+          `scene`. No scene-selection UI — the system chooses. */}
       {isVersa && (
         <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          <div className="relative aspect-square w-[min(88vw,52dvh)] sm:w-[min(72vw,56dvh)]">
-            {/* Inner violet glow pooling inside the ring */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-[6%] rounded-full"
-              style={{
-                background:
-                  'radial-gradient(circle at 50% 55%, rgba(147,51,234,0.14) 0%, rgba(88,28,135,0.08) 45%, transparent 72%)',
-              }}
-            />
-            <ChamberRings isVersa={isVersa} />
-            {/* The scene, inset so it breathes inside the ring */}
-            <div className="absolute inset-[9%] flex items-center justify-center">
-              <SwordCultivatorClash />
-            </div>
-          </div>
+          <ManifestationChamber
+            isVersa={isVersa}
+            scene={<SwordCultivatorClash />}
+            foreground={<ChamberForegroundMotes isVersa={isVersa} />}
+          />
         </div>
       )}
 
