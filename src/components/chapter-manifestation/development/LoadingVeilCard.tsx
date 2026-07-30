@@ -6,64 +6,23 @@ import NarrativeManifestationZone from './NarrativeManifestationZone';
 import MediaManifestationZone from './MediaManifestationZone';
 import JourneyScrubber from './journey-scrubber/JourneyScrubber';
 
-const ACCENT = {
-  versa: '#8B0000',
-  scout: '#04ACFF',
-} as const;
-
 /**
- * Celestial matrix — faint concentric rings, star points, and cardinal sparks
- * drifting behind the agent emblem so the top section reads as a cosmic sigil.
+ * Celestial field — a quiet scatter of fixed star points behind the agent
+ * emblem so the top section still reads as cosmic. The spinning crimson
+ * sigil rings were removed (2026-07-30): three dark-red circles rotating
+ * around Versa competed with the violet aura and reached down over the
+ * journey scrubber beneath her.
  */
-const CelestialSigil: React.FC<{ isVersa: boolean }> = ({ isVersa }) => {
-  const accent = isVersa ? ACCENT.versa : ACCENT.scout;
+const CelestialSigil: React.FC = () => {
   const stars = React.useMemo<Array<[number, number, number, number]>>(() => [
     // [cx, cy, r, opacity]
     [38, 52, 1.1, 0.5], [196, 64, 0.9, 0.4], [52, 178, 1.2, 0.45], [188, 186, 0.8, 0.35],
     [86, 30, 0.7, 0.4], [152, 34, 1.0, 0.45], [28, 118, 0.8, 0.35], [210, 122, 1.1, 0.4],
     [104, 208, 0.9, 0.4], [140, 204, 0.7, 0.3], [64, 96, 0.6, 0.3], [176, 100, 0.6, 0.3],
   ], []);
-  const ticks = React.useMemo(() => Array.from({ length: 12 }, (_, i) => i * 30), []);
 
   return (
     <svg viewBox="0 0 240 240" className="absolute w-[240px] h-[240px] pointer-events-none" aria-hidden="true">
-      {/* Slow-drifting outer dashed ring */}
-      <motion.g
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 80, ease: 'linear' }}
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      >
-        <circle cx="120" cy="120" r="110" fill="none" stroke={accent} strokeWidth="0.8" strokeDasharray="1 6" opacity="0.3" />
-        {/* Cardinal diamond sparks riding the outer ring */}
-        {[0, 90, 180, 270].map((deg) => (
-          <path
-            key={deg}
-            d="M120 6 L123 10 L120 14 L117 10 Z"
-            fill={accent}
-            opacity="0.55"
-            transform={`rotate(${deg} 120 120)`}
-          />
-        ))}
-      </motion.g>
-
-      {/* Counter-drifting mid ring with tick marks */}
-      <motion.g
-        animate={{ rotate: -360 }}
-        transition={{ repeat: Infinity, duration: 120, ease: 'linear' }}
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      >
-        <circle cx="120" cy="120" r="96" fill="none" stroke={accent} strokeWidth="0.6" opacity="0.18" />
-        <circle cx="120" cy="120" r="70" fill="none" stroke={accent} strokeWidth="0.7" strokeDasharray="3 5" opacity="0.22" />
-        {ticks.map((deg) => (
-          <line
-            key={deg}
-            x1="120" y1="17" x2="120" y2="22"
-            stroke={accent} strokeWidth="0.8" opacity="0.3"
-            transform={`rotate(${deg} 120 120)`}
-          />
-        ))}
-      </motion.g>
-
       {/* Fixed star field */}
       {stars.map(([cx, cy, r, opacity], i) => (
         <circle key={i} cx={cx} cy={cy} r={r} fill="#E8E4F0" opacity={opacity} />
@@ -167,7 +126,7 @@ export default function LoadingVeilCard({ task, backdrop, emblemClassName, trave
           sits lower and more centered instead of cramped at the top. */}
       <div className="relative z-10 flex-none h-[32dvh] min-h-[196px] flex items-end justify-center pointer-events-none">
         <div className={`relative w-32 h-32 sm:w-36 sm:h-36 ${emblemClassName ?? ''} flex items-center justify-center shrink-0`}>
-          <CelestialSigil isVersa={isVersa} />
+          <CelestialSigil />
 
           {/* Ground pool — a grounded shadow that doesn't rise with her */}
           {isVersa && (
