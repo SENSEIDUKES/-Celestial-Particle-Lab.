@@ -79,4 +79,16 @@ export const workshopEntries: WorkshopEntry[] = [
       lastCompared: '2026-07-29',
     },
   },
+  {
+    id: 'reader-chamber',
+    title: 'Reader Chamber',
+    description: 'The full reading UI — header, viewport with system blocks and world cards, playback controls, preferences, bookmarks, and Alter Fate — running on a local mock story.',
+    category: 'reader-ui',
+    status: 'refining',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/ReaderChamber.tsx',
+      lastCompared: '2026-07-31',
+    },
+  },
 ];

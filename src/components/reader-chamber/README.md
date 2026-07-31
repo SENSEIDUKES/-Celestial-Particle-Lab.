@@ -1,0 +1,281 @@
+# Reader Chamber
+
+- **Source repository:** SENSEIDUKES/Light-Novels
+- **Source location:** `src/components/ReaderChamber.tsx` (verified on `main` @ `16e9b6d`)
+- **Workshop preview:** `?preview=reader-chamber`
+- **Replica created:** 2026-07-31
+- **Last Workshop update:** 2026-07-31
+- **Last source comparison:** 2026-07-31
+- **Replica status:** faithful replica
+
+## Workshop history
+
+- **2026-07-31:** Created faithful Workshop replica and local state simulator (11 preview states, mock StoryWorld with 4 chapters, zustand-free external mock store).
+
+## Folder layout
+
+```
+reference/                    — untouched replica of production, locked
+  ReaderChamber.tsx
+  ReaderViewport.tsx
+  ReaderHeader.tsx
+  ReaderPreferencesPanel.tsx
+  ReaderControls/             — index.tsx, types.ts, PlaybackControls.tsx,
+                                ChapterNavigation.tsx, ImmersionSettings.tsx, AudioMenu.tsx
+  CosmicBookmarksPanel.tsx
+  VirtualizedList.tsx
+  AlterFatePanel.tsx
+  ParticleSystem.tsx
+  AudioWidget.tsx
+  SystemBlock.tsx
+  FateResultCard.tsx
+  WorldEntityCard.tsx
+  ReaderFateAlerts.tsx
+  FateSurvivalExplanation.tsx
+  SystemColorLegend.tsx
+  ManifestationImage.tsx
+  ContextInspector.tsx
+development/                  — active Workshop version; starts as an exact copy of reference/
+  (same files)
+shared/                       — code genuinely identical between the two forks
+  types.ts                    — ReaderChapter + composing types, StoryBlock/metadata/SystemEvent/
+                                WorldCardEvent/FateResultData, StoryCuePayload, ContextManifest,
+                                ReaderPreferences, StoryWorld subset, StoryArc, Bookmark,
+                                UpdateStoryFields (no CodexTerm — codex job excluded)
+  reader-chamber.css          — reader-specific classes/vars/keyframes extracted from source
+                                src/index.css (imported by the preview Workspace)
+  stubs.ts                    — mock external store (useAppStore + selectIsGenerating, no
+                                zustand), LOCAL_ONLY_MODE, inert hook stubs, inert audio engine
+  readerPlayback.ts           — pure extractSFXCues (verbatim) + inert useReaderPlayback
+  id.ts, readerTypography.ts, readerLegend.ts, alterFateLock.ts, systemColors.ts,
+  dialect.ts, autoCuePolicy.ts, manifestationEligibility.ts,
+  cinematicScroll/anchors.ts, effects/cinematicEffectGovernor.ts
+                            — pure libs copied (near-)verbatim from production
+  trackLibrary.ts             — static TRACK_LIBRARY catalog for the Audio Menu (display only)
+```
+
+Both forks render inside `src/workshop/previews/reader-chamber/ReaderChamberWorkspace.tsx`,
+which shares one mock story, preview-state panel, chapter selector, theme selector, and
+particle-intensity selector between them via `FeatureWorkspace`.
+
+## What was copied
+
+The full Reader Chamber presentation tree from `src/components/` in Light-Novels:
+`ReaderChamber.tsx` (default export, `ReaderChamberProps`), `ReaderViewport.tsx`,
+`ReaderHeader.tsx` (+ `AudioWidget`), `ReaderPreferencesPanel.tsx`, the whole
+`ReaderControls/` folder, `CosmicBookmarksPanel.tsx` (+ `VirtualizedList`),
+`AlterFatePanel.tsx`, `ParticleSystem.tsx`, `SystemBlock.tsx` (+ `FateResultCard`,
+`lib/systemColors.ts`), `WorldEntityCard.tsx`, `ReaderFateAlerts.tsx` (+
+`FateSurvivalExplanation`), `SystemColorLegend.tsx`, `ManifestationImage.tsx`,
+`ContextInspector.tsx`, plus the pure libraries listed under `shared/` above and the
+reader-specific styling from `src/index.css` (`.light-novel-reader`,
+`.reader-prose`/`.reader-paragraph` + CJK variants, `.gold-accent`/`.jade-accent`,
+holographic-panel + keyframes, `.reading-focus-active/dimmed`, menacing/screen-shake
+animations, `:root` reader CSS vars + entity-highlight palette vars incl. `data-palette`,
+`.highlight-*` classes, custom scrollbar). The 5 hard-coded public R2 backdrop URLs in
+`ReaderViewport.tsx` (`FALLBACK_BACKDROPS`) were kept for visual fidelity — they are
+public static images, and with the codex system excluded they never actually render
+(they only back codex-term reveal cards).
+
+Styling caveat: `@theme` tokens were NOT duplicated — the Workshop `src/styles.css`
+already carries the same font and color tokens.
+
+## What was mocked
+
+- **`useAppStore` / `selectIsGenerating`** — a tiny external store on
+  `useSyncExternalStore` (no zustand), exposing the same call signatures
+  (`useAppStore(selector)` + `useAppStore.getState()`). All setters genuinely update
+  state, so reader mode, immersion toggles, fullscreen, read/unread, bookmarks,
+  preferences, and the audio mix visibly work.
+- **Story data** — one mock `StoryWorld` ("Ashes of the Ninth Meridian", genre
+  `Fate Survival`) with 4 chapters:
+  1. rich structured-`blocks` chapter (breakthrough system block, Fate Result card,
+     World Card with a browser-native TTS line, soft continuity notes, Context
+     Inspector manifest);
+  2. long legacy `generatedContent` prose chapter with a hard Timeline Divergence
+     banner and a legacy `[bracket]` system line;
+  3. sealed chapter that is also a death/critical scene (menacing red chamber
+     shading + corruption system block);
+  4. empty chapter with no content ("Unmanifested Segment").
+  Plus two bookmarks and default `readerPreferences`.
+- **Hook stubs** matching the exact destructured shapes: `useReaderPlayback`
+  (play/pause flips real store state; `activeChunks` empty), `useReaderVisuals`
+  (`codexTerms: []`, `isMomentousChapter: false`), `useCinematicScroll`
+  (idle/following/yielded), `useReadingPosition` (no-op), `useChapterTranslation`
+  (`translateChapter: async () => null`), `useAudioMix` (settings are real state,
+  no sound), `vibrate` (no-op), `LOCAL_ONLY_MODE = true`.
+- **`onSwitchTab`** — the reader/codex/memory tab bar is faithful and functional;
+  codex/memory switch to a clearly-marked Workshop-only placeholder ("Codex menu
+  system — separate Workshop job") rendered by the Workspace, never by the
+  reusable components.
+- **Preview-state UI actions** — `preferences-open`, `bookmarks-open`,
+  `alter-fate-open`, and `continuity-warning` click the real in-chamber buttons
+  (by accessible label) after remount, exercising the production interaction path.
+- **Reveal backdrop assignment** — `updateStory` runs against the mock store, so
+  `assignedRevealBackdrops` writes are local and harmless (and currently never
+  fire, since codex-term resolution is stubbed to nothing).
+
+## Available preview states
+
+- `reading` — rich blocks chapter 1 (system blocks, Fate Result card, World Card,
+  Context Inspector, legend, Fate Survival banner)
+- `preferences-open` — Reader Chamber Controls panel expanded
+- `bookmarks-open` — Chronicle Anchors drawer with two anchor cards
+- `alter-fate-open` — Alter Fate (branch) modal
+- `continuity-warning` — Seal flow surfacing the Continuity Guard Warning modal
+- `generating` — chapter 4 with skeleton pulse placeholder
+- `translating` — "Translating the Heavenly Dao…" spinner
+- `fullscreen` — header hidden; click prose to toggle back
+- `death-scene` — sealed chapter 3 with menacing red shading + death flag block
+- `empty-chapter` — "Unmanifested Segment" with Manifest buttons
+- `auto-scroll-paused` — resume-reading pill (rendered at the chamber bottom, as in production)
+
+Workspace-only controls (never inside the reusable components): preview-state buttons,
+chapter selector (1–4), theme selector (void/crimson/abyss/sepia/emerald via
+`readerPreferences.themeOverride`), particle intensity (off/low/default/high via
+`readerPreferences.particleIntensity`).
+
+## Reusable Workshop dependencies
+
+- `FeatureWorkspace` + one `manifest.ts` entry (`reader-chamber`, category `reader-ui`)
+- Existing `@theme` tokens in `src/styles.css` (fonts, portal/void/signal/human/gold-accent)
+- `lucide-react`, `motion/react` (already installed)
+
+## Production dependencies intentionally excluded
+
+- zustand stores (`store/useAppStore`, `store/useGenerationStore`) → `shared/stubs.ts`
+- Firebase (`lib/firebase`, `LOCAL_ONLY_MODE`) → constant `true`
+- storyStorage / IndexedDB persistence
+- Generation pipeline (`onGenerateChapter`/`onGenerateNextFiveChapters` log only)
+- TTS / audio engines (`useReaderPlayback` internals, `hooks/audio/useAudioMix`
+  playback, `lib/audio/cardSoundCatalog`/`cardSoundPlayer`/`audioMixSettings`,
+  `lib/vibration`, `lib/narrativeCues`) — settings state is real, playback inert;
+  World Card SFX resolves to nothing ("Echo Unavailable"), `tts_line` cards use the
+  browser's own `speechSynthesis` (no production dependency)
+- `useImageManifest` / media pipeline (`ManifestationImage` never receives
+  `isMomentousChapter: true` from the stub)
+- `react-focus-lock` — not installed in the Workshop; `AlterFatePanel` renders its
+  modal inside a plain `<div>` instead (no focus trap)
+- `hooks/useChapterTranslation`, `hooks/useReaderVisuals`, `hooks/useCinematicScroll`,
+  `hooks/useReadingPosition` — inert stubs
+- **Codex menu system (explicit user decision)** — `CodexHovercard`,
+  `lib/codexHighlighting.ts`, and everything under `src/components/codex/` were NOT
+  copied. Codex wiring was removed from the chamber: prose renders as plain text and
+  `codexTerms` is always `[]` (metadata-entity reveal cards stay dormant; World Card
+  blocks render normally). Exact source files for the future codex Workshop job:
+  - `src/components/CodexHovercard.tsx`
+  - `src/lib/codexHighlighting.ts`
+  - `src/components/codex/ReaderCodexCollage.tsx`
+  - codex-term collection in `src/hooks/useReaderVisuals.ts`
+  (The `.highlight-*` CSS classes are already in `shared/reader-chamber.css`, so the
+  future job lands without CSS work.)
+
+## Dead code dropped while copying
+
+- Unused `SystemBlock` import inside `ReaderChamber.tsx` (production keeps it, unused).
+- Unused `stories` / `activeStoryId` / `saveStories` / `routingConfig` selectors
+  (source `ReaderChamber.tsx` lines 101–104).
+
+## Icon substitutions (lucide-react version difference)
+
+The Workshop's `lucide-react@^1.27.0` removed several legacy aliases the source uses.
+All substitutions are import-level aliases only — JSX is byte-identical to production:
+
+- `Loader2` → `LoaderCircle as Loader2` (ReaderViewport, WorldEntityCard, ManifestationImage)
+- `Sliders` → `SlidersHorizontal as Sliders` (ReaderHeader, ReaderPreferencesPanel)
+- `AlertTriangle` → `TriangleAlert as AlertTriangle` (SystemBlock, FateSurvivalExplanation)
+- `AlertCircle` → `CircleAlert as AlertCircle` (FateResultCard)
+- `CheckCircle` → `CircleCheck as CheckCircle` (FateResultCard)
+- `HelpCircle` → `CircleQuestionMark as HelpCircle` (FateSurvivalExplanation)
+
+## Known visual differences from the source
+
+- **Codex hovercard/highlighting absent** — codex terms render as plain text; no
+  hovercards, no entity colors in prose, metadata-entity reveal cards never appear.
+- **No focus trap** in the Alter Fate modal (plain div instead of FocusLock).
+- **Audio inert** — the mixer's toggles and volumes are real state, but no music,
+  atmosphere, cues, or narration ever play; World Card SFX shows "Echo Unavailable";
+  `tts_line` World Cards speak via the browser's own speechSynthesis.
+- **No TTS sync highlighting** — `activeChunks` is always empty, so the
+  portal-colored narration span and `reading-focus-*` classes never activate;
+  the play/pause vinyl still flips and spins.
+- **Neutral/gray/zinc/slate/stone shade drift** — production overrides
+  `--color-neutral-500/600/700` (lighter) and the gray/zinc/slate/stone 500–700
+  ranges in its `@theme`; the Workshop tokens were intentionally left untouched, so
+  some muted text renders a shade darker. Conversely `text-gold-accent` resolves in
+  the Workshop (token exists here, not in production) where production falls back to
+  inherited color. `text-jade-accent`, `text-neutral-350/550/650`,
+  `border-neutral-850/855`, and `animate-fadeIn`/`animate-fade-in` are no-ops in BOTH
+  repos (no token/keyframes anywhere), so parity there is automatic.
+- **Mock story genre is `Fate Survival`**, so the Fate Survival banner renders on
+  every chapter (production behavior for that genre) and the Alter Fate panel uses
+  the `plain` dialect labels ("Story Steering" / "Command Prompt") exactly as
+  production would for this genre.
+- **Momentous chapter hero image** (`ManifestationImage`) never renders — the
+  visuals stub hard-codes `isMomentousChapter: false`.
+- **Shared store between Compare panes** — the mock store is a module singleton, so
+  in Compare mode both panes navigate/toggle in lockstep (intended: same data on
+  both sides). The bottom control bar is viewport-`fixed`, so the two bars overlap
+  exactly in Compare mode.
+- **R2 backdrop URLs** — the 5 hard-coded public `FALLBACK_BACKDROPS` URLs were
+  kept; they are display-only and currently unused (codex reveal cards dormant).
+
+## Exact files needed for transfer (verified)
+
+When a development/ change is approved, transfer these to Light-Novels, reversing
+the import rewrites (`../shared/X` → `../lib/X` / `../hooks/X` / `../store/X`,
+`./X` unchanged) and restoring the codex wiring if the codex system is still absent:
+
+- `development/ReaderChamber.tsx` → `src/components/ReaderChamber.tsx`
+- `development/ReaderViewport.tsx` → `src/components/ReaderViewport.tsx`
+- `development/ReaderHeader.tsx` → `src/components/ReaderHeader.tsx`
+- `development/ReaderPreferencesPanel.tsx` → `src/components/ReaderPreferencesPanel.tsx`
+- `development/ReaderControls/*` → `src/components/ReaderControls/*`
+- `development/CosmicBookmarksPanel.tsx` → `src/components/CosmicBookmarksPanel.tsx`
+- `development/VirtualizedList.tsx` → `src/components/VirtualizedList.tsx`
+- `development/AlterFatePanel.tsx` → `src/components/AlterFatePanel.tsx`
+- `development/ParticleSystem.tsx` → `src/components/ParticleSystem.tsx`
+- `development/AudioWidget.tsx` → `src/components/AudioWidget.tsx`
+- `development/SystemBlock.tsx` → `src/components/SystemBlock.tsx`
+- `development/FateResultCard.tsx` → `src/components/FateResultCard.tsx`
+- `development/WorldEntityCard.tsx` → `src/components/WorldEntityCard.tsx`
+- `development/ReaderFateAlerts.tsx` → `src/components/ReaderFateAlerts.tsx`
+- `development/FateSurvivalExplanation.tsx` → `src/components/FateSurvivalExplanation.tsx`
+- `development/SystemColorLegend.tsx` → `src/components/SystemColorLegend.tsx`
+- `development/ManifestationImage.tsx` → `src/components/ManifestationImage.tsx`
+- `development/ContextInspector.tsx` → `src/components/ContextInspector.tsx`
+- Style changes from `shared/reader-chamber.css` → merge back into `src/index.css`
+
+Workshop-only — never transfer: `shared/stubs.ts`, `shared/types.ts` (production
+`src/types.ts` is authoritative), `shared/trackLibrary.ts` (production
+`lib/audio/musicResolver.ts` is authoritative), everything under
+`src/workshop/previews/reader-chamber/`, the manifest entry, and the registry line.
+
+## Transfer notes and cautions
+
+- The `reference/` and `development/` files import shared code from `../shared/…`;
+  production paths were `../lib/…`, `../hooks/…`, `../store/…`, `../types`. Reverse
+  the mapping exactly (see "What was mocked").
+- `ReaderViewport.tsx` carries one deliberate rewrite: `chapterNumbers.at(-1)` →
+  index access (Workshop tsconfig targets ES2020 without `Array.prototype.at`).
+  Safe to carry back, or restore `.at(-1)`.
+- `ReaderChamber.tsx` carries two strict-null coercions (`cue.danger ?? 0`) and two
+  prop casts (`handleUpdatePreference`, `handleAlterFate`) required by the
+  Workshop's stricter tsconfig; both are behavior-identical.
+- The Alter Fate panel's production button label "Sundert The Timeline" is a
+  production typo preserved verbatim — fix it deliberately in production, not here.
+- `ReaderCodexStoryPatch` in `shared/types.ts` is widened to `Partial<StoryWorld>`;
+  production's narrow Pick is the authoritative contract — do not transfer the type.
+- lucide icons: on transfer, either keep the aliased imports (they exist in current
+  lucide-react) or restore the legacy names if production's version still has them.
+
+## Lifecycle
+
+1. **Import** — copy production's current implementation into `reference/`.
+2. **Fork once** — `development/` starts as a copy of `reference/`.
+3. **Refine** — every Workshop task modifies `development/` only.
+4. **Approve** — once approved, transfer `development/` back to Light-Novels.
+5. **Resynchronize** — refresh `reference/` from the newly integrated production
+   code, record the new comparison date, and reset `development/` for the next
+   redesign cycle. There is no V2/V3 — only "what production currently is" vs "what
+   we are currently trying to make it become."
