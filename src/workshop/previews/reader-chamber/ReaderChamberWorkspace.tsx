@@ -114,14 +114,14 @@ export function ReaderChamberWorkspace() {
   }, []);
 
   // After the chambers remount for a scenario, drive its UI action (open the
-  // preferences panel, the bookmarks drawer, the Alter Fate modal, or start
+  // Reader Settings panel, the bookmarks drawer, the Alter Fate modal, or start
   // the Seal flow that surfaces the Continuity Guard warning).
   useEffect(() => {
     const scenario = scenarios.find((s) => s.id === activeState);
     if (!scenario?.uiAction) return;
     const timer = setTimeout(() => {
       if (scenario.uiAction === 'preferences') {
-        clickInChamber((b) => b.getAttribute('aria-label') === 'Aetherial Styles');
+        clickInChamber((b) => b.getAttribute('aria-label') === 'Reader Settings');
       } else if (scenario.uiAction === 'bookmarks') {
         clickInChamber((b) => b.getAttribute('aria-label') === 'The Chronicle Anchors');
       } else if (scenario.uiAction === 'alter-fate') {
