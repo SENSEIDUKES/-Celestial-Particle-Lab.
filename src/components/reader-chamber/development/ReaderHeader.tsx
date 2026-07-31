@@ -12,6 +12,8 @@ interface ReaderHeaderProps {
   onAlterFate?: () => void;
   alterFateLockMessage?: string | null;
   getHeaderThemeClasses: () => string;
+  /** Scroll-direction visibility from the chamber. Defaults to pinned visible. */
+  isVisible?: boolean;
 }
 
 const HEADER_BUTTON_CLASSES =
@@ -103,7 +105,8 @@ export function ReaderHeader({
   setShowReaderSettings,
   onAlterFate,
   alterFateLockMessage,
-  getHeaderThemeClasses
+  getHeaderThemeClasses,
+  isVisible = true
 }: ReaderHeaderProps) {
   return (
     <div
@@ -114,7 +117,7 @@ export function ReaderHeader({
           ? JSON.stringify(selectedChapter.cuePayload)
           : undefined
       }
-      className={`narrative-trigger sticky top-[0px] z-20 backdrop-blur-md px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1 border-b transition-colors duration-500 ${getHeaderThemeClasses()}`}
+      className={`narrative-trigger sticky top-[0px] z-20 backdrop-blur-md px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1 border-b transition-[color,background-color,border-color,transform] duration-300 motion-reduce:transition-none ${isVisible ? "translate-y-0" : "-translate-y-full"} ${getHeaderThemeClasses()}`}
     >
       <div className="min-w-0 flex-1 flex items-center gap-1.5 sm:gap-3">
         <button

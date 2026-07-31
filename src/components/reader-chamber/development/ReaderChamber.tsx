@@ -501,6 +501,78 @@ export default function ReaderChamber({
     return () => window.removeEventListener('narrative-cue', handleCue);
   }, [selectedChapterNum]);
 
+  // --- Scroll-direction header visibility ---
+  // The chamber root uses `overflow-clip` (not `overflow-hidden`), so the
+  // sticky header sticks to the actual scroll surface again. This effect
+  // hides the header on intentional downward scroll and reveals it on
+  // intentional upward scroll; it stays visible near the chapter top and
+  // while the Reader Settings panel (anchored directly under the header, and
+  // toggled from inside it) is open.
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+
+  useEffect(() => {
+    setIsHeaderVisible(true);
+    if (showReaderSettings) return;
+
+    const startEl = readerRef.current;
+    if (!startEl) return;
+
+    // The Reader Chamber's actual scroll container: the nearest ancestor that
+    // genuinely scrolls — never an assumed global page scroll. Falls back to
+    // the document when no inner scroller exists (Workshop + production).
+    let scroller: HTMLElement | Window = window;
+    let node: HTMLElement | null = startEl.parentElement;
+    while (node) {
+      const overflowY = window.getComputedStyle(node).overflowY;
+      if (
+        (overflowY === "auto" || overflowY === "scroll") &&
+        node.scrollHeight > node.clientHeight
+      ) {
+        scroller = node;
+        break;
+      }
+      node = node.parentElement;
+    }
+
+    const getScrollTop = () =>
+      scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+
+    let lastY = getScrollTop();
+    let direction: -1 | 0 | 1 = 0;
+    let accrued = 0;
+
+    const handleScroll = () => {
+      const y = getScrollTop();
+      const delta = y - lastY;
+      lastY = y;
+
+      // Near the top of the chapter the header always stays visible.
+      if (y <= 80) {
+        direction = 0;
+        accrued = 0;
+        setIsHeaderVisible(true);
+        return;
+      }
+      if (delta === 0) return;
+
+      const nextDirection = delta > 0 ? 1 : -1;
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        accrued = 0;
+      }
+      accrued += Math.abs(delta);
+
+      // Require 8px of accumulated one-direction travel before flipping, so
+      // touch bounce and sub-pixel jitter never flicker the header.
+      if (accrued < 8) return;
+      setIsHeaderVisible(direction === -1);
+    };
+
+    const target: HTMLElement | Window = scroller;
+    target.addEventListener("scroll", handleScroll, { passive: true });
+    return () => target.removeEventListener("scroll", handleScroll);
+  }, [showReaderSettings, selectedChapterNum, activeStory.id]);
+
   // --- Cosmic Bookmarking System States & Handlers ---
   const [showBookmarksPanel, setShowBookmarksPanel] = useState(false);
   const [editingBookmarkParagraphIndex, setEditingBookmarkParagraphIndex] =
@@ -834,7 +906,7 @@ export default function ReaderChamber({
 
   return (
     <div
-      className={`flex flex-col min-h-[85dvh] rounded-t-xl transition-colors duration-500 relative overflow-hidden ${getThemeClasses()} ${isShaking ? "animate-screen-shake" : ""}`}
+      className={`flex flex-col min-h-[85dvh] rounded-t-xl transition-colors duration-500 relative overflow-clip ${getThemeClasses()} ${isShaking ? "animate-screen-shake" : ""}`}
       id="reader-chamber-root"
     >
       {particleCount > 0 && (
@@ -858,6 +930,7 @@ export default function ReaderChamber({
           onAlterFate={handleAlterFate ? () => setIsAlterFateOpen(true) : undefined}
           alterFateLockMessage={alterFateLockMessage}
           getHeaderThemeClasses={getHeaderThemeClasses}
+          isVisible={isHeaderVisible}
         />
       )}
 
