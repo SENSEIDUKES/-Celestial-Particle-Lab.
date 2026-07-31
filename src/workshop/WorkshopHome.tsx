@@ -1,10 +1,10 @@
-import { workshopEntries, type WorkshopEntry } from './manifest';
-
-const statusLabel: Record<WorkshopEntry['status'], string> = {
-  draft: 'In Development',
-  refining: 'In Review',
-  approved: 'Approved',
-};
+import { useState } from 'react';
+import {
+  getWorkshopTrack,
+  getWorkshopVersionLabel,
+  workshopEntries,
+  type WorkshopTrack,
+} from './manifest';
 
 function CelestialVisual() {
   return (
@@ -105,6 +105,9 @@ function EdgeOrbit({ side }: { side: 'left' | 'right' }) {
 }
 
 export function WorkshopHome() {
+  const [activeTrack, setActiveTrack] = useState<WorkshopTrack>('development');
+  const visibleEntries = workshopEntries.filter((entry) => getWorkshopTrack(entry.version) === activeTrack);
+
   return (
     <main className="workshop-home">
       <EdgeOrbit side="left" />
@@ -113,22 +116,34 @@ export function WorkshopHome() {
       <div className="workshop-shell">
         <div className="workshop-topbar">
           <span className="workshop-brand">SEIHOUSE</span>
-          <nav className="workshop-nav" aria-label="Workshop">
-            <span className="workshop-nav-active">Development</span>
+          <nav className="workshop-nav" aria-label="Workshop tracks" role="tablist">
+            {(['development', 'production'] as const).map((track) => (
+              <button
+                key={track}
+                type="button"
+                role="tab"
+                aria-selected={activeTrack === track}
+                aria-controls="workshop-component-grid"
+                className={`workshop-nav-tab ${activeTrack === track ? 'workshop-nav-tab-active' : ''}`}
+                onClick={() => setActiveTrack(track)}
+              >
+                {track === 'development' ? 'Development' : 'Production'}
+              </button>
+            ))}
           </nav>
           <span className="workshop-topbar-spacer" aria-hidden="true" />
         </div>
 
         <header className="workshop-header">
-          <h1 className="workshop-title">Development</h1>
+          <h1 className="workshop-title">{activeTrack === 'development' ? 'Development' : 'Production'}</h1>
           <p className="workshop-kicker">Component Workshop</p>
           <p className="workshop-subtitle">
             Explore and refine the building blocks of our interface.
           </p>
         </header>
 
-        <section className="workshop-grid" aria-label="Workshop components">
-          {workshopEntries.map((entry) => (
+        <section id="workshop-component-grid" className="workshop-grid" aria-label={`${activeTrack === 'development' ? 'Development' : 'Production'} components`}>
+          {visibleEntries.map((entry) => (
             <a className="workshop-card" href={`?preview=${entry.id}`} key={entry.id}>
               <div className="workshop-card-visual">
                 <CardVisual id={entry.id} />
@@ -137,9 +152,9 @@ export function WorkshopHome() {
                 <h2>{entry.title}</h2>
                 <p>{entry.description}</p>
                 <div className="workshop-card-meta">
-                  <span className={`workshop-status workshop-status-${entry.status}`}>
+                  <span className={`workshop-status workshop-status-${getWorkshopTrack(entry.version)}`}>
                     <span className="workshop-status-dot" aria-hidden="true" />
-                    {statusLabel[entry.status]}
+                    {getWorkshopVersionLabel(entry.version)}
                   </span>
                   <span className="workshop-card-arrow" aria-hidden="true">→</span>
                 </div>
