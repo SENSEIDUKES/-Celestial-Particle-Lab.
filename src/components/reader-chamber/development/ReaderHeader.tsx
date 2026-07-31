@@ -1,35 +1,108 @@
-import React from 'react';
-import { Lock, Check, SlidersHorizontal as Sliders, Bookmark as BookmarkIcon } from 'lucide-react';
-import { ReaderChapter, Bookmark } from '../shared/types';
-import { AudioWidget } from './AudioWidget';
+import React, { useState } from 'react';
+import { ArrowLeft, History, Lock, SlidersHorizontal as Sliders, Volume2, Zap } from 'lucide-react';
+import { ReaderChapter } from '../shared/types';
 
 interface ReaderHeaderProps {
   arcTitle: string;
   selectedChapter: ReaderChapter;
-  chapters: ReaderChapter[];
-  selectedChapterNum: number;
-  setSelectedChapterNum: (num: number) => void;
-  onToggleRead: (chapterNumber: number) => void;
+  onBack?: () => void;
+  onOpenAudioControls: () => void;
   showReaderSettings: boolean;
   setShowReaderSettings: (show: boolean) => void;
-  showBookmarksPanel: boolean;
-  setShowBookmarksPanel: (show: boolean) => void;
-  activeBookmarks: Bookmark[];
+  onAlterFate?: () => void;
+  alterFateLockMessage?: string | null;
   getHeaderThemeClasses: () => string;
 }
 
+const HEADER_BUTTON_CLASSES =
+  "p-2 rounded-full border flex items-center justify-center transition-all";
+
+/**
+ * Header Quick Action slot — placeholder for the future "last used tool"
+ * shortcut. For now it opens a small menu so more actions can be pinned here
+ * later; Alter Fate (Branch) is the first entry.
+ */
+function QuickActionMenu({
+  onAlterFate,
+  alterFateLockMessage,
+}: {
+  onAlterFate?: () => void;
+  alterFateLockMessage?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((isOpen) => !isOpen)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        title="Quick Action"
+        aria-label="Quick Actions"
+        className={`${HEADER_BUTTON_CLASSES} ${
+          open
+            ? "border-portal bg-portal/10 text-portal"
+            : "border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
+        }`}
+      >
+        <History size={14} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div
+            role="menu"
+            className="absolute right-0 top-full mt-2 z-40 w-56 rounded-lg border border-neutral-800 bg-[#0b0b0b]/95 backdrop-blur-md p-2 shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
+          >
+            <p className="px-2 pb-1.5 text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-600">
+              Quick Actions
+            </p>
+            {onAlterFate && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onAlterFate();
+                }}
+                disabled={Boolean(alterFateLockMessage)}
+                title={alterFateLockMessage || 'Alter Fate (Branch)'}
+                aria-label={alterFateLockMessage || 'Alter Fate (Branch)'}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[11px] font-sc uppercase tracking-wider text-portal transition-colors hover:bg-portal/10 disabled:opacity-45 disabled:cursor-not-allowed"
+              >
+                <Zap size={13} />
+                Alter Fate (Branch)
+              </button>
+            )}
+            {alterFateLockMessage && (
+              <p className="px-2 pt-1 text-[9px] leading-tight text-neutral-500">
+                {alterFateLockMessage}
+              </p>
+            )}
+            <p className="px-2 pt-1.5 text-[9px] leading-tight text-neutral-600">
+              Your last used tools will pin here.
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The top header is navigation and controls only: Back, story/chapter title,
+ * Audio, Settings, and the Quick Action slot. Reading actions (chapter
+ * navigation, comments, play/pause, codex) live in the bottom action bar.
+ */
 export function ReaderHeader({
   arcTitle,
   selectedChapter,
-  chapters,
-  selectedChapterNum,
-  setSelectedChapterNum,
-  onToggleRead,
+  onBack,
+  onOpenAudioControls,
   showReaderSettings,
   setShowReaderSettings,
-  showBookmarksPanel,
-  setShowBookmarksPanel,
-  activeBookmarks,
+  onAlterFate,
+  alterFateLockMessage,
   getHeaderThemeClasses
 }: ReaderHeaderProps) {
   return (
@@ -43,45 +116,50 @@ export function ReaderHeader({
       }
       className={`narrative-trigger sticky top-[0px] z-20 backdrop-blur-md px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1 border-b transition-colors duration-500 ${getHeaderThemeClasses()}`}
     >
-      <div className="min-w-0 flex-1">
-        <span className="font-sc font-semibold text-[10px] text-jade-accent tracking-[0.2em] uppercase flex items-center gap-1.5 line-clamp-1">
-          <span>
-            {arcTitle} • Chapter {selectedChapter.number}
+      <div className="min-w-0 flex-1 flex items-center gap-1.5 sm:gap-3">
+        <button
+          onClick={onBack ?? (() => window.history.back())}
+          className={`${HEADER_BUTTON_CLASSES} shrink-0 border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900`}
+          title="Back"
+          aria-label="Back"
+        >
+          <ArrowLeft size={14} />
+        </button>
+        <div className="min-w-0 flex-1">
+          <span className="font-sc font-semibold text-[10px] text-jade-accent tracking-[0.2em] uppercase flex items-center gap-1.5 line-clamp-1">
+            <span>
+              {arcTitle} • Chapter {selectedChapter.number}
+            </span>
+            {selectedChapter.isSealed && (
+              <span title="Published & Sealed" className="flex items-center">
+                <Lock size={10} className="text-portal shrink-0" />
+              </span>
+            )}
+            {selectedChapter.hasContinuityFaults && (
+              <span title="A hard contradiction couldn't be fully reconciled with your Codex — the chapter is still fully readable." className="flex items-center bg-rose-500/15 text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded text-[8px] font-sans font-bold uppercase tracking-normal gap-1">
+                <span className="animate-pulse">●</span> Timeline Divergence
+              </span>
+            )}
           </span>
-          {selectedChapter.isSealed && (
-            <span title="Published & Sealed" className="flex items-center">
-              <Lock size={10} className="text-portal shrink-0" />
-            </span>
-          )}
-          {selectedChapter.hasContinuityFaults && (
-            <span title="A hard contradiction couldn't be fully reconciled with your Codex — the chapter is still fully readable." className="flex items-center bg-rose-500/15 text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded text-[8px] font-sans font-bold uppercase tracking-normal gap-1">
-              <span className="animate-pulse">●</span> Timeline Divergence
-            </span>
-          )}
-        </span>
-        <h2 className="font-display font-medium text-signal text-base sm:text-xl line-clamp-1 mt-0.5">
-          {selectedChapter.title}
-        </h2>
+          <h2 className="font-display font-medium text-signal text-base sm:text-xl line-clamp-1 mt-0.5">
+            {selectedChapter.title}
+          </h2>
+        </div>
       </div>
       <div className="flex space-x-1 sm:space-x-2 items-center shrink-0">
-        <AudioWidget />
         <button
-           tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => onToggleRead(selectedChapter.number)}
-          className={`p-2 rounded-full border flex items-center justify-center transition-all ${
-            selectedChapter.status === "read"
-              ? "border-gold-accent bg-gold-accent/10 text-gold-accent"
-              : "border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
-          }`}
-          title={selectedChapter.status === "read" ? "Mark Chapter as Unread" : "Mark Chapter as Finished & Read"}
-          aria-label={selectedChapter.status === "read" ? "Mark Chapter as Unread" : "Mark Chapter as Finished & Read"}
+          onClick={onOpenAudioControls}
+          className={`${HEADER_BUTTON_CLASSES} border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900`}
+          title="Audio & Narration"
+          aria-label="Audio & Narration"
         >
-          <Check size={14} />
+          <Volume2 size={14} />
         </button>
 
         <button
           onClick={() => setShowReaderSettings(!showReaderSettings)}
           aria-expanded={showReaderSettings}
-          className={`p-2 rounded-full border flex items-center justify-center transition-all ${
+          className={`${HEADER_BUTTON_CLASSES} ${
             showReaderSettings
               ? "border-portal bg-portal/10 text-portal"
               : "border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
@@ -92,42 +170,10 @@ export function ReaderHeader({
           <Sliders size={14} />
         </button>
 
-        <button
-          onClick={() => setShowBookmarksPanel(!showBookmarksPanel)}
-          aria-expanded={showBookmarksPanel}
-          className={`p-2 rounded-full border flex items-center justify-center transition-all relative ${
-            showBookmarksPanel
-              ? "border-gold-accent bg-gold-accent/15 text-gold-accent"
-              : activeBookmarks.length > 0
-                ? "border-portal/40 bg-portal/5 text-portal"
-                : "border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
-          }`}
-          title="The Chronicle Anchors"
-          aria-label="The Chronicle Anchors"
-        >
-          <BookmarkIcon size={14} />
-          {activeBookmarks.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-human text-signal text-[8px] h-3.5 w-3.5 flex items-center justify-center rounded-full font-mono font-bold">
-              {activeBookmarks.length}
-            </span>
-          )}
-        </button>
-
-        <div className="flex sm:flex relative top-0 z-50 items-center space-x-2">
-          <select
-            value={selectedChapterNum}
-            onChange={(e) =>
-              setSelectedChapterNum(parseInt(e.target.value))
-            }
-            className="hidden sm:block bg-void border border-neutral-800 py-1 px-3 rounded text-xs text-neutral-400 font-sans cursor-pointer focus:outline-none"
-          >
-            {chapters.map((ch) => (
-              <option key={ch.number} value={ch.number}>
-                Ch. {ch.number}: {ch.title.substring(0, 20)}...{ch.hasContinuityFaults ? " ⚠️" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
+        <QuickActionMenu
+          onAlterFate={onAlterFate}
+          alterFateLockMessage={alterFateLockMessage}
+        />
       </div>
     </div>
   );

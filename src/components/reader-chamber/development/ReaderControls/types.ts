@@ -33,15 +33,14 @@ export interface ImmersionPreferences {
   setImmersion: (settings: any) => void;
 }
 
-export interface FateActions {
-  handleAlterFate?: (chapterNum: number, direction: string, customPrompt?: string) => Promise<void>;
-  setIsAlterFateOpen: (isOpen: boolean) => void;
-  handleExportText: () => void;
-  alterFateLockMessage?: string | null;
-}
-
-export interface ReaderSettingsControl {
+/**
+ * The Comments entry reuses the Chronicle Anchors (bookmarks) panel until the
+ * full comments system replaces it — `open`/`onToggle` drive that same drawer
+ * and `count` carries the anchor badge.
+ */
+export interface CommentsControl {
   open: boolean;
+  count: number;
   onToggle: () => void;
 }
 
@@ -49,6 +48,5 @@ export interface ReaderControlsProps {
   selectedChapter: ReaderChapter;
   navigation: ChapterNavigationState;
   playback: PlaybackState;
-  actions: FateActions;
-  settings: ReaderSettingsControl;
+  comments: CommentsControl;
 }

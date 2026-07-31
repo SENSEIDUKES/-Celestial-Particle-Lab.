@@ -123,8 +123,13 @@ export function ReaderChamberWorkspace() {
       if (scenario.uiAction === 'preferences') {
         clickInChamber((b) => b.getAttribute('aria-label') === 'Reader Settings');
       } else if (scenario.uiAction === 'bookmarks') {
-        clickInChamber((b) => b.getAttribute('aria-label') === 'The Chronicle Anchors');
+        // The Comments button reuses the Chronicle Anchors drawer for now.
+        clickInChamber((b) => b.getAttribute('aria-label') === 'Comments');
       } else if (scenario.uiAction === 'alter-fate') {
+        // Alter Fate lives in the header Quick Action menu — open it first
+        // (discrete click updates flush synchronously, so the menu item is
+        // clickable immediately after).
+        clickInChamber((b) => b.getAttribute('aria-label') === 'Quick Actions');
         clickInChamber((b) => (b.getAttribute('aria-label') || '').includes('Alter Fate'));
       } else if (scenario.uiAction === 'seal') {
         clickInChamber((b) => /Seal Chapter|^Publish$/.test(b.textContent?.trim() ?? ''));

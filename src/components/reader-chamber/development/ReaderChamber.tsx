@@ -45,6 +45,7 @@ interface ReaderChamberProps {
   setSelectedChapterNum: (num: number) => void;
   onToggleRead: (chapterNumber: number) => void;
   arcTitle: string;
+  onBack?: () => void;
   onSwitchTab?: (tab: "reader" | "codex" | "memory") => void;
   activeStory: StoryWorld;
   updateStoryFields: UpdateStoryFields;
@@ -67,6 +68,7 @@ export default function ReaderChamber({
   setSelectedChapterNum,
   onToggleRead,
   arcTitle,
+  onBack,
   onSwitchTab,
   activeStory,
   updateStoryFields,
@@ -354,6 +356,22 @@ export default function ReaderChamber({
         ...DEFAULT_READER_TYPOGRAPHY,
       },
     }));
+  };
+
+  // Header Audio button: the audio/narration controls live in the Audio
+  // section of the single Reader Settings panel — open it and bring that
+  // section into view.
+  const handleOpenAudioControls = () => {
+    if (!showReaderSettings) {
+      interveneAutoScroll();
+      readerRef.current?.scrollIntoView({ behavior: "smooth" });
+      setShowReaderSettings(true);
+    }
+    setTimeout(() => {
+      document
+        .getElementById("reader-settings-audio")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
   };
 
   const isDeathOrCriticalHealthScene = useMemo(() => {
@@ -827,26 +845,24 @@ export default function ReaderChamber({
         />
       )}
 
-      {/* HEADER: Readability & Chapter Title */}
+      {/* HEADER: Navigation & controls only (Back, title, Audio, Settings,
+          Quick Action) */}
       {!isReaderFullscreen && (
         <ReaderHeader
           arcTitle={arcTitle}
           selectedChapter={selectedChapter}
-          chapters={chapters}
-          selectedChapterNum={selectedChapterNum}
-          setSelectedChapterNum={setSelectedChapterNum}
-          onToggleRead={onToggleRead}
+          onBack={onBack}
+          onOpenAudioControls={handleOpenAudioControls}
           showReaderSettings={showReaderSettings}
           setShowReaderSettings={setShowReaderSettings}
-          showBookmarksPanel={showBookmarksPanel}
-          setShowBookmarksPanel={setShowBookmarksPanel}
-          activeBookmarks={activeBookmarks}
+          onAlterFate={handleAlterFate ? () => setIsAlterFateOpen(true) : undefined}
+          alterFateLockMessage={alterFateLockMessage}
           getHeaderThemeClasses={getHeaderThemeClasses}
         />
       )}
 
       {/* Dynamic Collapsible Reader Settings Panel — the single settings
-          menu for Reader, Audio, and Immersion controls */}
+          entry point for Chapter, Reader, Audio, and Immersion controls */}
       <AnimatePresence>
         {showReaderSettings && (
           <ReaderSettings
@@ -879,6 +895,11 @@ export default function ReaderChamber({
               setImmersion,
             }}
             onExportText={handleExportText}
+            chapters={chapters}
+            selectedChapter={selectedChapter}
+            selectedChapterNum={selectedChapterNum}
+            onSelectChapter={setSelectedChapterNum}
+            onToggleRead={onToggleRead}
           />
         )}
       </AnimatePresence>
@@ -964,23 +985,10 @@ export default function ReaderChamber({
           readerMode,
           playerStyle: currentPrefs.playerStyle,
         }}
-        actions={{
-          handleAlterFate: handleAlterFate as ((chapterNum: number, direction: string, customPrompt?: string) => Promise<void>) | undefined,
-          setIsAlterFateOpen,
-          handleExportText,
-          alterFateLockMessage,
-        }}
-        settings={{
-          open: showReaderSettings,
-          onToggle: () => {
-            if (!showReaderSettings) {
-              // The panel opens under the header — bring it into view when the
-              // toggle comes from the bottom control bar.
-              interveneAutoScroll();
-              readerRef.current?.scrollIntoView({ behavior: "smooth" });
-            }
-            setShowReaderSettings(!showReaderSettings);
-          },
+        comments={{
+          open: showBookmarksPanel,
+          count: activeBookmarks.length,
+          onToggle: () => setShowBookmarksPanel(!showBookmarksPanel),
         }}
       />
 

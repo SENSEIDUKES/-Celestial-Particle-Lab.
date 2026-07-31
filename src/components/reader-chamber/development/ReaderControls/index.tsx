@@ -1,98 +1,90 @@
 import React from 'react';
-import { ListMusic, Settings } from 'lucide-react';
-import { ReaderControlsProps, ReaderSettingsControl } from './types';
+import { ArrowLeft, ArrowRight, ListMusic, MessageSquare } from 'lucide-react';
+import { ReaderControlsProps } from './types';
 import { PlaybackControls } from './PlaybackControls';
-import { ChapterNavigation } from './ChapterNavigation';
 
-function ReaderSettingsButton({ settings }: { settings: ReaderSettingsControl }) {
-  return (
-    <button
-      onClick={settings.onToggle}
-      aria-label="Reader Settings"
-      aria-expanded={settings.open}
-      title="Reader Settings"
-      className={`p-2 border rounded-full transition-colors focus:outline-none ${
-        settings.open
-          ? "bg-neutral-800 border-neutral-700 text-signal"
-          : "bg-void border-neutral-800 hover:text-signal hover:bg-neutral-900 text-neutral-400"
-      }`}
-    >
-      <Settings size={16} />
-    </button>
-  );
-}
+const ACTION_BUTTON_CLASSES =
+  "p-2 border rounded-full transition-colors focus:outline-none bg-void border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900 disabled:opacity-25 disabled:cursor-not-allowed";
 
+/**
+ * The bottom action bar carries reading actions only — Previous Chapter,
+ * Comments, Play/Pause (primary center action), Codex, Next Chapter — in one
+ * unified row on every breakpoint. Settings and audio configuration live in
+ * the header; Alter Fate lives in the header Quick Action menu.
+ */
 export function ReaderControls({
   selectedChapter,
   navigation,
   playback,
-  actions,
-  settings,
+  comments,
 }: ReaderControlsProps) {
-  const { onSwitchTab } = navigation;
-  const { isPlayingText, isPausedText, readerMode } = playback;
+  const { selectedChapterNum, maxChapterNum, navigatePrev, navigateNext, onSwitchTab } = navigation;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-900 z-40 px-4 py-2 sm:py-3 pb-6 sm:pb-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-      <div className="max-w-4xl mx-auto">
-        {/* Mobile View: Ultra-sleek compact player navigation row */}
-        <div className="flex sm:hidden items-center justify-between w-full">
-           {/* Left: Settings & Codex */}
-           <div className="flex items-center gap-2">
-              <ReaderSettingsButton settings={settings} />
-              <button
-                onClick={() => onSwitchTab && onSwitchTab("codex")}
-                aria-label="Open Codex"
-                className="p-2 border border-neutral-800 rounded-full bg-void text-neutral-400 hover:text-portal transition-colors focus:outline-none"
-                title="Codex"
-              >
-                <ListMusic size={16} />
-              </button>
-           </div>
+      <div className="max-w-4xl mx-auto flex items-center justify-between gap-1 sm:gap-2">
+        {/* Previous Chapter */}
+        <button
+          type="button"
+          onClick={navigatePrev}
+          disabled={selectedChapterNum <= 1}
+          aria-label="Previous Chapter"
+          title="Previous Chapter"
+          className={`${ACTION_BUTTON_CLASSES} enabled:hover:text-portal`}
+        >
+          <ArrowLeft size={16} />
+        </button>
 
-           {/* Center: Play/Pause Vinyl Disc */}
-           <div className="flex items-center justify-center relative shrink-0">
-              <PlaybackControls selectedChapter={selectedChapter} playback={playback} />
-           </div>
+        {/* Comments — reuses the Chronicle Anchors panel for now */}
+        <button
+          type="button"
+          onClick={comments.onToggle}
+          aria-label="Comments"
+          aria-expanded={comments.open}
+          title="Comments"
+          className={`p-2 border rounded-full transition-colors focus:outline-none relative ${
+            comments.open
+              ? "border-portal bg-portal/10 text-portal"
+              : comments.count > 0
+                ? "border-portal/40 bg-portal/5 text-portal"
+                : "bg-void border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
+          }`}
+        >
+          <MessageSquare size={16} />
+          {comments.count > 0 && (
+            <span className="absolute -top-1 -right-1 bg-human text-signal text-[8px] h-3.5 w-3.5 flex items-center justify-center rounded-full font-mono font-bold">
+              {comments.count}
+            </span>
+          )}
+        </button>
 
-           {/* Right: Alter Fate & Chapter Nav */}
-           <ChapterNavigation navigation={navigation} actions={actions} />
+        {/* Play / Pause — primary center action */}
+        <div className="flex items-center justify-center relative shrink-0">
+          <PlaybackControls selectedChapter={selectedChapter} playback={playback} />
         </div>
 
-        {/* Desktop View (Hidden on Mobile) */}
-        <div className="hidden sm:flex flex-row items-center justify-between gap-4">
-          {/* TTS Audio Controls */}
-          <div className="flex items-center space-x-4">
-            {/* Desktop Cosmic Vinyl/Reciter Disk */}
-            <PlaybackControls selectedChapter={selectedChapter} playback={playback} isDesktop />
+        {/* Codex */}
+        <button
+          type="button"
+          onClick={() => onSwitchTab && onSwitchTab("codex")}
+          aria-label="Open Codex"
+          title="Codex"
+          className={`${ACTION_BUTTON_CLASSES} hover:text-portal`}
+        >
+          <ListMusic size={16} />
+        </button>
 
-            {/* Title & Info */}
-            <div>
-              <p className="font-sc font-bold text-signal text-[10px] tracking-widest uppercase flex items-center gap-1.5">
-                <span>
-                  {isPlayingText && !isPausedText
-                    ? "Rhythmic Recitation Active"
-                    : "Listen to Chapter"}
-                </span>
-                {readerMode === 'basic-tts' && isPlayingText && (
-                  <span className="text-[7.5px] uppercase font-mono tracking-wider text-[#000000] bg-portal px-1 rounded font-bold">
-                    Basic Narration
-                  </span>
-                )}
-              </p>
-              <p className="font-sans text-[10px] text-neutral-500">
-                Chapter {navigation.selectedChapterNum}
-              </p>
-            </div>
-
-            {/* Settings Toggle */}
-            <div className="ml-2">
-              <ReaderSettingsButton settings={settings} />
-            </div>
-          </div>
-
-          <ChapterNavigation navigation={navigation} actions={actions} isDesktop />
-        </div>
+        {/* Next Chapter */}
+        <button
+          type="button"
+          onClick={navigateNext}
+          disabled={selectedChapterNum === maxChapterNum}
+          aria-label="Next Chapter"
+          title="Next Chapter"
+          className={`${ACTION_BUTTON_CLASSES} enabled:hover:text-human`}
+        >
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );

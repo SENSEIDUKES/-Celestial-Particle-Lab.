@@ -35,7 +35,7 @@ export interface PreviewScenario {
 export const scenarios: PreviewScenario[] = [
   { id: 'reading', label: 'Reading (rich blocks chapter)', chapter: 1 },
   { id: 'preferences-open', label: 'Reader Settings open', chapter: 1, uiAction: 'preferences' },
-  { id: 'bookmarks-open', label: 'Chronicle Anchors open', chapter: 1, uiAction: 'bookmarks' },
+  { id: 'bookmarks-open', label: 'Comments (Chronicle Anchors) open', chapter: 1, uiAction: 'bookmarks' },
   { id: 'alter-fate-open', label: 'Alter Fate panel open', chapter: 1, uiAction: 'alter-fate' },
   { id: 'continuity-warning', label: 'Continuity Guard warning (Seal flow)', chapter: 1, uiAction: 'seal' },
   { id: 'generating', label: 'Generating chapter (skeleton)', chapter: 4, isGenerating: true },

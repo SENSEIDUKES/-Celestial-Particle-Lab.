@@ -12,6 +12,7 @@
 
 - **2026-07-31:** Created faithful Workshop replica and local state simulator (11 preview states, mock StoryWorld with 4 chapters, zustand-free external mock store).
 - **2026-07-31:** Consolidated all reader settings into a single **Reader Settings** panel (`development/ReaderSettings.tsx`) with three labeled sections — Reader (the former `ReaderPreferencesPanel` controls: font, size, theme, particles, chapter divider, highlights, typography, player style, System Color Legend), Audio (the `AudioMenu` mix, voice selects, playback speed, Export Chronicle), and Immersion (Immersion Engine master, Autonomous Reading, Holographic Visions). Both entry points (header button, now aria-labeled "Reader Settings", and the bottom-bar gear) open this one panel; the old bottom-bar `ImmersionSettings` popover and the standalone `ReaderPreferencesPanel` were removed. No control behavior changed — only organization and presentation.
+- **2026-07-31:** Consolidated Reader Chamber navigation into the new layout direction (navigation architecture only — no visual redesign). The **top header** is now navigation and controls only: Back, story/chapter title, Audio, Settings, and a Quick Action slot. The **bottom action bar** carries reading actions only — Previous Chapter, Comments, Play/Pause (primary center action), Codex, Next Chapter — as one unified row on every breakpoint (the desktop-only recitation info text was dropped with the split layout). Details: the header **Audio** button opens the Reader Settings panel scrolled to the Audio section (`#reader-settings-audio`); the header **Settings** button is now the single settings entry point (the bottom-bar gear was removed); the chapter selector and mark-as-read toggle moved from the old header into a new **Chapter** section at the top of the settings panel; the bottom-bar **Comments** button reuses the Chronicle Anchors drawer (entry renamed to Comments, drawer internals untouched — Chronicle Anchors becomes the comments system later); **Alter Fate (Branch)** moved from the bottom bar into the header **Quick Action** menu, the placeholder slot's first wired action. `ReaderControls/ChapterNavigation.tsx` (inlined into `ReaderControls/index.tsx`) and `AudioWidget.tsx` (master mute/volume lives in the Audio section's `AudioMenu`) were removed from `development/`. Reader logic, TTS behavior, Codex, and Chronicle Anchors internals unchanged.
 
 ## Folder layout
 
@@ -37,8 +38,9 @@ reference/                    — untouched replica of production, locked
   ManifestationImage.tsx
   ContextInspector.tsx
 development/                  — active Workshop version; started as an exact copy of reference/
-  (same files, except: ReaderSettings.tsx replaces ReaderPreferencesPanel.tsx,
-   and ReaderControls/ no longer contains ImmersionSettings.tsx — see history)
+  (same files, except: ReaderSettings.tsx replaces ReaderPreferencesPanel.tsx;
+   ReaderControls/ no longer contains ImmersionSettings.tsx or
+   ChapterNavigation.tsx; AudioWidget.tsx was removed — see history)
 shared/                       — code genuinely identical between the two forks
   types.ts                    — ReaderChapter + composing types, StoryBlock/metadata/SystemEvent/
                                 WorldCardEvent/FateResultData, StoryCuePayload, ContextManifest,
@@ -122,7 +124,7 @@ already carries the same font and color tokens.
 - `reading` — rich blocks chapter 1 (system blocks, Fate Result card, World Card,
   Context Inspector, legend, Fate Survival banner)
 - `preferences-open` — Reader Settings panel expanded
-- `bookmarks-open` — Chronicle Anchors drawer with two anchor cards
+- `bookmarks-open` — Comments button opening the Chronicle Anchors drawer (two anchor cards)
 - `alter-fate-open` — Alter Fate (branch) modal
 - `continuity-warning` — Seal flow surfacing the Continuity Guard Warning modal
 - `generating` — chapter 4 with skeleton pulse placeholder
@@ -235,12 +237,13 @@ the import rewrites (`../shared/X` → `../lib/X` / `../hooks/X` / `../store/X`,
   on transfer, delete `src/components/ReaderPreferencesPanel.tsx` and
   `src/components/ReaderControls/ImmersionSettings.tsx` from production — their
   controls now live inside `ReaderSettings.tsx`)
-- `development/ReaderControls/*` → `src/components/ReaderControls/*`
+- `development/ReaderControls/*` → `src/components/ReaderControls/*` (on transfer,
+  delete `src/components/ReaderControls/ChapterNavigation.tsx` — the bottom action
+  bar is now inline in `ReaderControls/index.tsx`)
 - `development/CosmicBookmarksPanel.tsx` → `src/components/CosmicBookmarksPanel.tsx`
 - `development/VirtualizedList.tsx` → `src/components/VirtualizedList.tsx`
 - `development/AlterFatePanel.tsx` → `src/components/AlterFatePanel.tsx`
 - `development/ParticleSystem.tsx` → `src/components/ParticleSystem.tsx`
-- `development/AudioWidget.tsx` → `src/components/AudioWidget.tsx`
 - `development/SystemBlock.tsx` → `src/components/SystemBlock.tsx`
 - `development/FateResultCard.tsx` → `src/components/FateResultCard.tsx`
 - `development/WorldEntityCard.tsx` → `src/components/WorldEntityCard.tsx`
@@ -258,6 +261,13 @@ Workshop-only — never transfer: `shared/stubs.ts`, `shared/types.ts` (producti
 
 ## Transfer notes and cautions
 
+- The header **Back** button falls back to `window.history.back()` when no
+  `onBack` prop is passed — wire it to the production navigation handler on
+  transfer.
+- On transfer, delete production `src/components/AudioWidget.tsx` — the header
+  master-mute shortcut was replaced by the header Audio button, which opens the
+  Audio section of `ReaderSettings.tsx` (the `AudioMenu` keeps the same master
+  switch and volume).
 - The `reference/` and `development/` files import shared code from `../shared/…`;
   production paths were `../lib/…`, `../hooks/…`, `../store/…`, `../types`. Reverse
   the mapping exactly (see "What was mocked").
