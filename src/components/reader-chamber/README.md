@@ -15,6 +15,19 @@
 - **2026-07-31:** Consolidated Reader Chamber navigation into the new layout direction (navigation architecture only — no visual redesign). The **top header** is now navigation and controls only: Back, story/chapter title, Audio, Settings, and a Quick Action slot. The **bottom action bar** carries reading actions only — Previous Chapter, Comments, Play/Pause (primary center action), Codex, Next Chapter — as one unified row on every breakpoint (the desktop-only recitation info text was dropped with the split layout). Details: the header **Audio** button opens the Reader Settings panel scrolled to the Audio section (`#reader-settings-audio`); the header **Settings** button is now the single settings entry point (the bottom-bar gear was removed); the chapter selector and mark-as-read toggle moved from the old header into a new **Chapter** section at the top of the settings panel; the bottom-bar **Comments** button reuses the Chronicle Anchors drawer (entry renamed to Comments, drawer internals untouched — Chronicle Anchors becomes the comments system later); **Alter Fate (Branch)** moved from the bottom bar into the header **Quick Action** menu, the placeholder slot's first wired action. `ReaderControls/ChapterNavigation.tsx` (inlined into `ReaderControls/index.tsx`) and `AudioWidget.tsx` (master mute/volume lives in the Audio section's `AudioMenu`) were removed from `development/`. Reader logic, TTS behavior, Codex, and Chronicle Anchors internals unchanged.
 - **2026-07-31:** Restored scroll-direction header behavior (second attempt — the first was reverted for making the header vanish entirely). Root cause of both the old failure and the "header never returns" symptom: `#reader-chamber-root` had `overflow-hidden`, which silently disables `position: sticky` on the header, so the header simply scrolled away with the chapter. The root now uses `overflow-clip` — it clips exactly like `hidden` (rounded corners, particles, screen shake unaffected) but creates no scroll container, so the sticky header works again. On top of that, the chamber hides the header after 8px of accumulated downward scroll and reveals it after 8px of accumulated upward scroll, listening on the chamber's **actual scroll container** (nearest genuinely scrolling ancestor, resolved at runtime, document fallback) rather than assuming the global page scroll. The header stays pinned near the chapter top (≤80px) and while the Reader Settings panel is open; tiny touch jitter never flips it; the sticky slot reserves layout space so hide/show causes no reflow or scroll jump; `motion-reduce` disables the transition. Works for wheel, touch drag, and momentum scrolling on mobile, tablet, and desktop.
 
+- **2026-07-31:** Reorganized the Workshop preview-control menu (Workshop panel only — no
+  Reader Chamber behavior, no preview states removed). The single long Preview States list
+  became four categories chosen from a compact `Reading | Effects | Menus | Pages` selector,
+  with only the selected category's controls rendered: **Reading** (reading state, fullscreen
+  reading, chapter selection), **Effects** (theme, particle intensity), **Menus** (Reader
+  Settings open, Comments open, Alter Fate panel open), **Pages** (auto-scroll paused,
+  generating, translating, Unmanifested Segment, death/critical scene, Continuity Guard
+  warning). One responsive layout serves both breakpoints: the selector is a four-column grid
+  that fits the mobile viewport, state buttons stack one per row on mobile and flow into 2–3
+  columns from `sm`/`lg` up, long labels wrap instead of overflowing, every control keeps a
+  ~44px minimum touch target, and the panel clips horizontal overflow (verified at 390px and
+  1280px: zero horizontal page overflow in all four categories).
+
 ## Folder layout
 
 ```
@@ -60,8 +73,8 @@ shared/                       — code genuinely identical between the two forks
 ```
 
 Both forks render inside `src/workshop/previews/reader-chamber/ReaderChamberWorkspace.tsx`,
-which shares one mock story, preview-state panel, chapter selector, theme selector, and
-particle-intensity selector between them via `FeatureWorkspace`.
+which shares one mock story and one categorized preview-control panel (Reading / Effects /
+Menus / Pages — see "Available preview states") between them via `FeatureWorkspace`.
 
 ## What was copied
 
@@ -122,23 +135,42 @@ already carries the same font and color tokens.
 
 ## Available preview states
 
+The Workshop preview-control menu is split into four categories, selected with a
+compact `Reading | Effects | Menus | Pages` row at the top of the panel. Only the
+selected category's controls render, so the menu is never one long vertical list.
+Category membership lives on each scenario in
+`src/workshop/previews/reader-chamber/previewStates.ts` (`category` field).
+
+**Reading** — normal reading states and reading setup
+
 - `reading` — rich blocks chapter 1 (system blocks, Fate Result card, World Card,
   Context Inspector, legend, Fate Survival banner)
+- `fullscreen` — header hidden; click prose to toggle back
+- Chapter selector (1–4)
+
+**Effects** — preview-only visual and immersive controls
+
+- Theme selector (void/crimson/abyss/sepia/emerald via `readerPreferences.themeOverride`)
+- Particle intensity (off/low/default/high via `readerPreferences.particleIntensity`)
+
+**Menus** — opened panels, drawers, and overlays
+
 - `preferences-open` — Reader Settings panel expanded
 - `bookmarks-open` — Comments button opening the Chronicle Anchors drawer (two anchor cards)
 - `alter-fate-open` — Alter Fate (branch) modal
-- `continuity-warning` — Seal flow surfacing the Continuity Guard Warning modal
+
+**Pages** — alternate Reader Chamber states and special full-screen conditions
+
+- `auto-scroll-paused` — resume-reading pill (rendered at the chamber bottom, as in production)
 - `generating` — chapter 4 with skeleton pulse placeholder
 - `translating` — "Translating the Heavenly Dao…" spinner
-- `fullscreen` — header hidden; click prose to toggle back
-- `death-scene` — sealed chapter 3 with menacing red shading + death flag block
 - `empty-chapter` — "Unmanifested Segment" with Manifest buttons
-- `auto-scroll-paused` — resume-reading pill (rendered at the chamber bottom, as in production)
+- `death-scene` — sealed chapter 3 with menacing red shading + death flag block
+- `continuity-warning` — Seal flow surfacing the Continuity Guard Warning modal
 
-Workspace-only controls (never inside the reusable components): preview-state buttons,
-chapter selector (1–4), theme selector (void/crimson/abyss/sepia/emerald via
-`readerPreferences.themeOverride`), particle intensity (off/low/default/high via
-`readerPreferences.particleIntensity`).
+All of these are Workspace-only controls, never inside the reusable components. When the
+active state belongs to a category that is not on screen, the panel names it on a footer
+line so the current state is never ambiguous.
 
 ## Reusable Workshop dependencies
 

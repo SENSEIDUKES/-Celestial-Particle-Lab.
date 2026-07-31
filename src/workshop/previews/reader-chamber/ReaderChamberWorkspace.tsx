@@ -22,8 +22,11 @@ import {
 } from './previewData';
 import {
   PARTICLE_INTENSITIES,
+  PREVIEW_CATEGORIES,
   READER_THEMES,
   scenarios,
+  scenariosInCategory,
+  PreviewCategory,
   PreviewState,
 } from './previewStates';
 import '../../../components/reader-chamber/shared/reader-chamber.css';
@@ -90,6 +93,7 @@ function clickInChamber(predicate: (button: HTMLButtonElement) => boolean) {
 export function ReaderChamberWorkspace() {
   const entry = workshopEntries.find((e) => e.id === 'reader-chamber')!;
   const [activeState, setActiveState] = useState<PreviewState>('reading');
+  const [activeCategory, setActiveCategory] = useState<PreviewCategory>('reading');
   const [selectedChapterNum, setSelectedChapterNum] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const activeStory = useAppStore((s) => s.stories[0]);
@@ -220,73 +224,137 @@ export function ReaderChamberWorkspace() {
     },
   };
 
-  const controlButton = (active: boolean) =>
-    `px-3 py-1.5 rounded-lg text-xs transition-all duration-200 border ${
-      active
-        ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100'
-        : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10'
-    }`;
+  // Shared button skin. `stateButton` wraps long scenario labels onto multiple
+  // lines; `chipButton` stays compact for short tokens (chapter, theme, particles).
+  // Both keep a ~44px minimum touch target without bulking up the desktop panel.
+  const buttonBase =
+    'min-h-[2.75rem] rounded-lg border text-xs leading-snug transition-all duration-200';
+  const buttonTone = (active: boolean) =>
+    active
+      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100'
+      : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10';
+  const stateButton = (active: boolean) =>
+    `${buttonBase} ${buttonTone(active)} w-full px-3 py-2 text-left break-words hyphens-auto`;
+  const chipButton = (active: boolean) =>
+    `${buttonBase} ${buttonTone(active)} px-3 py-2 text-center`;
+
+  const stateList = (category: PreviewCategory) => (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {scenariosInCategory(category).map((scenario) => (
+        <button
+          key={scenario.id}
+          type="button"
+          onClick={() => applyScenario(scenario.id)}
+          className={stateButton(activeState === scenario.id)}
+        >
+          {scenario.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const chipGroup = (label: string, children: React.ReactNode) => (
+    <div className="min-w-0">
+      <span className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-white/50">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+
+  const activeScenario = scenarios.find((s) => s.id === activeState);
 
   const controls = (
-    <div className="max-w-6xl space-y-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+    <div className="w-full min-w-0 max-w-6xl space-y-4 overflow-hidden rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-md sm:p-4">
       <div>
         <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/70">
           Preview States
         </h2>
-        <div className="flex flex-wrap gap-2">
-          {scenarios.map((scenario) => (
+        {/* Compact four-category selector — one row that always fits the mobile
+            viewport, so only the selected category's controls are rendered below. */}
+        <div
+          role="tablist"
+          aria-label="Preview control categories"
+          className="grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-black/25 p-1 sm:max-w-md"
+        >
+          {PREVIEW_CATEGORIES.map((category) => (
             <button
-              key={scenario.id}
+              key={category.id}
               type="button"
-              onClick={() => applyScenario(scenario.id)}
-              className={controlButton(activeState === scenario.id)}
+              role="tab"
+              aria-selected={activeCategory === category.id}
+              onClick={() => setActiveCategory(category.id)}
+              className={`min-h-[2.5rem] rounded-lg px-1 text-[11px] font-medium tracking-wide transition-colors sm:text-xs ${
+                activeCategory === category.id
+                  ? 'bg-cyan-500/20 text-cyan-100'
+                  : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+              }`}
             >
-              {scenario.label}
+              {category.label}
             </button>
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-white/50">Chapter</span>
-          {chapters.map((c) => (
-            <button
-              key={c.number}
-              type="button"
-              onClick={() => setSelectedChapterNum(c.number)}
-              className={controlButton(selectedChapterNum === c.number)}
-            >
-              {c.number}
-            </button>
-          ))}
+
+      {activeCategory === 'reading' && (
+        <div className="space-y-4">
+          {stateList('reading')}
+          {chipGroup(
+            'Chapter',
+            chapters.map((c) => (
+              <button
+                key={c.number}
+                type="button"
+                onClick={() => setSelectedChapterNum(c.number)}
+                className={`${chipButton(selectedChapterNum === c.number)} min-w-[2.75rem]`}
+              >
+                {c.number}
+              </button>
+            )),
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-white/50">Theme</span>
-          {READER_THEMES.map((theme) => (
-            <button
-              key={theme}
-              type="button"
-              onClick={() => patchReaderPreferences({ themeOverride: theme })}
-              className={controlButton(currentTheme === theme)}
-            >
-              {theme}
-            </button>
-          ))}
+      )}
+
+      {activeCategory === 'effects' && (
+        <div className="space-y-4">
+          {chipGroup(
+            'Theme',
+            READER_THEMES.map((theme) => (
+              <button
+                key={theme}
+                type="button"
+                onClick={() => patchReaderPreferences({ themeOverride: theme })}
+                className={chipButton(currentTheme === theme)}
+              >
+                {theme}
+              </button>
+            )),
+          )}
+          {chipGroup(
+            'Particles',
+            PARTICLE_INTENSITIES.map((intensity) => (
+              <button
+                key={intensity}
+                type="button"
+                onClick={() => patchReaderPreferences({ particleIntensity: intensity })}
+                className={chipButton(currentParticles === intensity)}
+              >
+                {intensity}
+              </button>
+            )),
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-white/50">Particles</span>
-          {PARTICLE_INTENSITIES.map((intensity) => (
-            <button
-              key={intensity}
-              type="button"
-              onClick={() => patchReaderPreferences({ particleIntensity: intensity })}
-              className={controlButton(currentParticles === intensity)}
-            >
-              {intensity}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
+
+      {activeCategory === 'menus' && stateList('menus')}
+      {activeCategory === 'pages' && stateList('pages')}
+
+      {/* The active state can live in a category that isn't on screen, so name it. */}
+      {activeScenario && activeScenario.category !== activeCategory && (
+        <p className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+          Active state · {activeScenario.label}
+        </p>
+      )}
     </div>
   );
 

@@ -29,7 +29,7 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
 
   return (
     <div className="relative min-h-screen bg-[#04060d] text-slate-300 font-sans flex flex-col">
-      <header className="px-6 pt-16 pb-6 border-b border-white/5">
+      <header className="px-6 pt-6 pb-6 border-b border-white/5">
         <h1 className="text-xl sm:text-2xl font-display font-medium tracking-wide text-white/90 uppercase">
           {entry.title}
         </h1>
