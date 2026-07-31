@@ -4,7 +4,7 @@ import { ReaderControlsProps } from './types';
 import { PlaybackControls } from './PlaybackControls';
 
 const ACTION_BUTTON_CLASSES =
-  "p-2 border rounded-full transition-colors focus:outline-none bg-void border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900 disabled:opacity-25 disabled:cursor-not-allowed";
+  "p-2 border rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 bg-void border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900 disabled:opacity-25 disabled:cursor-not-allowed";
 
 /**
  * The bottom action bar carries reading actions only — Previous Chapter,
@@ -42,7 +42,7 @@ export function ReaderControls({
           aria-label="Comments"
           aria-expanded={comments.open}
           title="Comments"
-          className={`p-2 border rounded-full transition-colors focus:outline-none relative ${
+          className={`p-2 border rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 relative ${
             comments.open
               ? "border-portal bg-portal/10 text-portal"
               : comments.count > 0

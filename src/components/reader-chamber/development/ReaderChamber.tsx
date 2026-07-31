@@ -360,18 +360,30 @@ export default function ReaderChamber({
 
   // Header Audio button: the audio/narration controls live in the Audio
   // section of the single Reader Settings panel — open it and bring that
-  // section into view.
+  // section into view once the panel's open animation completes (no fixed
+  // delay: scrolling mid-animation lands at the wrong offset). When the
+  // panel is already open, scroll immediately.
+  const [audioScrollPending, setAudioScrollPending] = useState(false);
+
   const handleOpenAudioControls = () => {
-    if (!showReaderSettings) {
-      interveneAutoScroll();
-      readerRef.current?.scrollIntoView({ behavior: "smooth" });
-      setShowReaderSettings(true);
-    }
-    setTimeout(() => {
+    if (showReaderSettings) {
       document
         .getElementById("reader-settings-audio")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 250);
+      return;
+    }
+    interveneAutoScroll();
+    readerRef.current?.scrollIntoView({ behavior: "smooth" });
+    setAudioScrollPending(true);
+    setShowReaderSettings(true);
+  };
+
+  const handleSettingsReveal = () => {
+    if (!audioScrollPending) return;
+    setAudioScrollPending(false);
+    document
+      .getElementById("reader-settings-audio")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const isDeathOrCriticalHealthScene = useMemo(() => {
@@ -973,6 +985,7 @@ export default function ReaderChamber({
             selectedChapterNum={selectedChapterNum}
             onSelectChapter={setSelectedChapterNum}
             onToggleRead={onToggleRead}
+            onReveal={handleSettingsReveal}
           />
         )}
       </AnimatePresence>

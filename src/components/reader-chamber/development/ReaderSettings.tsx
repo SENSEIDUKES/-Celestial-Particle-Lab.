@@ -402,7 +402,7 @@ function ChapterSection({
         value={selectedChapterNum}
         onChange={(e) => onSelectChapter(parseInt(e.target.value))}
         aria-label="Select Chapter"
-        className="rounded border border-neutral-800 bg-void py-1 px-3 font-sans text-xs text-neutral-400 cursor-pointer focus:outline-none"
+        className="rounded border border-neutral-800 bg-void py-1 px-3 font-sans text-xs text-neutral-400 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70"
       >
         {chapters.map((ch) => (
           <option key={ch.number} value={ch.number}>
@@ -642,6 +642,8 @@ interface ReaderSettingsProps {
   selectedChapterNum: number;
   onSelectChapter: (num: number) => void;
   onToggleRead: (chapterNumber: number) => void;
+  /** Called when the panel's open animation completes (anchor scrolling hook). */
+  onReveal?: () => void;
 }
 
 /**
@@ -664,12 +666,14 @@ export const ReaderSettings: React.FC<ReaderSettingsProps> = ({
   selectedChapterNum,
   onSelectChapter,
   onToggleRead,
+  onReveal,
 }) => {
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
+      onAnimationComplete={onReveal}
       className="relative overflow-hidden border-b border-neutral-800 bg-[#050709]/95 px-4 py-5 sm:px-6"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(4,172,255,0.06),transparent_38%)]" />
