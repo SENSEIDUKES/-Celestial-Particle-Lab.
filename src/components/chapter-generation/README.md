@@ -6,7 +6,7 @@
 - **Replica created:** 2026-07-31
 - **Last Workshop update:** 2026-07-31
 - **Last source comparison:** 2026-07-31
-- **Replica status:** under refinement — Reference is a faithful replica of production; Development additionally prototypes two not-yet-in-production systems (see below)
+- **Replica status:** under refinement — Reference is a faithful replica of production; Development additionally prototypes two not-yet-in-production systems and a prompt-inspection stage (see below)
 
 ## What this is
 
@@ -27,7 +27,7 @@ feeds each pane a **different orchestrator**: Reference always runs
 `assembleGeneration.ts` (today's real 10-stage production flow, completely
 unchanged from the first pass). Development runs the new
 `assembleGenerationDev.ts`, which layers Cultural Prose Styles and Scene
-Ending Anchors on top and exposes the 9-step flow described below.
+Ending Anchors on top and exposes the 10-step flow described below.
 
 ## Folder layout
 
@@ -56,7 +56,7 @@ shared/
     culturalProse.ts             NEW — Cultural Prose Style catalog + instruction renderer
                                  (not in production yet — see "Development-only additions" below)
     sceneRhythm.ts                NEW — Scene Ending Anchors + Scene Rhythm Tracker
-                                 (not in production yet — see "Development-only additions" below)
+                                  (not in production yet — see "Development-only additions" below)
   fixtures/
     mockGenerationData.ts       two safe mock story scenarios (opening / established chapter),
                                  each now also carrying a `culturalProseStyleId` (or unset, to
@@ -69,14 +69,19 @@ shared/
   assembleGenerationDev.ts      NEW — DEVELOPMENT-ONLY orchestrator. Runs the same real context-
                                  assembly modules as assembleGeneration.ts, then layers Cultural
                                  Prose Style + Scene Ending Anchors on top and groups everything
-                                 into the 9-step development flow (see below).
+                                  into the 10-step development flow (see below).
 
 reference/
   ChapterGenerationInspector.tsx  — untouched, locked; fed by assembleGeneration.ts only
 development/
   ChapterGenerationInspector.tsx  — identical component to reference/ (it's a generic
-                                 GenerationStage[] + ChapterContent viewer); fed by
-                                 assembleGenerationDev.ts, which is where the new systems live
+                                  GenerationStage[] + ChapterContent viewer); fed by
+                                  assembleGenerationDev.ts, which is where the new systems live
+  chapterEffectsDirection.ts      — Development-only projection that extracts complete existing
+                                  media/effects prompt blocks for inspection; never transfer
+
+scripts/
+  validateChapterEffectsDirection.ts — focused seven-category extraction regression check
 
 workshop/previews/chapter-generation-flow/
   ChapterGenerationFlowWorkspace.tsx — story scenario, rhythm/Fate-Pressure scenario, and
@@ -117,14 +122,15 @@ Generation Request, Generated Chapter Output) without rewriting or
 summarizing any of the underlying text — each stage's content is a direct
 slice or concatenation of the real assembled sections/prompt.
 
-## Development-only additions: Cultural Prose Styles + Scene Ending Anchors
+## Development-only additions: Cultural Prose Styles, Scene Ending Anchors, and Chapter Effects Direction
 
-First (skeleton) implementations of two systems that do **not exist in
-Light-Novels production yet**. They live only in `assembleGenerationDev.ts`
-/ the Development pane; `assembleGeneration.ts` / Reference are completely
-unaffected. Both are written as small, pure, portable modules specifically
-so they're easy to lift into `src/server/` once approved — see "Exact files
-needed for transfer" below.
+This Development pane contains two skeleton systems that do **not exist in
+Light-Novels production yet**—Cultural Prose Styles and Scene Ending Anchors—
+plus one Workshop-only inspection projection, Chapter Effects Direction.
+`assembleGeneration.ts` / Reference are completely unaffected. Only the two
+skeleton systems are written for possible later transfer into Light-Novels;
+Chapter Effects Direction remains Development-only and must not be transferred.
+See "Exact files needed for transfer" below.
 
 ### 1. Cultural Prose Styles (`lib/culturalProse.ts`)
 
@@ -198,6 +204,31 @@ is fully real and functional; only the actual prose *generation* is mocked,
 consistent with the rest of this replica). Refining that is future work,
 not part of this skeleton pass.
 
+### 3. Chapter Effects Direction (`development/chapterEffectsDirection.ts`)
+
+The Development flow now inserts **Chapter Effects Direction** after
+**Selected Next-Scene Path** and before **Final Chapter Instructions**. It
+groups the exact, already-active chapter-prompt rules for narration and
+dialogue metadata, beast sound cues, World Card audio and visual cues, system
+panel visual cues, scene music, atmosphere, and narrative cue payloads.
+
+This is an inspection projection only: it uses stable neighboring prompt
+boundaries to extract each complete existing rule block, then repeats that
+same output inside **Final Chapter Instructions**. It does not add a director,
+select a track, sound, voice, or asset, change Reader-side media behavior, or
+change the actual assembled `finalUserPrompt`.
+
+`npm run validate:chapter-effects` exercises the real ported prompt and checks
+representative opening and later details from all seven categories. The
+Development inspector also stacks stage status below stage copy on narrow
+screens, allows long schema text to wrap within the viewport, and relies on
+the shared Workshop view switch wrapping instead of widening the page.
+
+The Development order is now: Story and Chapter Context, Cultural Prose
+Style, Fate Pressure, Recent Scene Rhythm, Available Scene Ending Anchors,
+Selected Next-Scene Path, Chapter Effects Direction, Final Chapter
+Instructions, Generated Chapter Output, and Newly Generated Anchors.
+
 ## What was mocked
 
 - **Story data** — two hand-authored scenarios in `fixtures/mockGenerationData.ts`
@@ -246,7 +277,8 @@ not part of this skeleton pass.
   story is active.
 - Reference / Development / Compare (via `FeatureWorkspace`, shared with
   every other Workshop entry) — Compare mode now visibly shows the two flows
-  diverging (Reference's 10 stages vs. Development's 9), which is expected.
+  diverging (Reference's 10 stages vs. Development's 10 differently grouped
+  stages), which is expected.
 
 ## Reusable Workshop dependencies
 
@@ -317,6 +349,9 @@ When that happens:
   `storyRouter.ts`. Transferring means replacing that inline text with a
   call to `getFatePressureBlock()` (or just leaving production as-is and
   treating this file as Workshop-only plumbing — either is fine).
+- `development/chapterEffectsDirection.ts` is Workshop-only inspection
+  plumbing. Do not transfer it into Light-Novels as a new media/director
+  layer; it intentionally only groups instructions that already exist there.
 - `shared/assembleGenerationDev.ts` and `shared/fixtures/mockGenerationData.ts`'s
   `RHYTHM_SCENARIOS` are Workshop-only orchestration/fixtures — never transfer.
 
@@ -344,3 +379,15 @@ ordinary inspector-layout refinements, same as any other Workshop replica.
   generated anchors for the following chapter). `assembleGeneration.ts` /
   Reference are unchanged. Added 6 fixed Scene Rhythm validation scenarios
   and a Cultural Prose Style override control to the Workspace.
+- **2026-07-31:** Added the Development-only **Chapter Effects Direction**
+  step between Selected Next-Scene Path and Final Chapter Instructions. It
+  consolidates existing Chapter prompt instructions for music, atmosphere,
+  audio cues, World Cards, narration/dialogue metadata, and visual cues, and
+  repeats the same inspection output inside Final Chapter Instructions.
+  Reference and the actual `finalUserPrompt` assembly remain unchanged.
+- **2026-07-31:** Replaced single-line matching with stable prompt-boundary
+  extraction so every effects category exposes its complete existing rule
+  block. Moved the helper into `development/`, added the focused seven-category
+  validation command, and tightened long-instruction wrapping, stage layout,
+  and the shared Workshop view switch for narrow mobile screens. Reference and
+  production prompt behavior remain unchanged.
