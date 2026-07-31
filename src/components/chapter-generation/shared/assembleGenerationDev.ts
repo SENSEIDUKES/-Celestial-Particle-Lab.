@@ -15,7 +15,7 @@
  * reference flow (`generationContext.ts`, `contextBudgeter.ts`,
  * `contextManifest.ts`, `chapterPrompts.ts`, etc.) — only the prompt
  * assembly around them, and the exposed stage list, differ, per the design
- * brief's explicit 9-step development flow.
+ * brief's explicit Development flow.
  *
  * No network/DB/LLM call happens here either — see `assembleGeneration.ts`'s
  * header comment; the same safety guarantees apply.
@@ -36,6 +36,7 @@ import { estimateTokens, formatAbilityLedgerForPrompt } from "./lib/helpers";
 import { appendChapterWritingStyleInstruction } from "./lib/chapterWritingStyle";
 import { formatGlossaryForPrompt } from "./lib/glossaryFormatter";
 import { buildChapterContract } from "./lib/chapterHandoff";
+import { buildChapterEffectsDirection } from "./lib/chapterEffectsDirection";
 import { getFatePressureBlock } from "./lib/fatePressureBlocks";
 import {
   CulturalProseStyleId,
@@ -223,7 +224,7 @@ export function assembleChapterGenerationDev(
     memoryAndHistoryBudgetTokens: budgetedContext.totalBudgetTokens,
   });
 
-  // ── Stage construction (the 9-step development flow) ───────────────────
+  // ── Stage construction (the Development flow) ──────────────────────────
   const blobStart = userPrompt.indexOf(memoryJsonStr);
   const beforeBlob = blobStart >= 0 ? userPrompt.slice(0, blobStart).trim() : "";
   const afterBlob = blobStart >= 0 ? userPrompt.slice(blobStart + memoryJsonStr.length).trim() : "";
@@ -239,6 +240,7 @@ export function assembleChapterGenerationDev(
   const storyContextContent = [genreRulesContent, allContextSections].filter(Boolean).join("\n\n");
 
   const styleInstructionAddition = appendChapterWritingStyleInstruction("", scenario.chapterWritingStyle).trim();
+  const chapterEffectsDirectionContent = buildChapterEffectsDirection(systemInstruction, afterBlob);
   const finalInstructionsContent = [
     afterBlob,
     styleInstructionAddition,
@@ -246,6 +248,7 @@ export function assembleChapterGenerationDev(
     pacingBlock(scenario.pacingDirective).trim(),
     getFatePressureBlock(rhythmScenario.fatePressure).trim(),
     nextSceneDirectionBlock(selection).trim(),
+    chapterEffectsDirectionContent,
   ].filter(Boolean).join("\n\n");
 
   const finalOutput = buildMockFinalOutputDev({
@@ -333,9 +336,18 @@ export function assembleChapterGenerationDev(
       estimateTokens(JSON.stringify(selection ?? {})),
     ),
     stage(
+      "chapter-effects-direction",
+      "Chapter Effects Direction",
+      "Existing scene music, atmosphere, audio cue, World Card, narration/dialogue metadata, and visual-cue instructions collected from the current chapter prompt. This inspection step does not select tracks, sounds, voices, or media assets.",
+      chapterEffectsDirectionContent,
+      "text",
+      chapterEffectsDirectionContent.trim().length > 0,
+      estimateTokens(chapterEffectsDirectionContent),
+    ),
+    stage(
       "final-instructions",
       "Final Chapter Instructions",
-      "Author-context authority, continuation rule, length/expansion directives, system-panel & cue instructions, chapter writing style, Cultural Prose Style, AI Director pacing, Fate Pressure, and the Next Scene Direction anchor — everything appended after the context blob.",
+      "Author-context authority, continuation rule, length/expansion directives, chapter writing style, Cultural Prose Style, AI Director pacing, Fate Pressure, Next Scene Direction, and the consolidated Chapter Effects Direction — everything assembled after the context blob.",
       finalInstructionsContent,
       "text",
       true,
