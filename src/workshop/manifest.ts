@@ -39,7 +39,7 @@ export const workshopEntries: WorkshopEntry[] = [
     status: 'refining',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
-      path: 'src/ParticleEffect.tsx',
+      path: 'src/components/ParticleEffect.tsx',
       lastCompared: '2026-07-29',
     },
   },
