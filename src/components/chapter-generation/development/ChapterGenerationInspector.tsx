@@ -34,9 +34,9 @@ export function ChapterGenerationInspector({ stages, finalOutput }: ChapterGener
   if (!selected) return null;
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 py-6 lg:grid-cols-[300px_1fr]">
+    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 overflow-x-hidden px-3 py-6 sm:px-4 lg:grid-cols-[300px_1fr]">
       {/* 1. Generation Order */}
-      <aside className="h-fit rounded-lg border border-white/10 bg-black/30 lg:sticky lg:top-4">
+      <aside className="h-fit min-w-0 overflow-hidden rounded-lg border border-white/10 bg-black/30 lg:sticky lg:top-4">
         <h2 className="border-b border-white/10 px-3 py-2 text-[11px] uppercase tracking-widest text-white/60">
           Generation Order
         </h2>
@@ -47,7 +47,7 @@ export function ChapterGenerationInspector({ stages, finalOutput }: ChapterGener
                 type="button"
                 onClick={() => setSelectedKey(stage.key)}
                 aria-current={stage.key === selected.key}
-                className={`flex w-full items-start justify-between gap-2 px-3 py-2.5 text-left text-xs transition-colors ${
+                className={`flex w-full min-w-0 flex-col items-stretch gap-2 px-3 py-2.5 text-left text-xs transition-colors sm:flex-row sm:items-start sm:justify-between ${
                   stage.key === selected.key ? "bg-cyan-500/10 text-cyan-100" : "text-white/70 hover:bg-white/5"
                 }`}
               >
@@ -58,7 +58,7 @@ export function ChapterGenerationInspector({ stages, finalOutput }: ChapterGener
                     <span className="mt-0.5 block text-[10px] leading-snug text-white/40">{stage.description}</span>
                   </span>
                 </span>
-                <span className="flex shrink-0 flex-col items-end gap-1">
+                <span className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end">
                   <span
                     className={`rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide ${
                       stage.included ? "bg-jade-accent/10 text-jade-accent" : "bg-white/5 text-white/30"
@@ -90,9 +90,9 @@ export function ChapterGenerationInspector({ stages, finalOutput }: ChapterGener
               {selected.content.trim() && <CopyButton text={selected.content} />}
             </div>
           </div>
-          <div className="max-h-[52vh] overflow-auto p-3">
+          <div className="max-h-[52vh] max-w-full overflow-auto overscroll-contain p-3">
             {selected.content.trim() ? (
-              <pre className={`whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed ${selected.format === "json" ? "text-jade-accent/90" : "text-white/80"}`}>
+              <pre className={`max-w-full whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed [overflow-wrap:anywhere] ${selected.format === "json" ? "text-jade-accent/90" : "text-white/80"}`}>
                 {selected.content}
               </pre>
             ) : (

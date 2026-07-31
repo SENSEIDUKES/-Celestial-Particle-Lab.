@@ -38,11 +38,11 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
           {entry.source?.lastCompared ? ` · Source checked ${entry.source.lastCompared}` : ''}
         </p>
 
-        <div className="mt-4 inline-flex rounded-full border border-white/10 bg-white/5 p-1 gap-1">
+        <div className="mt-4 inline-flex max-w-full flex-wrap rounded-2xl border border-white/10 bg-white/5 p-1 gap-1 sm:rounded-full">
           <button
             type="button"
             onClick={() => setView('reference')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'reference' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -51,7 +51,7 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
           <button
             type="button"
             onClick={() => setView('development')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'development' ? 'bg-cyan-500/20 text-cyan-100' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -61,7 +61,7 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
             <button
               type="button"
               onClick={() => setView('compare')}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
                 view === 'compare' ? 'bg-violet-500/20 text-violet-100' : 'text-white/50 hover:text-white/80'
               }`}
             >

@@ -36,7 +36,7 @@ import { estimateTokens, formatAbilityLedgerForPrompt } from "./lib/helpers";
 import { appendChapterWritingStyleInstruction } from "./lib/chapterWritingStyle";
 import { formatGlossaryForPrompt } from "./lib/glossaryFormatter";
 import { buildChapterContract } from "./lib/chapterHandoff";
-import { buildChapterEffectsDirection } from "./lib/chapterEffectsDirection";
+import { buildChapterEffectsDirection } from "../development/chapterEffectsDirection";
 import { getFatePressureBlock } from "./lib/fatePressureBlocks";
 import {
   CulturalProseStyleId,
