@@ -16,6 +16,8 @@ interface ReaderHeaderProps {
   setShowBookmarksPanel: (show: boolean) => void;
   activeBookmarks: Bookmark[];
   getHeaderThemeClasses: () => string;
+  /** Workshop refinement (Development only): scroll-direction visibility. Defaults to pinned (production behavior). */
+  isVisible?: boolean;
 }
 
 export function ReaderHeader({
@@ -30,7 +32,8 @@ export function ReaderHeader({
   showBookmarksPanel,
   setShowBookmarksPanel,
   activeBookmarks,
-  getHeaderThemeClasses
+  getHeaderThemeClasses,
+  isVisible = true
 }: ReaderHeaderProps) {
   return (
     <div
@@ -41,7 +44,7 @@ export function ReaderHeader({
           ? JSON.stringify(selectedChapter.cuePayload)
           : undefined
       }
-      className={`narrative-trigger sticky top-[0px] z-20 backdrop-blur-md px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1 border-b transition-colors duration-500 ${getHeaderThemeClasses()}`}
+      className={`narrative-trigger sticky top-[0px] z-20 backdrop-blur-md px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1 border-b transition-[color,background-color,border-color,transform] duration-300 motion-reduce:transition-none ${isVisible ? "translate-y-0" : "-translate-y-full"} ${getHeaderThemeClasses()}`}
     >
       <div className="min-w-0 flex-1">
         <span className="font-sc font-semibold text-[10px] text-jade-accent tracking-[0.2em] uppercase flex items-center gap-1.5 line-clamp-1">

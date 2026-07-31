@@ -6,11 +6,12 @@
 - **Replica created:** 2026-07-31
 - **Last Workshop update:** 2026-07-31
 - **Last source comparison:** 2026-07-31
-- **Replica status:** faithful replica
+- **Replica status:** under refinement
 
 ## Workshop history
 
 - **2026-07-31:** Created faithful Workshop replica and local state simulator (11 preview states, mock StoryWorld with 4 chapters, zustand-free external mock store).
+- **2026-07-31:** Development fork: the header now hides on scroll down and reappears on scroll up (`isVisible` prop on `ReaderHeader`, window-scroll direction listener in `ReaderChamber`). Production pins the header (`sticky top-0`) and never re-shows it — a latent bug the replica comparison surfaced, since no scroll-direction logic exists anywhere in current or historical production code. The header is pinned visible while the Preferences or Bookmarks submenus are open so it can't strand its own anchor, and always reappears within 80px of the top. `reference/` keeps production's pinned behavior so Compare shows the fix side by side.
 
 ## Folder layout
 
