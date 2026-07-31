@@ -8,7 +8,7 @@ import {
   type MediaRevealState,
   type RevealedMediaAsset,
 } from '../shared/manifestation';
-import { CelestialParticleShower } from '../../../CelestialParticleShower';
+import { ParticleEffect } from '../../../ParticleEffect';
 import type { AILoadingVeilProps } from '../reference/AILoadingVeil';
 
 /**
@@ -142,7 +142,7 @@ export default function AILoadingVeil({
       destinationId={destinationId}
       onMediaUnseal={onMediaUnseal}
       backdrop={
-        <CelestialParticleShower
+        <ParticleEffect
           accent={activeAgentId === 'scout' ? '#04ACFF' : '#c22e1f'}
           speedScale={0.47}
           dispersion={0.96}

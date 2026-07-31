@@ -1,11 +1,11 @@
 import { useState, type CSSProperties } from 'react';
-import { CelestialParticleShower } from '../../../CelestialParticleShower';
+import { ParticleEffect } from '../../../ParticleEffect';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
 
 /**
  * No Development fork has diverged from the Original Reference yet — both
- * views render the same CelestialParticleShower. This is the expected
+ * views render the same ParticleEffect. This is the expected
  * starting state for a feature workspace: Development begins as an exact
  * copy of Reference until a redesign task actually changes it.
  */
@@ -25,7 +25,7 @@ function BackdropDemo({ accent, speedScale, dispersion, onAccentChange, onSpeedS
     <main className="preview-stage-embedded" style={previewStyle}>
       <div className="ambient-glow ambient-glow-gold" />
       <div className="ambient-glow ambient-glow-blue" />
-      <CelestialParticleShower accent={accent} speedScale={speedScale} dispersion={dispersion} />
+      <ParticleEffect accent={accent} speedScale={speedScale} dispersion={dispersion} />
       <section className="preview-relic" data-celestial-foreground>
         <p className="preview-relic-eyebrow">Workshop Preview</p>
         <h1>Foreground Content</h1>

@@ -87,7 +87,7 @@ const toRgba = ([red, green, blue]: Rgb, alpha: number) =>
 const DEFAULT_FOREGROUND_SELECTOR =
   '[data-celestial-foreground], dialog[open], [role="dialog"]';
 
-export interface CelestialParticleShowerProps {
+export interface ParticleEffectProps {
   /**
    * Accent color for the whole effect — scroll glow, beam, absorption point,
    * particle bloom, and glyph halos all derive from it. Accepts a hex string
@@ -117,7 +117,7 @@ export interface CelestialParticleShowerProps {
   dispersion?: number;
 }
 
-export const CelestialParticleShower: React.FC<CelestialParticleShowerProps> = React.memo(
+export const ParticleEffect: React.FC<ParticleEffectProps> = React.memo(
   ({
     accent,
     foregroundSelector = DEFAULT_FOREGROUND_SELECTOR,

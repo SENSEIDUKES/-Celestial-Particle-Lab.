@@ -51,7 +51,7 @@ development/RelicReveal.tsx  — active Workshop version of the celebration flow
 
 ### Reusable Workshop dependencies
 
-- `src/CelestialParticleShower.tsx`
+- `src/ParticleEffect.tsx`
 - Tailwind theme tokens in `src/styles.css` (`portal`, `gold-accent`)
 
 ### Production dependencies intentionally excluded
@@ -62,7 +62,7 @@ development/RelicReveal.tsx  — active Workshop version of the celebration flow
 
 - `shared/RelicCard.tsx`, `shared/RelicModal.tsx` → `Light-Novels`, pointing `CosmicArtifact` back at the real `src/types.ts`.
 - `development/RelicReveal.tsx` (once approved) → extract into its own component in `ModalsAndToasts.tsx`, feeding it `unlockedArtifactAlert` + `dismissArtifactAlert` from the store instead of the `artifact`/`onClaim` props.
-- `src/CelestialParticleShower.tsx` already exists in Light-Novels; do not overwrite without a diff.
+- `src/ParticleEffect.tsx` already exists in Light-Novels; do not overwrite without a diff.
 - `--color-gold-accent: #D4AF37` theme token, if the target stylesheet lacks it.
 
 ### Transfer notes

@@ -336,7 +336,7 @@ function QiFlight({ flight }: { flight: Flight }) {
   );
 }
 
-export interface IdleCultivationModalProps {
+export interface ClosedDoorCultivationModalProps {
   qiEarned: number | null;
   onClose: () => void;
   onClaim: (qi: number) => Promise<void>;
@@ -345,7 +345,7 @@ export interface IdleCultivationModalProps {
   daysCultivating?: number;
 }
 
-export function IdleCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem', daysCultivating = 1 }: IdleCultivationModalProps) {
+export function ClosedDoorCultivationModal({ qiEarned, onClose, onClaim, targetElementId = 'celestial-library-emblem', daysCultivating = 1 }: ClosedDoorCultivationModalProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [absorb, setAbsorb] = useState<Absorb | null>(null);
