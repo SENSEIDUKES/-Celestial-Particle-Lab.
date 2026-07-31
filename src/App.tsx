@@ -27,14 +27,19 @@ const previewRegistry: Record<string, ComponentType> = {
 function PreviewLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <a
-        href="/"
-        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white rounded-full backdrop-blur transition-all duration-200 border border-neutral-700/50 shadow-lg"
-        style={{ textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '0.875rem' }}
-      >
-        <ArrowLeft size={16} />
-        Back to Workshop
-      </a>
+      {/* In normal document flow (not fixed) so it scrolls away with the page
+          instead of permanently floating over a preview's own sticky header
+          (e.g. the Reader Chamber's in-chamber title bar) at the same corner. */}
+      <div className="p-4">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white rounded-full backdrop-blur transition-all duration-200 border border-neutral-700/50 shadow-lg"
+          style={{ textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '0.875rem' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Workshop
+        </a>
+      </div>
       {children}
     </>
   );
