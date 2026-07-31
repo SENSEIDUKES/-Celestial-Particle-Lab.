@@ -21,9 +21,27 @@ export type WorkshopEntry = {
   title: string;
   description: string;
   category: WorkshopCategory;
-  status: 'draft' | 'refining' | 'approved';
+  /** Manually maintained Workshop release version. Never inferred from source changes. */
+  version: `v${number}.${number}`;
   source: WorkshopSource;
 };
+
+export type WorkshopTrack = 'development' | 'production';
+
+/**
+ * A feature's track is intentionally derived from its manually assigned version.
+ * Updating source code alone must never move a card between tracks.
+ */
+export function getWorkshopTrack(version: WorkshopEntry['version']): WorkshopTrack {
+  return Number.parseFloat(version.slice(1)) >= 2 ? 'production' : 'development';
+}
+
+/** Keep milestone labels deliberate while leaving all other versions literal. */
+export function getWorkshopVersionLabel(version: WorkshopEntry['version']) {
+  if (version === 'v1.0') return 'v1.0 · Prototype';
+  if (version === 'v2.0') return 'v2.0 · Production';
+  return version;
+}
 
 /**
  * One entry per actual feature — never per version. A feature's Original
@@ -36,7 +54,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Celestial Particle Backdrop',
     description: 'Color-adaptive celestial particle field with a hidden scroll absorption point.',
     category: 'backgrounds',
-    status: 'refining',
+    version: 'v1.5',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/ParticleEffect.tsx',
@@ -48,7 +66,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Chapter Generation',
     description: 'Inspection tool for the chapter-generation pipeline — the exact assembly order of context/prompt inputs, the assembled text at each stage, and the final structured ChapterContent output. Development additionally prototypes Cultural Prose Styles and Scene Ending Anchors.',
     category: 'other',
-    status: 'refining',
+    version: 'v1.1',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/server/routes/storyRouter.ts',
@@ -60,7 +78,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Chapter Generation Manifestation',
     description: 'Aura Veil state simulator — one shared manifestation shell with narrative and media manifestation modes, driven by one task-card format.',
     category: 'animations',
-    status: 'refining',
+    version: 'v1.6',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/AILoadingVeil.tsx',
@@ -72,7 +90,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Closed-Door Cultivation',
     description: 'Idle Qi reward presentation and absorption animation.',
     category: 'rewards',
-    status: 'refining',
+    version: 'v2.0',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/ClosedDoorCultivationModal.tsx',
@@ -84,7 +102,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Relics Gallery',
     description: 'Cosmic Artifact cards separated by rarity rank, with the full-screen Relic Reveal celebration flow.',
     category: 'rewards',
-    status: 'refining',
+    version: 'v1.3',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/UserProfileInventoryPanel.tsx',
@@ -96,7 +114,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Reader Chamber',
     description: 'The full reading UI — header, viewport with system blocks and world cards, playback controls, preferences, bookmarks, and Alter Fate — running on a local mock story.',
     category: 'reader-ui',
-    status: 'refining',
+    version: 'v1.2',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/ReaderChamber.tsx',

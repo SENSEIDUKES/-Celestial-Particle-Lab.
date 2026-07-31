@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, FlaskConical, Columns2 } from 'lucide-react';
-import type { WorkshopEntry } from './manifest';
+import { getWorkshopVersionLabel, type WorkshopEntry } from './manifest';
 
 export type WorkspaceView = 'reference' | 'development' | 'compare';
 
@@ -15,12 +15,6 @@ export interface FeatureWorkspaceProps {
   /** Disable the Compare viewing mode for features where it doesn't make sense. Defaults to true. */
   allowCompare?: boolean;
 }
-
-const statusLabel: Record<WorkshopEntry['status'], string> = {
-  draft: 'In Development',
-  refining: 'Under Refinement',
-  approved: 'Approved',
-};
 
 /**
  * The one shared shell every Workshop feature opens into: Original Reference,
@@ -40,7 +34,7 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
           {entry.title}
         </h1>
         <p className="mt-1 text-xs text-white/40 font-mono">
-          {statusLabel[entry.status]}
+          {getWorkshopVersionLabel(entry.version)}
           {entry.source?.lastCompared ? ` · Source checked ${entry.source.lastCompared}` : ''}
         </p>
 
