@@ -45,6 +45,7 @@ interface ReaderChamberProps {
   setSelectedChapterNum: (num: number) => void;
   onToggleRead: (chapterNumber: number) => void;
   arcTitle: string;
+  onBack?: () => void;
   onSwitchTab?: (tab: "reader" | "codex" | "memory") => void;
   activeStory: StoryWorld;
   updateStoryFields: UpdateStoryFields;
@@ -67,6 +68,7 @@ export default function ReaderChamber({
   setSelectedChapterNum,
   onToggleRead,
   arcTitle,
+  onBack,
   onSwitchTab,
   activeStory,
   updateStoryFields,
@@ -356,6 +358,34 @@ export default function ReaderChamber({
     }));
   };
 
+  // Header Audio button: the audio/narration controls live in the Audio
+  // section of the single Reader Settings panel — open it and bring that
+  // section into view once the panel's open animation completes (no fixed
+  // delay: scrolling mid-animation lands at the wrong offset). When the
+  // panel is already open, scroll immediately.
+  const [audioScrollPending, setAudioScrollPending] = useState(false);
+
+  const handleOpenAudioControls = () => {
+    if (showReaderSettings) {
+      document
+        .getElementById("reader-settings-audio")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    interveneAutoScroll();
+    readerRef.current?.scrollIntoView({ behavior: "smooth" });
+    setAudioScrollPending(true);
+    setShowReaderSettings(true);
+  };
+
+  const handleSettingsReveal = () => {
+    if (!audioScrollPending) return;
+    setAudioScrollPending(false);
+    document
+      .getElementById("reader-settings-audio")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const isDeathOrCriticalHealthScene = useMemo(() => {
     const textToMatch = `${selectedChapter.title || ""} ${selectedChapter.summary || ""}`.toLowerCase();
     const deathKeywords = [
@@ -482,6 +512,78 @@ export default function ReaderChamber({
     window.addEventListener('narrative-cue', handleCue);
     return () => window.removeEventListener('narrative-cue', handleCue);
   }, [selectedChapterNum]);
+
+  // --- Scroll-direction header visibility ---
+  // The chamber root uses `overflow-clip` (not `overflow-hidden`), so the
+  // sticky header sticks to the actual scroll surface again. This effect
+  // hides the header on intentional downward scroll and reveals it on
+  // intentional upward scroll; it stays visible near the chapter top and
+  // while the Reader Settings panel (anchored directly under the header, and
+  // toggled from inside it) is open.
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+
+  useEffect(() => {
+    setIsHeaderVisible(true);
+    if (showReaderSettings) return;
+
+    const startEl = readerRef.current;
+    if (!startEl) return;
+
+    // The Reader Chamber's actual scroll container: the nearest ancestor that
+    // genuinely scrolls — never an assumed global page scroll. Falls back to
+    // the document when no inner scroller exists (Workshop + production).
+    let scroller: HTMLElement | Window = window;
+    let node: HTMLElement | null = startEl.parentElement;
+    while (node) {
+      const overflowY = window.getComputedStyle(node).overflowY;
+      if (
+        (overflowY === "auto" || overflowY === "scroll") &&
+        node.scrollHeight > node.clientHeight
+      ) {
+        scroller = node;
+        break;
+      }
+      node = node.parentElement;
+    }
+
+    const getScrollTop = () =>
+      scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+
+    let lastY = getScrollTop();
+    let direction: -1 | 0 | 1 = 0;
+    let accrued = 0;
+
+    const handleScroll = () => {
+      const y = getScrollTop();
+      const delta = y - lastY;
+      lastY = y;
+
+      // Near the top of the chapter the header always stays visible.
+      if (y <= 80) {
+        direction = 0;
+        accrued = 0;
+        setIsHeaderVisible(true);
+        return;
+      }
+      if (delta === 0) return;
+
+      const nextDirection = delta > 0 ? 1 : -1;
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        accrued = 0;
+      }
+      accrued += Math.abs(delta);
+
+      // Require 8px of accumulated one-direction travel before flipping, so
+      // touch bounce and sub-pixel jitter never flicker the header.
+      if (accrued < 8) return;
+      setIsHeaderVisible(direction === -1);
+    };
+
+    const target: HTMLElement | Window = scroller;
+    target.addEventListener("scroll", handleScroll, { passive: true });
+    return () => target.removeEventListener("scroll", handleScroll);
+  }, [showReaderSettings, selectedChapterNum, activeStory.id]);
 
   // --- Cosmic Bookmarking System States & Handlers ---
   const [showBookmarksPanel, setShowBookmarksPanel] = useState(false);
@@ -816,7 +918,7 @@ export default function ReaderChamber({
 
   return (
     <div
-      className={`flex flex-col min-h-[85dvh] rounded-t-xl transition-colors duration-500 relative overflow-hidden ${getThemeClasses()} ${isShaking ? "animate-screen-shake" : ""}`}
+      className={`flex flex-col min-h-[85dvh] rounded-t-xl transition-colors duration-500 relative overflow-clip ${getThemeClasses()} ${isShaking ? "animate-screen-shake" : ""}`}
       id="reader-chamber-root"
     >
       {particleCount > 0 && (
@@ -827,26 +929,25 @@ export default function ReaderChamber({
         />
       )}
 
-      {/* HEADER: Readability & Chapter Title */}
+      {/* HEADER: Navigation & controls only (Back, title, Audio, Settings,
+          Quick Action) */}
       {!isReaderFullscreen && (
         <ReaderHeader
           arcTitle={arcTitle}
           selectedChapter={selectedChapter}
-          chapters={chapters}
-          selectedChapterNum={selectedChapterNum}
-          setSelectedChapterNum={setSelectedChapterNum}
-          onToggleRead={onToggleRead}
+          onBack={onBack}
+          onOpenAudioControls={handleOpenAudioControls}
           showReaderSettings={showReaderSettings}
           setShowReaderSettings={setShowReaderSettings}
-          showBookmarksPanel={showBookmarksPanel}
-          setShowBookmarksPanel={setShowBookmarksPanel}
-          activeBookmarks={activeBookmarks}
+          onAlterFate={handleAlterFate ? () => setIsAlterFateOpen(true) : undefined}
+          alterFateLockMessage={alterFateLockMessage}
           getHeaderThemeClasses={getHeaderThemeClasses}
+          isVisible={isHeaderVisible}
         />
       )}
 
       {/* Dynamic Collapsible Reader Settings Panel — the single settings
-          menu for Reader, Audio, and Immersion controls */}
+          entry point for Chapter, Reader, Audio, and Immersion controls */}
       <AnimatePresence>
         {showReaderSettings && (
           <ReaderSettings
@@ -879,6 +980,12 @@ export default function ReaderChamber({
               setImmersion,
             }}
             onExportText={handleExportText}
+            chapters={chapters}
+            selectedChapter={selectedChapter}
+            selectedChapterNum={selectedChapterNum}
+            onSelectChapter={setSelectedChapterNum}
+            onToggleRead={onToggleRead}
+            onReveal={handleSettingsReveal}
           />
         )}
       </AnimatePresence>
@@ -964,23 +1071,10 @@ export default function ReaderChamber({
           readerMode,
           playerStyle: currentPrefs.playerStyle,
         }}
-        actions={{
-          handleAlterFate: handleAlterFate as ((chapterNum: number, direction: string, customPrompt?: string) => Promise<void>) | undefined,
-          setIsAlterFateOpen,
-          handleExportText,
-          alterFateLockMessage,
-        }}
-        settings={{
-          open: showReaderSettings,
-          onToggle: () => {
-            if (!showReaderSettings) {
-              // The panel opens under the header — bring it into view when the
-              // toggle comes from the bottom control bar.
-              interveneAutoScroll();
-              readerRef.current?.scrollIntoView({ behavior: "smooth" });
-            }
-            setShowReaderSettings(!showReaderSettings);
-          },
+        comments={{
+          open: showBookmarksPanel,
+          count: activeBookmarks.length,
+          onToggle: () => setShowBookmarksPanel(!showBookmarksPanel),
         }}
       />
 

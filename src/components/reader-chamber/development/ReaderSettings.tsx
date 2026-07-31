@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Eye,
+  ListOrdered,
   Palette,
   Play,
   RotateCcw,
@@ -14,7 +15,7 @@ import {
   Type,
   Volume2,
 } from 'lucide-react';
-import { ReaderPreferences } from '../shared/types';
+import { ReaderChapter, ReaderPreferences } from '../shared/types';
 import { getReaderTypography } from '../shared/readerTypography';
 import { AudioMenu } from './ReaderControls/AudioMenu';
 import { AudioSettings, ImmersionPreferences } from './ReaderControls/types';
@@ -379,6 +380,54 @@ function ReaderSection({
   );
 }
 
+interface ChapterSectionProps {
+  chapters: ReaderChapter[];
+  selectedChapter: ReaderChapter;
+  selectedChapterNum: number;
+  onSelectChapter: (num: number) => void;
+  onToggleRead: (chapterNumber: number) => void;
+}
+
+/** Chapter navigation and read-state controls, moved out of the header. */
+function ChapterSection({
+  chapters,
+  selectedChapter,
+  selectedChapterNum,
+  onSelectChapter,
+  onToggleRead,
+}: ChapterSectionProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <select
+        value={selectedChapterNum}
+        onChange={(e) => onSelectChapter(parseInt(e.target.value))}
+        aria-label="Select Chapter"
+        className="rounded border border-neutral-800 bg-void py-1 px-3 font-sans text-xs text-neutral-400 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70"
+      >
+        {chapters.map((ch) => (
+          <option key={ch.number} value={ch.number}>
+            Ch. {ch.number}: {ch.title.substring(0, 20)}...{ch.hasContinuityFaults ? " ⚠️" : ""}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => onToggleRead(selectedChapter.number)}
+        className={`flex items-center gap-2 rounded border px-3 py-1.5 text-[10px] font-sans transition-all ${
+          selectedChapter.status === 'read'
+            ? 'border-gold-accent bg-gold-accent/10 text-gold-accent'
+            : 'border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900'
+        }`}
+        title={selectedChapter.status === 'read' ? 'Mark Chapter as Unread' : 'Mark Chapter as Finished & Read'}
+        aria-label={selectedChapter.status === 'read' ? 'Mark Chapter as Unread' : 'Mark Chapter as Finished & Read'}
+      >
+        <Check size={12} />
+        {selectedChapter.status === 'read' ? 'Read' : 'Mark as Read'}
+      </button>
+    </div>
+  );
+}
+
 /** All audio controls in one place: mix, voices, playback, and export. */
 function AudioSection({ audio, onExportText }: { audio: AudioSettings; onExportText: () => void }) {
   return (
@@ -588,12 +637,20 @@ interface ReaderSettingsProps {
   audio: AudioSettings;
   immersion: ImmersionPreferences;
   onExportText: () => void;
+  chapters: ReaderChapter[];
+  selectedChapter: ReaderChapter;
+  selectedChapterNum: number;
+  onSelectChapter: (num: number) => void;
+  onToggleRead: (chapterNumber: number) => void;
+  /** Called when the panel's open animation completes (anchor scrolling hook). */
+  onReveal?: () => void;
 }
 
 /**
  * The single Reader Settings menu: every reader control lives here under
- * three labeled sections (Reader / Audio / Immersion). Both the header
- * button and the bottom-bar gear open this panel.
+ * labeled sections (Chapter / Reader / Audio / Immersion). The header
+ * Settings button opens this panel, and the header Audio button opens it
+ * scrolled to the Audio section.
  */
 export const ReaderSettings: React.FC<ReaderSettingsProps> = ({
   currentPrefs,
@@ -604,12 +661,19 @@ export const ReaderSettings: React.FC<ReaderSettingsProps> = ({
   audio,
   immersion,
   onExportText,
+  chapters,
+  selectedChapter,
+  selectedChapterNum,
+  onSelectChapter,
+  onToggleRead,
+  onReveal,
 }) => {
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
+      onAnimationComplete={onReveal}
       className="relative overflow-hidden border-b border-neutral-800 bg-[#050709]/95 px-4 py-5 sm:px-6"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(4,172,255,0.06),transparent_38%)]" />
@@ -622,6 +686,17 @@ export const ReaderSettings: React.FC<ReaderSettingsProps> = ({
         </div>
 
         <div className="max-h-[72dvh] space-y-6 overflow-y-auto pr-1">
+          <section className="space-y-4 rounded-xl border border-neutral-800 bg-[#070a0d]/80 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-5">
+            <SettingsSectionLabel icon={<ListOrdered size={14} />} label="Chapter" />
+            <ChapterSection
+              chapters={chapters}
+              selectedChapter={selectedChapter}
+              selectedChapterNum={selectedChapterNum}
+              onSelectChapter={onSelectChapter}
+              onToggleRead={onToggleRead}
+            />
+          </section>
+
           <section className="space-y-4">
             <SettingsSectionLabel icon={<BookOpen size={14} />} label="Reader" />
             <ReaderSection
@@ -634,7 +709,7 @@ export const ReaderSettings: React.FC<ReaderSettingsProps> = ({
           </section>
 
           <div className="grid items-start gap-4 lg:grid-cols-2">
-            <section className="space-y-4 rounded-xl border border-neutral-800 bg-[#070a0d]/80 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-5">
+            <section id="reader-settings-audio" className="space-y-4 rounded-xl border border-neutral-800 bg-[#070a0d]/80 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.2)] sm:p-5">
               <SettingsSectionLabel icon={<Volume2 size={14} />} label="Audio" />
               <AudioSection audio={audio} onExportText={onExportText} />
             </section>
