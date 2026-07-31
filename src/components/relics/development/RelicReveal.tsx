@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Sparkles, Award, Shield, Zap, RefreshCw, Save, Sliders, Compass, Globe, Key } from 'lucide-react';
-import { CelestialParticleShower } from '../../../CelestialParticleShower';
+import { ParticleEffect } from '../../../ParticleEffect';
 import { CosmicArtifact } from '../shared/types';
 
 /**
@@ -242,7 +242,7 @@ export function RelicReveal({ artifact, onClaim, onDismiss, replayKey = 0 }: Rel
             Rank-tinted background lighting is held back until the reveal —
             before that the backdrop stays rank-neutral so the rarity
             color lands as a payoff, not a spoiler. */}
-        <CelestialParticleShower
+        <ParticleEffect
           accent={
             isArtifactRevealed
               ? (RARITY_THEMES[artifact.rarity] ?? NEUTRAL_THEME).hex

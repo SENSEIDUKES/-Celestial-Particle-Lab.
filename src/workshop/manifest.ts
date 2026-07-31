@@ -39,7 +39,7 @@ export const workshopEntries: WorkshopEntry[] = [
     status: 'refining',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
-      path: 'src/CelestialParticleShower.tsx',
+      path: 'src/components/ParticleEffect.tsx',
       lastCompared: '2026-07-29',
     },
   },
@@ -63,7 +63,7 @@ export const workshopEntries: WorkshopEntry[] = [
     status: 'refining',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
-      path: 'src/components/IdleCultivationModal.tsx',
+      path: 'src/components/ClosedDoorCultivationModal.tsx',
       lastCompared: '2026-07-29',
     },
   },

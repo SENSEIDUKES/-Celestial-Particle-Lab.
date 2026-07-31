@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { IdleCultivationModal as ReferenceIdleCultivationModal } from '../../../components/closed-door-cultivation/reference/IdleCultivationModal';
-import { IdleCultivationModal as DevelopmentIdleCultivationModal } from '../../../components/closed-door-cultivation/development/IdleCultivationModal';
-import type { IdleCultivationModalProps } from '../../../components/closed-door-cultivation/development/IdleCultivationModal';
+import { ClosedDoorCultivationModal as ReferenceClosedDoorCultivationModal } from '../../../components/closed-door-cultivation/reference/ClosedDoorCultivationModal';
+import { ClosedDoorCultivationModal as DevelopmentClosedDoorCultivationModal } from '../../../components/closed-door-cultivation/development/ClosedDoorCultivationModal';
+import type { ClosedDoorCultivationModalProps } from '../../../components/closed-door-cultivation/development/ClosedDoorCultivationModal';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
 import { scenarios, PreviewState } from './previewStates';
@@ -35,7 +35,7 @@ function MockBookCard({ book }: { book: (typeof mockLibrary)[number] }) {
   );
 }
 
-function PreviewCanvas({ Modal, emblemId, daysCultivating }: { Modal: React.ComponentType<IdleCultivationModalProps>; emblemId: string; daysCultivating?: number }) {
+function PreviewCanvas({ Modal, emblemId, daysCultivating }: { Modal: React.ComponentType<ClosedDoorCultivationModalProps>; emblemId: string; daysCultivating?: number }) {
   const [activeState, setActiveState] = useState<PreviewState>('idle');
   const [qiEarned, setQiEarned] = useState<number | null>(null);
 
@@ -98,8 +98,8 @@ export function ClosedDoorCultivationWorkspace() {
   return (
     <FeatureWorkspace
       entry={entry}
-      renderReference={() => <PreviewCanvas Modal={ReferenceIdleCultivationModal} emblemId="cdc-emblem-reference" />}
-      renderDevelopment={() => <PreviewCanvas Modal={DevelopmentIdleCultivationModal} emblemId="cdc-emblem-development" daysCultivating={7} />}
+      renderReference={() => <PreviewCanvas Modal={ReferenceClosedDoorCultivationModal} emblemId="cdc-emblem-reference" />}
+      renderDevelopment={() => <PreviewCanvas Modal={DevelopmentClosedDoorCultivationModal} emblemId="cdc-emblem-development" daysCultivating={7} />}
     />
   );
 }

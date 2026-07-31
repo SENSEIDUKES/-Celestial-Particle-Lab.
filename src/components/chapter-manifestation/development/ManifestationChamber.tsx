@@ -129,7 +129,7 @@ export interface ManifestationChamberProps {
  * shower, bubbles, glyphs) from ever washing over the scene:
  *
  *   1. `data-celestial-foreground` on the chamber root — the shared
- *      CelestialParticleShower treats marked regions as calm zones and
+ *      ParticleEffect treats marked regions as calm zones and
  *      dims its particles to a whisper inside them (+padding). Because the
  *      marker lives on the chamber, every scene placed here inherits it.
  *   2. A soft occlusion disc in Layer 0 — a dark radial that sits behind the
