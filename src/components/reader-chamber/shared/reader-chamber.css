@@ -1,0 +1,287 @@
+/**
+ * Reader Chamber scoped styles.
+ *
+ * Extracted from `src/index.css` in SENSEIDUKES/Light-Novels — only the
+ * reader-specific classes, CSS variables, and keyframes the copied Reader
+ * Chamber components actually use. The Google Fonts import and the Tailwind
+ * `@theme` tokens (fonts, portal/void/signal/human/gold-accent colors)
+ * already live in the Workshop's `src/styles.css` and are NOT duplicated
+ * here.
+ *
+ * Imported by `src/workshop/previews/reader-chamber/ReaderChamberWorkspace.tsx`.
+ */
+
+/* Custom scrollbar for an immersive feeling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #8b0000;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a30000;
+}
+
+/* Aesthetic light-novel reading view styling */
+.light-novel-reader {
+  font-family: var(--font-serif);
+  font-size: calc(1rem * var(--reader-font-size-scale, 1));
+  line-height: var(--reader-line-height-scale, 1.62);
+  letter-spacing: var(--reader-letter-spacing, 0);
+  color: #dfd8cf;
+  background-color: #111111;
+}
+
+/* Reader prose is deliberately scoped so chamber UI keeps its cinematic layout. */
+.reader-prose {
+  line-height: var(--reader-line-height, 1.62);
+  letter-spacing: var(--reader-letter-spacing, 0);
+  word-spacing: var(--reader-word-spacing, normal);
+  text-align: start;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-break: auto;
+  hyphens: auto;
+  hanging-punctuation: first last;
+}
+
+.reader-prose .reader-paragraph {
+  margin-block: 0 var(--reader-paragraph-spacing, 1.15em);
+  text-indent: 1.25em;
+}
+
+/* CJK does not use spaces between most words; preserve its native line-breaking rules. */
+.reader-prose:lang(zh),
+.reader-prose:lang(ja),
+.reader-prose:lang(ko) {
+  line-break: strict;
+  word-spacing: normal;
+  text-spacing: auto;
+}
+
+.gold-accent {
+  color: #D4AF37;
+}
+
+.jade-accent {
+  color: #00A86B;
+}
+
+@keyframes holographic-pulse {
+  0% { box-shadow: 0 0 4px currentColor, inset 0 0 2px currentColor; border-color: rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 12px currentColor, inset 0 0 6px currentColor; border-color: currentColor; }
+  100% { box-shadow: 0 0 4px currentColor, inset 0 0 2px currentColor; border-color: rgba(255,255,255,0.2); }
+}
+
+.system-block.holographic-panel {
+  backdrop-filter: blur(12px) brightness(1.1) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) brightness(1.1) saturate(1.2);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.system-block.holographic-panel:hover {
+  filter: brightness(1.2) saturate(1.3);
+  box-shadow:
+    0 0 20px color-mix(in srgb, currentColor 25%, transparent),
+    inset 0 0 10px color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.system-block.holographic-panel .rarity-accent {
+  animation: holographic-pulse 2.5s infinite ease-in-out;
+}
+
+/* SEN/Paced Mode Narration Sync Styles */
+.reading-focus-active {
+  color: var(--color-signal);
+  text-shadow: 0 0 8px rgba(250, 250, 250, 0.15);
+  transition: color 0.4s ease, text-shadow 0.4s ease;
+}
+
+.reading-focus-dimmed {
+  color: var(--color-neutral-600);
+  opacity: 0.6;
+  transition: color 0.4s ease, opacity 0.4s ease;
+}
+
+@keyframes menacing-pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(225, 29, 72, 0.25), inset 0 0 6px rgba(225, 29, 72, 0.15);
+    border-color: rgba(225, 29, 72, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(225, 29, 72, 0.75), inset 0 0 12px rgba(225, 29, 72, 0.35);
+    border-color: rgba(225, 29, 72, 1);
+  }
+}
+
+@keyframes menacing-pulse-amber {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), inset 0 0 6px rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.75), inset 0 0 12px rgba(245, 158, 11, 0.35);
+    border-color: rgba(245, 158, 11, 1);
+  }
+}
+
+.animate-menacing-red {
+  animation: menacing-pulse-red 3s infinite ease-in-out;
+}
+
+.animate-menacing-amber {
+  animation: menacing-pulse-amber 3s infinite ease-in-out;
+}
+
+@keyframes screen-shake-intense {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-1.4px, -1.4px) rotate(-0.35deg); }
+  20% { transform: translate(1.4px, 1.4px) rotate(0.35deg); }
+  30% { transform: translate(-1.4px, 1.4px) rotate(0deg); }
+  40% { transform: translate(1.4px, -1.4px) rotate(0.35deg); }
+  50% { transform: translate(-0.7px, 0.7px) rotate(-0.35deg); }
+  60% { transform: translate(0.7px, -0.7px) rotate(0deg); }
+  70% { transform: translate(-0.7px, 0px) rotate(0.35deg); }
+  80% { transform: translate(0.7px, 0.7px) rotate(-0.35deg); }
+  90% { transform: translate(0px, -0.7px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-screen-shake {
+  animation: screen-shake-intense 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Collectible Card Styling (FateResultCard) */
+.collectible-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
+}
+
+.collectible-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  z-index: 20;
+}
+
+.collectible-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.1) 25%, transparent 30%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: overlay;
+}
+
+.collectible-card:hover::after {
+  opacity: 1;
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(30deg); }
+  100% { transform: translateX(200%) translateY(200%) rotate(30deg); }
+}
+
+/* ==========================================================================
+   READER ACCESSIBILITY & THEME VARIABLES
+   ========================================================================== */
+:root {
+  /* Default typography multipliers */
+  --reader-font-size-scale: 1;
+  --reader-line-height-scale: 1.62;
+  --reader-letter-spacing: 0;
+
+  /* Default semantic entity colors - all >= 4.5:1 contrast on dark novel bg (#111111) */
+  --color-entity-mc: #60a5fa; /* Main Character - Blue (blue-400) */
+  --color-entity-friend: #34d399; /* Friend - Green (emerald-400) */
+  --color-entity-ally: var(--color-entity-friend); /* Legacy */
+  --color-entity-enemy: #f87171; /* Enemy - Red (red-400) */
+  --color-entity-unknown: #a3a3a3; /* Unknown - Gray (neutral-400) */
+  --color-entity-lover: #f472b6; /* Lover - Pink (pink-400) */
+  --color-entity-mentor: #fbbf24; /* Mentor - Yellow/Gold (amber-400) */
+  --color-entity-fallback: var(--color-entity-mc);
+
+  --color-location-regular: #c084fc; /* Regular Location - Purple (purple-400) */
+  --color-location-special: #f59e0b; /* Special Location - Gold (amber-500) */
+
+  --color-item-basic: #ffffff; /* Basic Item - White */
+  --color-item-decent: #34d399; /* Decent Item - Green (emerald-400) */
+  --color-item-good: #38bdf8; /* Good Item - Light Blue (sky-400) */
+  --color-item-great: #fb923c; /* Great Item - Orange (orange-400) */
+  --color-item-legendary: #fbbf24; /* Legendary Item - Gold (amber-400) */
+}
+
+/* ---------------------------------------------------------
+   COLOR PALETTES (Accessibility Profiles)
+   --------------------------------------------------------- */
+:root[data-palette="protanopia"] {
+  --color-entity-enemy: #fca5a5; /* High contrast peach/pink for protanopia text */
+  --color-entity-lover: #60a5fa; /* Shift pinks to clear blue */
+  --color-entity-friend: #fbbf24; /* Shift greens to warm yellow */
+  --color-item-decent: #fbbf24;
+}
+
+:root[data-palette="deuteranopia"] {
+  --color-entity-enemy: #fca5a5; /* High contrast peach/pink for deuteranopia text */
+  --color-entity-lover: #38bdf8; /* Shift pinks to deep sky blue */
+  --color-entity-friend: #daa520; /* High-contrast goldenrod yellow */
+  --color-item-decent: #daa520;
+}
+
+:root[data-palette="tritanopia"] {
+  --color-entity-enemy: #fca5a5; /* High-contrast red/pink */
+  --color-entity-lover: #c084fc; /* Shift pinks to violet */
+  --color-entity-friend: #14b8a6; /* Shift greens to teal/cyan */
+  --color-entity-mc: #fca5a5; /* Shift blues */
+  --color-item-good: #c084fc;
+}
+
+:root[data-palette="high_contrast_dark"] {
+  --color-entity-mc: #3388ff;
+  --color-entity-friend: #33ff33; /* Pure vivid green */
+  --color-entity-enemy: #ff3333; /* Pure vivid red */
+  --color-entity-unknown: #cccccc;
+  --color-entity-lover: #ff66ff; /* Pure vivid magenta */
+  --color-entity-mentor: #ffff33;
+  --color-location-regular: #cc33ff;
+  --color-location-special: #ffff33;
+  --color-item-basic: #ffffff;
+  --color-item-decent: #33ff33;
+  --color-item-good: #33ccff;
+  --color-item-great: #ff9933;
+  --color-item-legendary: #ffff33;
+}
+
+/* ---------------------------------------------------------
+   SEMANTIC ENTITY HIGHLIGHT CLASSES
+   (Consumed by the codex highlighting system — currently excluded from this
+   replica, kept so the future codex Workshop job lands without CSS work.)
+   --------------------------------------------------------- */
+.highlight-mc { color: var(--color-entity-mc); font-weight: 500; transition: color 0.3s ease; }
+.highlight-friend { color: var(--color-entity-friend); font-weight: 500; transition: color 0.3s ease; }
+.highlight-enemy { color: var(--color-entity-enemy); font-weight: 500; transition: color 0.3s ease; }
+.highlight-unknown { color: var(--color-entity-unknown); font-weight: 500; transition: color 0.3s ease; }
+.highlight-lover { color: var(--color-entity-lover); font-weight: 500; transition: color 0.3s ease; }
+.highlight-mentor { color: var(--color-entity-mentor); font-weight: 500; transition: color 0.3s ease; }
+.highlight-ally { color: var(--color-entity-ally); font-weight: 500; transition: color 0.3s ease; }
+.highlight-fallback { color: var(--color-entity-fallback); font-weight: 500; transition: color 0.3s ease; }
+
+.highlight-location { color: var(--color-location-regular); font-weight: 500; transition: color 0.3s ease; }
+.highlight-location-special { color: var(--color-location-special); font-weight: 500; transition: color 0.3s ease; }
+
+.highlight-item-basic { color: var(--color-item-basic); font-weight: 500; transition: color 0.3s ease; }
+.highlight-item-decent { color: var(--color-item-decent); font-weight: 500; transition: color 0.3s ease; }
+.highlight-item-good { color: var(--color-item-good); font-weight: 500; transition: color 0.3s ease; }
+.highlight-item-great { color: var(--color-item-great); font-weight: 500; transition: color 0.3s ease; }
+.highlight-item-legendary { color: var(--color-item-legendary); font-weight: 500; transition: color 0.3s ease; text-shadow: 0 0 8px rgba(251, 191, 36, 0.4); }

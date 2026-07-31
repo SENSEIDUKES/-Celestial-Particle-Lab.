@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from 'react';
 import { CelestialBackdropWorkspace } from './workshop/previews/celestial-backdrop/CelestialBackdropWorkspace';
 import { ChapterManifestationWorkspace } from './workshop/previews/chapter-manifestation/ChapterManifestationWorkspace';
 import { ClosedDoorCultivationWorkspace } from './workshop/previews/closed-door-cultivation/ClosedDoorCultivationWorkspace';
+import { ReaderChamberWorkspace } from './workshop/previews/reader-chamber/ReaderChamberWorkspace';
 import { RelicsWorkspace } from './workshop/previews/relics/RelicsWorkspace';
 import { WorkshopHome } from './workshop/WorkshopHome';
 import { ArrowLeft } from 'lucide-react';
@@ -17,6 +18,7 @@ const previewRegistry: Record<string, ComponentType> = {
   'celestial-backdrop': CelestialBackdropWorkspace,
   'chapter-generation-manifestation': ChapterManifestationWorkspace,
   'idle-cultivation': ClosedDoorCultivationWorkspace,
+  'reader-chamber': ReaderChamberWorkspace,
   'relics-gallery': RelicsWorkspace,
 };
 
