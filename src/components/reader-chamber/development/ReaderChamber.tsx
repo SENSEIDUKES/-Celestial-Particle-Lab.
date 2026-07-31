@@ -492,34 +492,6 @@ export default function ReaderChamber({
     number | null
   >(null);
 
-  // --- Workshop refinement (Development only): hide-on-scroll-down /
-  // reveal-on-scroll-up header. Production currently pins the header with
-  // sticky top-0 and never re-shows it; the document is the scroll surface
-  // here (same one useCinematicScroll drives), so window scroll drives this.
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const headerPinnedOpen = showReaderPreferences || showBookmarksPanel;
-
-  useEffect(() => {
-    // Never hide the header while a submenu it anchors is open.
-    if (headerPinnedOpen) {
-      setIsHeaderVisible(true);
-      return;
-    }
-    let lastY = window.scrollY;
-    const handleScrollDirection = () => {
-      const y = window.scrollY;
-      const delta = y - lastY;
-      if (y < 80 || delta < -4) {
-        setIsHeaderVisible(true);
-      } else if (delta > 4) {
-        setIsHeaderVisible(false);
-      }
-      lastY = y;
-    };
-    window.addEventListener("scroll", handleScrollDirection, { passive: true });
-    return () => window.removeEventListener("scroll", handleScrollDirection);
-  }, [headerPinnedOpen]);
-
   const renderHighlightedText = React.useCallback((text: string, paragraphIndex: number) => {
     // WORKSHOP: codex-term highlighting removed (separate Workshop job). Only
     // the TTS narration sync highlight remains; with the inert playback stub
@@ -870,7 +842,6 @@ export default function ReaderChamber({
           setShowBookmarksPanel={setShowBookmarksPanel}
           activeBookmarks={activeBookmarks}
           getHeaderThemeClasses={getHeaderThemeClasses}
-          isVisible={isHeaderVisible}
         />
       )}
 
