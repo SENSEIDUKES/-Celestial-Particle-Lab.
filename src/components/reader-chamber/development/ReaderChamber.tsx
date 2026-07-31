@@ -18,7 +18,7 @@ import { useAppStore } from "../shared/stubs";
 import { selectIsGenerating } from "../shared/stubs";
 import { LOCAL_ONLY_MODE } from "../shared/stubs";
 import { AlterFatePanel } from "./AlterFatePanel";
-import { ReaderPreferencesPanel } from "./ReaderPreferencesPanel";
+import { ReaderSettings } from "./ReaderSettings";
 import { CosmicBookmarksPanel } from "./CosmicBookmarksPanel";
 import { useReaderPlayback, extractSFXCues } from "../shared/readerPlayback";
 import { useReaderVisuals } from "../shared/stubs";
@@ -309,7 +309,7 @@ export default function ReaderChamber({
   ]);
 
   // --- Theme & Reader Typography Customizer States ---
-  const [showReaderPreferences, setShowReaderPreferences] = useState(false);
+  const [showReaderSettings, setShowReaderSettings] = useState(false);
 
   const defaultPrefs: ReaderPreferences = {
     fontSize: "lg",
@@ -427,8 +427,8 @@ export default function ReaderChamber({
   };
 
   // --- Rendering UI States ---
-  const [showImmersionPopover, setShowImmersionPopover] = useState<boolean>(false);
-  const [showVoiceDetail, setShowVoiceDetail] = useState<boolean>(false);
+  // (The old immersion popover states lived here; all settings now open the
+  // single Reader Settings panel via showReaderSettings.)
 
   // --- Climax Screen Shake State ---
   const [isShaking, setIsShaking] = useState(false);
@@ -836,8 +836,8 @@ export default function ReaderChamber({
           selectedChapterNum={selectedChapterNum}
           setSelectedChapterNum={setSelectedChapterNum}
           onToggleRead={onToggleRead}
-          showReaderPreferences={showReaderPreferences}
-          setShowReaderPreferences={setShowReaderPreferences}
+          showReaderSettings={showReaderSettings}
+          setShowReaderSettings={setShowReaderSettings}
           showBookmarksPanel={showBookmarksPanel}
           setShowBookmarksPanel={setShowBookmarksPanel}
           activeBookmarks={activeBookmarks}
@@ -845,10 +845,11 @@ export default function ReaderChamber({
         />
       )}
 
-      {/* Dynamic Collapsible Reader Preferences Panel */}
+      {/* Dynamic Collapsible Reader Settings Panel — the single settings
+          menu for Reader, Audio, and Immersion controls */}
       <AnimatePresence>
-        {showReaderPreferences && (
-          <ReaderPreferencesPanel 
+        {showReaderSettings && (
+          <ReaderSettings
             currentPrefs={currentPrefs}
             handleUpdatePreference={handleUpdatePreference}
             onResetTypography={handleResetTypography}
@@ -862,6 +863,22 @@ export default function ReaderChamber({
                 localStorage.removeItem(SYSTEM_LEGEND_DISMISSED_STORAGE_KEY);
               }
             }}
+            audio={{
+              speechRate,
+              setSpeechRate,
+              availableVoices,
+              selectedVoiceURI,
+              setSelectedVoiceURI,
+              selectedDialogueVoiceURI,
+              setSelectedDialogueVoiceURI,
+              selectedSideVoiceURI,
+              setSelectedSideVoiceURI,
+            }}
+            immersion={{
+              immersion,
+              setImmersion,
+            }}
+            onExportText={handleExportText}
           />
         )}
       </AnimatePresence>
@@ -947,26 +964,23 @@ export default function ReaderChamber({
           readerMode,
           playerStyle: currentPrefs.playerStyle,
         }}
-        audio={{
-          speechRate,
-          setSpeechRate,
-          availableVoices,
-          selectedVoiceURI,
-          setSelectedVoiceURI,
-          selectedDialogueVoiceURI,
-          setSelectedDialogueVoiceURI,
-          selectedSideVoiceURI,
-          setSelectedSideVoiceURI,
-        }}
-        immersion={{
-          immersion,
-          setImmersion,
-        }}
         actions={{
           handleAlterFate: handleAlterFate as ((chapterNum: number, direction: string, customPrompt?: string) => Promise<void>) | undefined,
           setIsAlterFateOpen,
           handleExportText,
           alterFateLockMessage,
+        }}
+        settings={{
+          open: showReaderSettings,
+          onToggle: () => {
+            if (!showReaderSettings) {
+              // The panel opens under the header — bring it into view when the
+              // toggle comes from the bottom control bar.
+              interveneAutoScroll();
+              readerRef.current?.scrollIntoView({ behavior: "smooth" });
+            }
+            setShowReaderSettings(!showReaderSettings);
+          },
         }}
       />
 

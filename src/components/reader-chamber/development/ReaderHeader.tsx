@@ -10,8 +10,8 @@ interface ReaderHeaderProps {
   selectedChapterNum: number;
   setSelectedChapterNum: (num: number) => void;
   onToggleRead: (chapterNumber: number) => void;
-  showReaderPreferences: boolean;
-  setShowReaderPreferences: (show: boolean) => void;
+  showReaderSettings: boolean;
+  setShowReaderSettings: (show: boolean) => void;
   showBookmarksPanel: boolean;
   setShowBookmarksPanel: (show: boolean) => void;
   activeBookmarks: Bookmark[];
@@ -25,8 +25,8 @@ export function ReaderHeader({
   selectedChapterNum,
   setSelectedChapterNum,
   onToggleRead,
-  showReaderPreferences,
-  setShowReaderPreferences,
+  showReaderSettings,
+  setShowReaderSettings,
   showBookmarksPanel,
   setShowBookmarksPanel,
   activeBookmarks,
@@ -79,15 +79,15 @@ export function ReaderHeader({
         </button>
 
         <button
-          onClick={() => setShowReaderPreferences(!showReaderPreferences)}
-          aria-expanded={showReaderPreferences}
+          onClick={() => setShowReaderSettings(!showReaderSettings)}
+          aria-expanded={showReaderSettings}
           className={`p-2 rounded-full border flex items-center justify-center transition-all ${
-            showReaderPreferences
+            showReaderSettings
               ? "border-portal bg-portal/10 text-portal"
               : "border-neutral-800 text-neutral-400 hover:text-signal hover:bg-neutral-900"
           }`}
-          title="Aetherial Styles"
-          aria-label="Aetherial Styles"
+          title="Reader Settings"
+          aria-label="Reader Settings"
         >
           <Sliders size={14} />
         </button>

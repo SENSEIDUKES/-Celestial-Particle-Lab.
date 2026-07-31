@@ -40,11 +40,15 @@ export interface FateActions {
   alterFateLockMessage?: string | null;
 }
 
+export interface ReaderSettingsControl {
+  open: boolean;
+  onToggle: () => void;
+}
+
 export interface ReaderControlsProps {
   selectedChapter: ReaderChapter;
   navigation: ChapterNavigationState;
   playback: PlaybackState;
-  audio: AudioSettings;
-  immersion: ImmersionPreferences;
   actions: FateActions;
+  settings: ReaderSettingsControl;
 }

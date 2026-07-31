@@ -1,17 +1,33 @@
 import React from 'react';
-import { ListMusic } from 'lucide-react';
-import { ReaderControlsProps } from './types';
-import { ImmersionSettings } from './ImmersionSettings';
+import { ListMusic, Settings } from 'lucide-react';
+import { ReaderControlsProps, ReaderSettingsControl } from './types';
 import { PlaybackControls } from './PlaybackControls';
 import { ChapterNavigation } from './ChapterNavigation';
+
+function ReaderSettingsButton({ settings }: { settings: ReaderSettingsControl }) {
+  return (
+    <button
+      onClick={settings.onToggle}
+      aria-label="Reader Settings"
+      aria-expanded={settings.open}
+      title="Reader Settings"
+      className={`p-2 border rounded-full transition-colors focus:outline-none ${
+        settings.open
+          ? "bg-neutral-800 border-neutral-700 text-signal"
+          : "bg-void border-neutral-800 hover:text-signal hover:bg-neutral-900 text-neutral-400"
+      }`}
+    >
+      <Settings size={16} />
+    </button>
+  );
+}
 
 export function ReaderControls({
   selectedChapter,
   navigation,
   playback,
-  audio,
-  immersion,
-  actions
+  actions,
+  settings,
 }: ReaderControlsProps) {
   const { onSwitchTab } = navigation;
   const { isPlayingText, isPausedText, readerMode } = playback;
@@ -23,12 +39,7 @@ export function ReaderControls({
         <div className="flex sm:hidden items-center justify-between w-full">
            {/* Left: Settings & Codex */}
            <div className="flex items-center gap-2">
-              <ImmersionSettings
-                audio={audio}
-                immersion={immersion}
-                actions={actions}
-                isMobile
-              />
+              <ReaderSettingsButton settings={settings} />
               <button
                 onClick={() => onSwitchTab && onSwitchTab("codex")}
                 aria-label="Open Codex"
@@ -75,12 +86,8 @@ export function ReaderControls({
             </div>
 
             {/* Settings Toggle */}
-            <div className="relative ml-2">
-              <ImmersionSettings
-                audio={audio}
-                immersion={immersion}
-                actions={actions}
-              />
+            <div className="ml-2">
+              <ReaderSettingsButton settings={settings} />
             </div>
           </div>
 

@@ -11,6 +11,7 @@
 ## Workshop history
 
 - **2026-07-31:** Created faithful Workshop replica and local state simulator (11 preview states, mock StoryWorld with 4 chapters, zustand-free external mock store).
+- **2026-07-31:** Consolidated all reader settings into a single **Reader Settings** panel (`development/ReaderSettings.tsx`) with three labeled sections — Reader (the former `ReaderPreferencesPanel` controls: font, size, theme, particles, chapter divider, highlights, typography, player style, System Color Legend), Audio (the `AudioMenu` mix, voice selects, playback speed, Export Chronicle), and Immersion (Immersion Engine master, Autonomous Reading, Holographic Visions). Both entry points (header button, now aria-labeled "Reader Settings", and the bottom-bar gear) open this one panel; the old bottom-bar `ImmersionSettings` popover and the standalone `ReaderPreferencesPanel` were removed. No control behavior changed — only organization and presentation.
 
 ## Folder layout
 
@@ -35,8 +36,9 @@ reference/                    — untouched replica of production, locked
   SystemColorLegend.tsx
   ManifestationImage.tsx
   ContextInspector.tsx
-development/                  — active Workshop version; starts as an exact copy of reference/
-  (same files)
+development/                  — active Workshop version; started as an exact copy of reference/
+  (same files, except: ReaderSettings.tsx replaces ReaderPreferencesPanel.tsx,
+   and ReaderControls/ no longer contains ImmersionSettings.tsx — see history)
 shared/                       — code genuinely identical between the two forks
   types.ts                    — ReaderChapter + composing types, StoryBlock/metadata/SystemEvent/
                                 WorldCardEvent/FateResultData, StoryCuePayload, ContextManifest,
@@ -119,7 +121,7 @@ already carries the same font and color tokens.
 
 - `reading` — rich blocks chapter 1 (system blocks, Fate Result card, World Card,
   Context Inspector, legend, Fate Survival banner)
-- `preferences-open` — Reader Chamber Controls panel expanded
+- `preferences-open` — Reader Settings panel expanded
 - `bookmarks-open` — Chronicle Anchors drawer with two anchor cards
 - `alter-fate-open` — Alter Fate (branch) modal
 - `continuity-warning` — Seal flow surfacing the Continuity Guard Warning modal
@@ -182,7 +184,7 @@ The Workshop's `lucide-react@^1.27.0` removed several legacy aliases the source 
 All substitutions are import-level aliases only — JSX is byte-identical to production:
 
 - `Loader2` → `LoaderCircle as Loader2` (ReaderViewport, WorldEntityCard, ManifestationImage)
-- `Sliders` → `SlidersHorizontal as Sliders` (ReaderHeader, ReaderPreferencesPanel)
+- `Sliders` → `SlidersHorizontal as Sliders` (ReaderHeader, ReaderSettings)
 - `AlertTriangle` → `TriangleAlert as AlertTriangle` (SystemBlock, FateSurvivalExplanation)
 - `AlertCircle` → `CircleAlert as AlertCircle` (FateResultCard)
 - `CheckCircle` → `CircleCheck as CheckCircle` (FateResultCard)
@@ -229,7 +231,10 @@ the import rewrites (`../shared/X` → `../lib/X` / `../hooks/X` / `../store/X`,
 - `development/ReaderChamber.tsx` → `src/components/ReaderChamber.tsx`
 - `development/ReaderViewport.tsx` → `src/components/ReaderViewport.tsx`
 - `development/ReaderHeader.tsx` → `src/components/ReaderHeader.tsx`
-- `development/ReaderPreferencesPanel.tsx` → `src/components/ReaderPreferencesPanel.tsx`
+- `development/ReaderSettings.tsx` → `src/components/ReaderSettings.tsx` (new file;
+  on transfer, delete `src/components/ReaderPreferencesPanel.tsx` and
+  `src/components/ReaderControls/ImmersionSettings.tsx` from production — their
+  controls now live inside `ReaderSettings.tsx`)
 - `development/ReaderControls/*` → `src/components/ReaderControls/*`
 - `development/CosmicBookmarksPanel.tsx` → `src/components/CosmicBookmarksPanel.tsx`
 - `development/VirtualizedList.tsx` → `src/components/VirtualizedList.tsx`
