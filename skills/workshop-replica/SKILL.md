@@ -1,17 +1,43 @@
 ---
 name: workshop-replica
 description: Create a faithful, isolated Workshop replica of a real application page, component, or flow using local mock state while preserving portability back to the source app.
-version: 1.0.0
-last_updated: 2026-07-28
+version: 1.1.0
+last_updated: 2026-07-31
 ---
 
 # Workshop Replica Skill
 
-Use this skill whenever the user asks to bring a real page, component, animation, or flow from another application into the SEN Visual Development space for safe visual refinement.
+Use this skill whenever the user asks to bring a real page, component, animation, or
+flow from another application into the SEN Visual Development Workshop for safe visual
+refinement.
 
-## Required input
+## Naming and Source Authority
 
-Resolve or ask for only the information that cannot be discovered from the repositories:
+For shared production concepts, the main `Light-Novels` repository is the naming source
+of truth. Use the current verified production name when creating or updating Workshop
+files, metadata, imports, and transfer instructions.
+
+Current examples include:
+
+- `ReaderCodex`
+- `CreationModal`
+- `StorySteeringModal`
+- `ClosedDoorCultivationModal`
+- `ParticleEffect`
+- `DestinedEndingCard`
+- `ManifestationImage`
+- `profilePicture`
+
+Do not reintroduce retired developer-facing synonyms into new Workshop replicas.
+
+A developer-facing rename does not authorize changing persisted values, API route
+strings, database fields, storage keys, or historical schema names. Preserve verified
+compatibility identifiers from the source application unless the user explicitly asks
+for a migration task.
+
+## Required Input
+
+Resolve or ask for only information that cannot be discovered from the repositories:
 
 - **Target:** exact page, screen, component, animation, or flow.
 - **Source repository:** repository containing the production implementation.
@@ -25,39 +51,61 @@ Source: Light-Novels
 Use the Workshop Replica skill.
 ```
 
-Do not require the user to describe implementation details they would not reasonably know.
+Do not require the user to describe implementation details they would not reasonably
+know.
 
 ## Mission
 
-Create a visually faithful Workshop replica of the target so it can be inspected, animated, and redesigned without relying on the source application's production systems.
+Create a visually faithful Workshop replica of the target so it can be inspected,
+animated, and redesigned without relying on the source application's production
+systems.
 
-The Workshop replica must preserve the real presentation while replacing production behavior with lightweight local state.
+The replica must preserve the real presentation while replacing production behavior
+with lightweight local state.
 
-Do not modify the source application's production page unless the user explicitly requests a separate integration task.
+Do not modify the source application's production page unless the user explicitly
+requests a separate integration task.
 
-## Phase 1: Inspect before editing
+## Phase 1: Inspect Before Editing
 
 Inspect both repositories before making changes.
 
 Identify:
 
 1. The real source page and its route or entry point.
-2. Presentation files that directly shape the visible experience.
-3. Visual dependencies that can be safely reused or copied.
-4. Production dependencies that must not enter the Workshop.
-5. Existing Workshop systems that should be reused instead of duplicated.
-6. The correct Workshop preview route, registry entry, and folder placement.
+2. The exact current source file path and exported symbol.
+3. Presentation files that directly shape the visible experience.
+4. Visual dependencies that can be safely reused or copied.
+5. Production dependencies that must not enter the Workshop.
+6. Existing Workshop systems that should be reused instead of duplicated.
+7. The correct Workshop preview route, registry entry, folder placement, and manifest
+   entry.
+
+### Source-path verification is mandatory
+
+Before writing `source.path`, transfer instructions, or import guidance:
+
+1. Verify the file exists in the named source repository.
+2. Verify the path against the intended source branch or commit.
+3. Verify the current exported component/function name.
+4. Verify whether the target was recently renamed or moved.
+5. Do not infer a production path from the Workshop path.
+6. Do not point at a root-level file when the verified production file is under
+   `src/components/`, `src/hooks/`, `src/services/`, or another real directory.
+
+A build passing inside `development` does not prove a cross-repository manifest path is
+valid.
 
 Present a brief file plan before implementation. Keep it practical and concise.
 
-## Phase 2: Preserve the real presentation
+## Phase 2: Preserve the Real Presentation
 
 Copy or reconstruct the target as faithfully as practical.
 
-Preserve all presentation details that materially affect visual judgment:
+Preserve presentation details that materially affect visual judgment:
 
 - layout and responsive behavior
-- mobile proportions
+- mobile and tablet proportions
 - typography
 - spacing
 - colors and borders
@@ -65,14 +113,15 @@ Preserve all presentation details that materially affect visual judgment:
 - visible animation structure
 - buttons and interaction hierarchy
 - progress indicators
-- loading, success, and failure presentation
+- loading, success, empty, and failure presentation
 - surrounding UI that changes how the target feels
 
-Do not simplify or redesign during extraction unless the user specifically asks for redesign work in the same task.
+Do not simplify or redesign during extraction unless the user specifically asks for
+redesign work in the same task.
 
 First create a trustworthy replica. Refinement comes afterward.
 
-## Phase 3: Enforce the production boundary
+## Phase 3: Enforce the Production Boundary
 
 The Workshop replica must not require:
 
@@ -92,12 +141,14 @@ The Workshop replica must not require:
 Do not copy large chains of business logic merely to make the replica run.
 
 Replace production behavior with local mock data, timers, and explicit preview state.
+Preserve compatibility strings only when they are necessary to faithfully model visible
+behavior; do not make real network calls to those routes.
 
-## Phase 4: Build a state simulator
+## Phase 4: Build a State Simulator
 
 Create a small state simulator covering every meaningful visual state of the target.
 
-Use names that match the real flow. Examples include:
+Use names matching the real flow. Examples include:
 
 ```ts
 type PreviewState =
@@ -115,81 +166,113 @@ type PreviewState =
   | 'error';
 ```
 
-Only include states that are meaningful for the target.
+Only include states meaningful for the target.
 
-Preview controls must remain clearly separated from the reusable UI. They are Workshop tools, not SEN product UI.
+Preview controls must remain clearly separated from reusable UI. They are Workshop
+tools, not SEN product UI.
 
-## Phase 5: Keep the result portable
+## Phase 5: Keep the Result Portable
 
-Every feature gets exactly one folder with a `reference/` and `development/` split — never a second component folder, preview folder, or homepage card for a "V2":
+Every feature gets exactly one folder with a `reference/` and `development/` split—never
+a second component folder, preview folder, or homepage card for a “V2”:
 
 ```text
 src/
   components/
     <target-name>/
       reference/
-        <TargetComponent>.tsx   — untouched, locked replica of production
+        <TargetComponent>.tsx
       development/
-        <TargetComponent>.tsx   — active Workshop version, starts as a copy of reference
-      shared/                   — only for logic genuinely identical across both (optional)
+        <TargetComponent>.tsx
+      shared/
       README.md
 
   workshop/
     previews/
       <target-name>/
-        <TargetName>Workspace.tsx   — built on FeatureWorkspace
+        <TargetName>Workspace.tsx
         previewData.ts
         previewStates.ts
 ```
 
-Adapt file names to the repository's existing structure rather than forcing unnecessary reorganization, but do not skip the `reference/` vs `development/` split — it is what lets `reference/` stay a trustworthy, untouched comparison point while `development/` absorbs every Workshop change.
+Adapt file names to the repository's existing structure rather than forcing unnecessary
+reorganization, but do not skip the `reference/` versus `development/` split. The
+reference copy is the trustworthy comparison point; the development copy absorbs every
+Workshop change.
 
-Separate these concerns:
+Separate:
 
 - reusable UI (`reference/` and `development/`)
-- preview-only wrapper (the `Workspace.tsx`, built on `FeatureWorkspace`)
+- preview-only wrapper (`Workspace.tsx`, built on `FeatureWorkspace`)
 - mock data
 - state simulator
 - Workshop navigation and controls
 
-Never embed Workshop-only controls or mock behavior into the reusable production component. Never create a second manifest entry, preview folder, or component folder named `V2`/`V3`/"Revised"/"Experimental" for the same feature — git history already preserves prior iterations, and a redesign in progress belongs in that feature's `development/` folder.
+Never embed Workshop-only controls or mock behavior into the reusable production
+component. Never create a second manifest entry, preview folder, or component folder
+named `V2`, `V3`, `Revised`, or `Experimental` for the same feature. Git history already
+preserves prior iterations.
 
-## Phase 6: Reuse approved Workshop systems
+## Phase 6: Reuse Approved Workshop Systems
 
 Reuse existing Workshop systems when they genuinely fit the target:
 
 - Library glyphs and icon assets
 - shared typography and visual tokens
-- celestial backdrop
-- seals, glows, particles, and animation utilities
+- `ParticleEffect` and other verified shared effects
+- seals, glows, and animation utilities
 - reduced-motion handling
 - foreground-safe behavior
 - reusable reward and presentation components
 
-Do not force an existing effect onto a target that needs its own visual identity.
+Verify every reused component's current file path and export before updating a manifest
+or transfer note. Do not force an existing effect onto a target that needs its own visual
+identity.
 
-## Phase 7: Register the replica
+## Phase 7: Register the Replica
 
 Add the replica to the Workshop's existing discovery system.
 
 At minimum:
 
-- add one entry to `src/workshop/manifest.ts`, including `source.repository`, `source.path`, and `source.lastCompared` — one entry per feature, never one per version
-- register the feature's `Workspace.tsx` component in the `previewRegistry` in `src/App.tsx`
-- give it a stable preview ID
-- make it reachable by direct URL
-- keep the Workshop home page intact — it must show one card per feature, never a second card for a variant or redesign in progress
-- do not break existing previews
+- add one entry to `src/workshop/manifest.ts` with `source.repository`, verified
+  `source.path`, and `source.lastCompared`;
+- register the feature's `Workspace.tsx` in the `previewRegistry` in `src/App.tsx`;
+- give it a stable preview ID;
+- make it reachable by direct URL;
+- keep one homepage card per feature;
+- do not break existing previews.
 
-## Required dating and history metadata
+One feature gets one manifest entry, not one entry per visual version.
 
-Every replicated component or page must include a local README with the following metadata near the top:
+## Production Rename Synchronization
+
+When the source component is renamed or moved after a replica already exists, update the
+Workshop in one focused synchronization pass:
+
+1. Verify the new source path and export in `Light-Novels`.
+2. Rename matching Workshop component filenames and symbols when they represent the
+   same production concept.
+3. Update both `reference/` and `development/` imports without altering visuals.
+4. Update workspace imports, preview registry references, and manifest metadata.
+5. Update the feature README's source location and transfer instructions.
+6. Search the Workshop repository for the retired developer-facing name.
+7. Keep intentionally persisted/API compatibility strings unchanged and report them.
+8. Build the Workshop and open the preview.
+
+Do not rename only the file while leaving stale exported symbols, props, test names,
+manifest paths, or transfer notes behind.
+
+## Required Dating and History Metadata
+
+Every replicated component or page must include a local README with metadata near the
+top:
 
 ```markdown
 # <Component or Page Name>
 
 - **Source repository:** <owner/repository>
-- **Source location:** <route or file path>
+- **Source location:** <verified route or file path>
 - **Workshop preview:** `?preview=<id>`
 - **Replica created:** YYYY-MM-DD
 - **Last Workshop update:** YYYY-MM-DD
@@ -197,16 +280,17 @@ Every replicated component or page must include a local README with the followin
 - **Replica status:** faithful replica | under refinement | approved | transferred back
 ```
 
-Use the real current calendar date. Never invent or reuse an old date.
+Use the real current date. Never invent or reuse an old date.
 
-Whenever an agent materially changes the replica, it must:
+Whenever an agent materially changes the replica:
 
-1. Update **Last Workshop update** to the current date.
+1. Update **Last Workshop update**.
 2. Add a concise entry under `## Workshop history`.
-3. Update **Last source comparison** only when the source implementation was actually inspected again.
+3. Update **Last source comparison** only when the source implementation was actually
+   inspected again.
 4. Update status when the lifecycle changes.
 
-Use this format:
+Use:
 
 ```markdown
 ## Workshop history
@@ -215,9 +299,9 @@ Use this format:
 - **YYYY-MM-DD:** Refined portal animation and reduced-motion behavior.
 ```
 
-Do not create noisy history entries for formatting-only edits.
+Do not create noisy history entries for formatting-only changes.
 
-## Component README requirements
+## Component README Requirements
 
 Document:
 
@@ -227,15 +311,16 @@ Document:
 - reusable Workshop dependencies
 - production dependencies intentionally excluded
 - known visual differences from the source
-- exact files needed for later transfer
-- transfer notes or cautions
+- exact verified files needed for later transfer
+- transfer notes and cautions
 
-## Accuracy checks
+## Accuracy Checks
 
 Test at minimum:
 
 - narrow mobile width
 - larger mobile width
+- tablet width
 - desktop width
 - short text
 - long text
@@ -243,9 +328,10 @@ Test at minimum:
 - all meaningful preview states
 - reduced-motion preference
 
-The replica should be accurate enough that decisions made in the Workshop remain trustworthy when transferred back.
+The replica should be accurate enough that decisions made in the Workshop remain
+trustworthy when transferred back.
 
-## Final verification
+## Final Verification
 
 Before finishing:
 
@@ -253,24 +339,30 @@ Before finishing:
 2. Confirm the preview opens directly.
 3. Confirm every mock state renders.
 4. Confirm no production API calls occur.
-5. Confirm no secrets or environment-specific assumptions were copied.
-6. Confirm the mobile layout closely matches the source.
+5. Confirm no secrets or environment assumptions were copied.
+6. Confirm mobile, tablet, and desktop layouts remain trustworthy.
 7. Confirm existing Workshop previews still work.
-8. Confirm the component README dates and history are current.
-9. List every file added or changed.
-10. State any remaining visual differences honestly.
+8. Confirm README dates and history are current.
+9. Verify every manifest `source.path` exists in the named repository.
+10. Search for stale retired developer-facing names in the feature folder, manifest,
+    registry, README, and transfer instructions.
+11. List every file added or changed.
+12. State remaining visual differences or risks honestly.
 
-## Final response format
+## Final Response Format
 
 Report:
 
-- what was replicated
+- what was replicated or synchronized
 - direct preview route
 - states available
 - production systems intentionally excluded
+- verified source path and export
 - build/test result
 - files changed
 - current README dates
+- intentionally retained compatibility strings
 - remaining differences or risks
 
-Do not claim successful compilation or visual parity unless actually verified.
+Do not claim successful compilation, valid source linkage, or visual parity unless each
+was actually verified.
