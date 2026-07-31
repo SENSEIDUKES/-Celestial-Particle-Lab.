@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { CelestialBackdropWorkspace } from './workshop/previews/celestial-backdrop/CelestialBackdropWorkspace';
+import { ChapterGenerationFlowWorkspace } from './workshop/previews/chapter-generation-flow/ChapterGenerationFlowWorkspace';
 import { ChapterManifestationWorkspace } from './workshop/previews/chapter-manifestation/ChapterManifestationWorkspace';
 import { ClosedDoorCultivationWorkspace } from './workshop/previews/closed-door-cultivation/ClosedDoorCultivationWorkspace';
 import { ReaderChamberWorkspace } from './workshop/previews/reader-chamber/ReaderChamberWorkspace';
@@ -16,6 +17,7 @@ import './styles.css';
  */
 const previewRegistry: Record<string, ComponentType> = {
   'celestial-backdrop': CelestialBackdropWorkspace,
+  'chapter-generation-flow': ChapterGenerationFlowWorkspace,
   'chapter-generation-manifestation': ChapterManifestationWorkspace,
   'idle-cultivation': ClosedDoorCultivationWorkspace,
   'reader-chamber': ReaderChamberWorkspace,

@@ -44,6 +44,18 @@ export const workshopEntries: WorkshopEntry[] = [
     },
   },
   {
+    id: 'chapter-generation-flow',
+    title: 'Chapter Generation',
+    description: 'Inspection tool for the chapter-generation pipeline — the exact assembly order of context/prompt inputs, the assembled text at each stage, and the final structured ChapterContent output. Development additionally prototypes Cultural Prose Styles and Scene Ending Anchors.',
+    category: 'other',
+    status: 'refining',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/server/routes/storyRouter.ts',
+      lastCompared: '2026-07-31',
+    },
+  },
+  {
     id: 'chapter-generation-manifestation',
     title: 'Chapter Generation Manifestation',
     description: 'Aura Veil state simulator — one shared manifestation shell with narrative and media manifestation modes, driven by one task-card format.',
