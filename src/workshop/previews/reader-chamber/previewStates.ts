@@ -20,9 +20,29 @@ export type PreviewState =
  */
 export type PreviewUiAction = 'preferences' | 'bookmarks' | 'alter-fate' | 'seal';
 
+/**
+ * The four groups the Workshop preview-control menu is split into, so the panel
+ * shows one short list at a time instead of every control at once:
+ *
+ * - `reading`  — normal reading states and reading setup (chapter selection).
+ * - `effects`  — preview-only visual controls (theme, particle intensity).
+ * - `menus`    — opened panels, drawers, and overlays.
+ * - `pages`    — alternate Reader Chamber states and full-screen conditions.
+ */
+export type PreviewCategory = 'reading' | 'effects' | 'menus' | 'pages';
+
+export const PREVIEW_CATEGORIES: { id: PreviewCategory; label: string }[] = [
+  { id: 'reading', label: 'Reading' },
+  { id: 'effects', label: 'Effects' },
+  { id: 'menus', label: 'Menus' },
+  { id: 'pages', label: 'Pages' },
+];
+
 export interface PreviewScenario {
   id: PreviewState;
   label: string;
+  /** Which section of the preview-control menu this state appears under. */
+  category: Exclude<PreviewCategory, 'effects'>;
   /** Chapter the chamber opens on for this state. */
   chapter: number;
   isGenerating?: boolean;
@@ -33,18 +53,22 @@ export interface PreviewScenario {
 }
 
 export const scenarios: PreviewScenario[] = [
-  { id: 'reading', label: 'Reading (rich blocks chapter)', chapter: 1 },
-  { id: 'preferences-open', label: 'Reader Settings open', chapter: 1, uiAction: 'preferences' },
-  { id: 'bookmarks-open', label: 'Comments (Chronicle Anchors) open', chapter: 1, uiAction: 'bookmarks' },
-  { id: 'alter-fate-open', label: 'Alter Fate panel open', chapter: 1, uiAction: 'alter-fate' },
-  { id: 'continuity-warning', label: 'Continuity Guard warning (Seal flow)', chapter: 1, uiAction: 'seal' },
-  { id: 'generating', label: 'Generating chapter (skeleton)', chapter: 4, isGenerating: true },
-  { id: 'translating', label: 'Translating (Heavenly Dao spinner)', chapter: 1, isTranslating: true },
-  { id: 'fullscreen', label: 'Fullscreen reading', chapter: 1, isReaderFullscreen: true },
-  { id: 'death-scene', label: 'Death / critical scene (sealed ch. 3)', chapter: 3 },
-  { id: 'empty-chapter', label: 'Unmanifested Segment (empty ch. 4)', chapter: 4 },
-  { id: 'auto-scroll-paused', label: 'Auto-scroll paused (resume pill)', chapter: 1, cinematicScrollState: 'yielded' },
+  { id: 'reading', label: 'Reading (rich blocks chapter)', category: 'reading', chapter: 1 },
+  { id: 'fullscreen', label: 'Fullscreen reading', category: 'reading', chapter: 1, isReaderFullscreen: true },
+  { id: 'preferences-open', label: 'Reader Settings open', category: 'menus', chapter: 1, uiAction: 'preferences' },
+  { id: 'bookmarks-open', label: 'Comments (Chronicle Anchors) open', category: 'menus', chapter: 1, uiAction: 'bookmarks' },
+  { id: 'alter-fate-open', label: 'Alter Fate panel open', category: 'menus', chapter: 1, uiAction: 'alter-fate' },
+  { id: 'auto-scroll-paused', label: 'Auto-scroll paused (resume pill)', category: 'pages', chapter: 1, cinematicScrollState: 'yielded' },
+  { id: 'generating', label: 'Generating chapter (skeleton)', category: 'pages', chapter: 4, isGenerating: true },
+  { id: 'translating', label: 'Translating (Heavenly Dao spinner)', category: 'pages', chapter: 1, isTranslating: true },
+  { id: 'empty-chapter', label: 'Unmanifested Segment (empty ch. 4)', category: 'pages', chapter: 4 },
+  { id: 'death-scene', label: 'Death / critical scene (sealed ch. 3)', category: 'pages', chapter: 3 },
+  { id: 'continuity-warning', label: 'Continuity Guard warning (Seal flow)', category: 'pages', chapter: 1, uiAction: 'seal' },
 ];
+
+export function scenariosInCategory(category: PreviewCategory): PreviewScenario[] {
+  return scenarios.filter((scenario) => scenario.category === category);
+}
 
 export const READER_THEMES = ['void', 'crimson', 'abyss', 'sepia', 'emerald'] as const;
 export type ReaderTheme = (typeof READER_THEMES)[number];
