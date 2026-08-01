@@ -107,7 +107,7 @@ export const scenarios: PreviewScenario[] = [
   },
   {
     id: 'auth-gated',
-    label: 'Signed out — "Sync Spirit" auth gate',
+    label: 'Signed out — "Your Destiny Awaits" auth gate',
     category: 'auth',
     signedIn: false,
     localOnlyMode: false,
