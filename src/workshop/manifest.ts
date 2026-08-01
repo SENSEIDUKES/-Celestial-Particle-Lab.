@@ -112,7 +112,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'The full CreationModal flow on the Phase 1 Creator / Story / World data contract — intake, import/export, saved-seed library, and World Blueprint review. Genre Path / Fate Survival now lives in the separate Story Settings feature.',
+    description: 'Phase 2 two-panel creation workspace on the Creator / Story / World contract — Story/World selector with focused section workspaces, Creator strip, Save Draft, required-input tracking, summary sheet, and a mobile section drawer. Blueprint review, import/export, and saved-seed library included.',
     category: 'other',
     version: 'v2.0',
     source: {

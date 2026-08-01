@@ -4,6 +4,7 @@ import {
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
   createStorySeedInput,
+  storySeedToIntake,
   validateStorySeedInput,
 } from './storySeedSchema';
 import {
@@ -23,10 +24,12 @@ import {
 } from './storyAdministrativeMetadata';
 
 const intake: IntakeData = {
+  creatorPenName: 'Sensei of the Ninth Meridian',
   novelTitle: 'Ashes of the Ninth Meridian',
   mcName: 'Ye Chen',
   genrePath: 'Fate Survival',
   corePremise: 'A prince must survive the seven timelines that say he dies.',
+  proseStyle: 'Close-third prose with ledger-like fate entries.',
   storyTags: ['death flags', 'foreknowledge'],
   desiredPlotDirection: 'Escalating court intrigue.',
   destinedEnding: 'The prince survives and severs the court from fate.',
@@ -36,6 +39,8 @@ const intake: IntakeData = {
   societyStructure: 'Sect-led feudal hierarchy',
   dangerLevel: 'Relentless',
   generalAtmosphere: 'Ominous and intimate',
+  universeOverview: 'A shattered celestial court rules the sects through fate ledgers.',
+  majorMysteries: 'Who wrote the fate ledgers?\nWhat killed the Eighth Prince?',
   startingIdentity: 'Crippled young master',
   personality: 'Protective and ruthless',
   mainFlaw: 'Cannot trust allies',
@@ -118,14 +123,15 @@ describe('Story Seed creator/story/world contract', () => {
     });
   });
 
-  it('classifies every legacy intake and blueprint field into Story or World', () => {
+  it('classifies every legacy intake and blueprint field into Creator, Story, or World', () => {
     const seed = createStorySeedInput(intake, blueprint);
 
+    expect(seed.creator).toEqual({ penName: intake.creatorPenName });
     expect(seed.story).toMatchObject({
       storyTags: ['death flags', 'foreknowledge'],
       premise: intake.corePremise,
       genre: intake.genrePath,
-      style: blueprint.styleBible,
+      style: intake.proseStyle,
       optional: {
         desiredPlotDirection: intake.desiredPlotDirection,
         dangerLevel: intake.dangerLevel,
@@ -143,10 +149,40 @@ describe('Story Seed creator/story/world contract', () => {
       mainCharacter: { name: intake.mcName, personality: intake.personality },
       abilities: { startingPowerConcept: intake.startingPowerConcept, uniquePath: intake.uniquePath },
       powerSystem: { flavor: intake.powerFlavor, knownRanks: intake.knownRanks, outline: blueprint.powerSystemOutline },
-      majorMysteries: blueprint.majorMysteries,
+      majorMysteries: ['Who wrote the fate ledgers?', 'What killed the Eighth Prince?'],
     });
     expect(seed.world.optional.additionalCharacters?.map(character => character.name)).toEqual(['Elder Qin', 'Ninth Prince']);
     expect(seed.world.optional.factions?.map(faction => faction.name)).toEqual(['Heavenly Sword Sect', 'Celestial Court']);
+  });
+
+  it('falls back to blueprint and intake values for style, universe, and mysteries', () => {
+    const { creatorPenName: _creatorPenName, proseStyle: _proseStyle, ...rest } = intake;
+    const seed = createStorySeedInput(rest, blueprint);
+    expect(seed.creator).toEqual({});
+    expect(seed.story.style).toBe(blueprint.styleBible);
+    expect(seed.world.optional.universe).toBe(blueprint.worldOverview);
+
+    const { universeOverview: _universeOverview, majorMysteries: _majorMysteries, ...restIntake } = rest;
+    const intakeOnly = createStorySeedInput(restIntake);
+    expect(intakeOnly.story.style).toBe(restIntake.generalAtmosphere);
+    expect(intakeOnly.world.optional.universe).toBeUndefined();
+    expect(intakeOnly.world.optional.majorMysteries).toBeUndefined();
+
+    const intakeSourced = createStorySeedInput(intake);
+    expect(intakeSourced.world.optional.universe).toBe(intake.universeOverview);
+    expect(intakeSourced.world.optional.majorMysteries).toEqual([
+      'Who wrote the fate ledgers?',
+      'What killed the Eighth Prince?',
+    ]);
+  });
+
+  it('round-trips the new creator, style, and world fields through the intake view model', () => {
+    const seed = createStorySeedInput(intake, blueprint);
+    const restored = storySeedToIntake(seed);
+    expect(restored.creatorPenName).toBe(intake.creatorPenName);
+    expect(restored.proseStyle).toBe(intake.proseStyle);
+    expect(restored.universeOverview).toBe(intake.universeOverview);
+    expect(restored.majorMysteries).toBe(intake.majorMysteries);
   });
 
   it('serializes only creator/story/world and round-trips portable files', () => {

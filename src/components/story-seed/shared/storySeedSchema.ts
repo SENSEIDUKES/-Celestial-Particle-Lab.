@@ -8,8 +8,8 @@ export const STORY_SEED_SCHEMA_VERSION = 2 as const;
 export const DEFAULT_STORY_STYLE = 'Immersive character-focused light-novel prose';
 
 export interface StorySeedCreator {
-  // Reserved for creator-controlled settings. The family is required even
-  // while Phase 1 has no creator fields to collect.
+  /** The creator's public-facing name or pen name. Optional; never required. */
+  penName?: string;
 }
 
 export interface StorySeedStoryOptional {
@@ -302,10 +302,11 @@ export function assertValidStorySeedInput(value: unknown): asserts value is Stor
 
 export const normalizeStorySeedInput = (value: unknown): StorySeedInput => {
   assertValidStorySeedInput(value);
+  const creator = value.creator as unknown as Record<string, unknown>;
   const story = value.story as unknown as Record<string, unknown>;
   const world = value.world as unknown as Record<string, unknown>;
   return {
-    creator: {},
+    creator: optionalTextFields<StorySeedCreator>(creator, ['penName']),
     story: {
       storyTags: stringList(story.storyTags),
       premise: text(story.premise)!,
@@ -356,19 +357,28 @@ const mergeNamedFactions = (intake: IntakeData, blueprint?: WorldBlueprint): Int
 };
 
 /**
- * Boundary adapter for the unchanged Phase 1 form. The flat IntakeData object
- * never crosses persistence, serialization, or generation after this point.
+ * Boundary adapter for the Phase 2 creation workspace. The flat IntakeData
+ * view model never crosses persistence, serialization, or generation after
+ * this point.
  */
 export const createStorySeedInput = (
   intake: IntakeData,
   blueprint?: WorldBlueprint,
-): StorySeedInput => ({
-  creator: {},
+): StorySeedInput => {
+  const majorMysteries = Array.from(new Set([
+    ...stringList(blueprint?.majorMysteries),
+    ...stringList((intake.majorMysteries || '').split('\n')),
+  ]));
+  return {
+  creator: {
+    ...(text(intake.creatorPenName) ? { penName: text(intake.creatorPenName) } : {}),
+  },
   story: {
     storyTags: stringList(intake.storyTags),
     premise: intake.corePremise?.trim() || '',
     genre: intake.genrePath?.trim() || '',
-    style: blueprint?.styleBible?.trim()
+    style: intake.proseStyle?.trim()
+      || blueprint?.styleBible?.trim()
       || intake.generalAtmosphere?.trim()
       || DEFAULT_STORY_STYLE,
     optional: {
@@ -407,7 +417,9 @@ export const createStorySeedInput = (
     optional: {
       ...(text(blueprint?.title || intake.novelTitle) ? { title: text(blueprint?.title || intake.novelTitle) } : {}),
       ...(text(intake.worldType) ? { worldType: text(intake.worldType) } : {}),
-      ...(text(blueprint?.worldOverview) ? { universe: text(blueprint?.worldOverview) } : {}),
+      ...(text(blueprint?.worldOverview || intake.universeOverview)
+        ? { universe: text(blueprint?.worldOverview || intake.universeOverview) }
+        : {}),
       ...(text(blueprint?.startingLocation || intake.startingLocation)
         ? { startingLocation: text(blueprint?.startingLocation || intake.startingLocation) }
         : {}),
@@ -460,22 +472,23 @@ export const createStorySeedInput = (
       ...(text(blueprint?.destinedEnding || intake.destinedEnding)
         ? { destinedEnding: text(blueprint?.destinedEnding || intake.destinedEnding) }
         : {}),
-      ...(stringList(blueprint?.majorMysteries).length > 0
-        ? { majorMysteries: stringList(blueprint?.majorMysteries) }
-        : {}),
+      ...(majorMysteries.length > 0 ? { majorMysteries } : {}),
     },
   },
-});
+};
+};
 
 export const storySeedToIntake = (seed: StorySeedInput): IntakeData => {
   const { optional: story } = seed.story;
   const { optional: world } = seed.world;
   const mainCharacter = world.mainCharacter || {};
   return {
+    creatorPenName: seed.creator.penName || '',
     novelTitle: world.title || '',
     mcName: mainCharacter.name || '',
     genrePath: seed.story.genre,
     corePremise: seed.story.premise,
+    proseStyle: seed.story.style,
     desiredPlotDirection: story.desiredPlotDirection || '',
     storyTags: [...seed.story.storyTags],
     destinedEnding: world.destinedEnding || '',
@@ -485,6 +498,8 @@ export const storySeedToIntake = (seed: StorySeedInput): IntakeData => {
     societyStructure: world.societyStructure || '',
     dangerLevel: story.dangerLevel || '',
     generalAtmosphere: story.generalAtmosphere || '',
+    universeOverview: world.universe || '',
+    majorMysteries: (world.majorMysteries || []).join('\n'),
     startingIdentity: mainCharacter.startingIdentity || '',
     personality: mainCharacter.personality || '',
     mainFlaw: mainCharacter.mainFlaw || '',

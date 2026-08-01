@@ -30,15 +30,21 @@ import {
 // "blueprint" scenario faithfully (never by reaching into React internals),
 // the Workshop drives the *real* rendered controls: typing into the actual
 // inputs and clicking the actual buttons, the same way reader-chamber's
-// `clickInChamber` drove its preview states. Both mounted panes (`reference`
-// and `development`) share the same literal DOM ids, so every helper below
-// operates on all `#creation-portal-root` instances at once — otherwise only
-// whichever pane happens first in DOM order would react.
+// `clickInChamber` drove its preview states.
+//
+// Since Phase 2, the two panes are structurally different UIs: the locked
+// reference fork is the old numbered accordion, the development fork is the
+// two-panel creation workspace. Pane wrappers carry `data-story-seed-pane`
+// so each scenario script can drive each fork through its own real controls.
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-function forEachRoot(callback: (root: Element) => void) {
-  document.querySelectorAll('[id="creation-portal-root"]').forEach(callback);
+type PaneKind = 'reference' | 'development';
+
+function getRoots(pane: PaneKind): Element[] {
+  return Array.from(
+    document.querySelectorAll(`[data-story-seed-pane="${pane}"] [id="creation-portal-root"]`),
+  );
 }
 
 function setFieldValue(root: Element, id: string, value: string) {
@@ -56,12 +62,13 @@ function clickByText(root: Element, selector: string, pattern: RegExp) {
   target?.click();
 }
 
-/** Fills a representative sample across every intake FormSection through the
- *  real form controls: text fields directly, accordion sections by clicking
- *  their header (only one section renders its body at a time), tag presets
- *  and "+ Add Character/Faction" by clicking the actual buttons. */
-async function runFillIntakeScenario() {
-  forEachRoot(root => {
+function clickByAriaLabel(root: Element, label: string) {
+  (root.querySelector(`[aria-label="${label}"]`) as HTMLElement | null)?.click();
+}
+
+/** Reference pane: fills the locked Phase 1 accordion replica (unchanged steps). */
+async function runReferenceFillScenario() {
+  getRoots('reference').forEach(root => {
     setFieldValue(root, 'a11y-control-v2xlbs8', 'Ashes of the Ninth Meridian');
     setFieldValue(root, 'a11y-control-7b2mqtu', 'Ye Chen');
     setFieldValue(
@@ -71,15 +78,15 @@ async function runFillIntakeScenario() {
     );
   });
   await wait(80);
-  forEachRoot(root => {
+  getRoots('reference').forEach(root => {
     clickByText(root, 'button', /^\+ death flags$/);
     clickByText(root, 'button', /^\+ sect politics$/);
   });
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /2\. World Setting/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /2\. World Setting/));
   await wait(120);
-  forEachRoot(root => {
+  getRoots('reference').forEach(root => {
     setFieldValue(root, 'world-type-input', 'Ancient sect world with a collapsing celestial court');
     setFieldValue(root, 'society-structure-input', 'Sect-led feudal hierarchy');
     setFieldValue(root, 'danger-level-input', 'Cutthroat, grimdark, mystical');
@@ -87,9 +94,9 @@ async function runFillIntakeScenario() {
   });
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /3\. Main Character Setup/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /3\. Main Character Setup/));
   await wait(120);
-  forEachRoot(root => {
+  getRoots('reference').forEach(root => {
     setFieldValue(root, 'mc-starting-identity-input', 'Crippled young master');
     setFieldValue(root, 'mc-personality-input', 'Ruthless but protective, chaotic neutral');
     setFieldValue(root, 'mc-secret-advantage-input', 'Foreknowledge of seven doomed timelines');
@@ -102,37 +109,123 @@ async function runFillIntakeScenario() {
   });
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /3\.5\. Character Intake/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /3\.5\. Character Intake/));
   await wait(120);
-  forEachRoot(root => clickByText(root, 'button', /\+ Add Character/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /\+ Add Character/));
   await wait(80);
-  forEachRoot(root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'));
+  getRoots('reference').forEach(root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'));
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /3\.8\. Faction\/Sect Intake/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /3\.8\. Faction\/Sect Intake/));
   await wait(120);
-  forEachRoot(root => clickByText(root, 'button', /\+ Add Faction/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /\+ Add Faction/));
   await wait(80);
-  forEachRoot(root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'));
+  getRoots('reference').forEach(root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'));
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /4\. Power System Seed/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /4\. Power System Seed/));
   await wait(120);
-  forEachRoot(root => {
+  getRoots('reference').forEach(root => {
     setFieldValue(root, 'a11y-control-itgsjgw', 'Qi Condensation Tier 1');
     setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist');
   });
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /5\. Plot & Trope Control/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /5\. Plot & Trope Control/));
   await wait(120);
-  forEachRoot(root => {
+  getRoots('reference').forEach(root => {
     setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
   });
 
   await wait(80);
-  forEachRoot(root => clickByText(root, 'button', /1\. Core Seed/));
+  getRoots('reference').forEach(root => clickByText(root, 'button', /1\. Core Seed/));
+}
+
+/** Development pane: fills the Phase 2 two-panel workspace through its real
+ *  selector items and field controls (same data as the reference fill). */
+async function runDevelopmentFillScenario() {
+  const selectSection = async (pattern: RegExp) => {
+    getRoots('development').forEach(root => clickByText(root, 'button', pattern));
+    await wait(150);
+  };
+
+  // Story Tags (default active section) — two preset tags
+  await selectSection(/^Story Tags/);
+  getRoots('development').forEach(root => {
+    clickByText(root, 'button', /^\+ death flags$/);
+    clickByText(root, 'button', /^\+ sect politics$/);
+  });
+
+  // Premise
+  await selectSection(/^Premise/);
+  getRoots('development').forEach(root => setFieldValue(
+    root,
+    'core-premise-input',
+    'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
+  ));
+
+  // Genre
+  await selectSection(/^Genre/);
+  getRoots('development').forEach(root => clickByText(root, 'button', /Fate Survival/));
+
+  // World Identity
+  await selectSection(/^World Identity$/);
+  getRoots('development').forEach(root => {
+    setFieldValue(root, 'a11y-control-v2xlbs8', 'Ashes of the Ninth Meridian');
+    setFieldValue(root, 'world-type-input', 'Ancient sect world with a collapsing celestial court');
+    setFieldValue(root, 'society-structure-input', 'Sect-led feudal hierarchy');
+    setFieldValue(root, 'starting-location-input', 'Outer sect labor quarry inside a volcanic rift.');
+  });
+
+  // Characters (main character + one additional character)
+  await selectSection(/^Characters$/);
+  getRoots('development').forEach(root => {
+    setFieldValue(root, 'a11y-control-7b2mqtu', 'Ye Chen');
+    setFieldValue(root, 'mc-starting-identity-input', 'Crippled young master');
+    setFieldValue(root, 'mc-personality-input', 'Ruthless but protective, chaotic neutral');
+    setFieldValue(root, 'mc-secret-advantage-input', 'Foreknowledge of seven doomed timelines');
+    setFieldValue(root, 'mc-starting-weakness-input', 'Destroyed meridians');
+    setFieldValue(
+      root,
+      'mc-bio-input',
+      'Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective.',
+    );
+  });
+  await wait(80);
+  getRoots('development').forEach(root => clickByText(root, 'button', /\+ Add Character/));
+  await wait(80);
+  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'));
+
+  // Factions
+  await selectSection(/^Factions$/);
+  getRoots('development').forEach(root => clickByText(root, 'button', /\+ Add Faction/));
+  await wait(80);
+  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'));
+
+  // Abilities
+  await selectSection(/^Abilities$/);
+  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-itgsjgw', 'Qi Condensation Tier 1'));
+
+  // Power System
+  await selectSection(/^Power System$/);
+  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist'));
+
+  // Story Settings (danger + plot controls)
+  await selectSection(/^Story Settings/);
+  getRoots('development').forEach(root => {
+    setFieldValue(root, 'danger-level-input', 'Cutthroat, grimdark, mystical');
+    setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
+    setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
+  });
+
+  // Land back on Story Tags
+  await selectSection(/^Story Tags/);
+}
+
+/** Development pane: opens the header overflow menu (the "···" button). */
+function openDevelopmentMenu(root: Element) {
+  clickByAriaLabel(root, 'Story Seed actions');
 }
 
 export function StorySeedWorkspace() {
@@ -154,7 +247,12 @@ export function StorySeedWorkspace() {
   }, []);
 
   useEffect(() => {
-    applyScenario('empty-intake');
+    // Deep-link support: `?preview=story-seed&state=<scenario-id>` opens the
+    // workspace directly in a given preview state (used for inspection and
+    // screenshot verification).
+    const requested = new URLSearchParams(window.location.search).get('state') as PreviewState | null;
+    const initial = requested && scenarios.some(s => s.id === requested) ? requested : 'empty-intake';
+    applyScenario(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -167,11 +265,30 @@ export function StorySeedWorkspace() {
       await wait(220);
       if (cancelled) return;
       if (scenario.uiAction === 'open-import-panel') {
-        forEachRoot(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
+        getRoots('reference').forEach(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
+        getRoots('development').forEach(root => {
+          openDevelopmentMenu(root);
+        });
+        await wait(120);
+        getRoots('development').forEach(root => clickByText(root, 'button', /Import Story Seed/));
+      } else if (scenario.uiAction === 'open-library') {
+        // The reference fork renders the account library inline; the
+        // development fork tucks it behind the header overflow menu.
+        getRoots('development').forEach(root => openDevelopmentMenu(root));
+        await wait(120);
+        getRoots('development').forEach(root => clickByText(root, 'button', /My Story Seeds/));
       } else if (scenario.uiAction === 'use-first-seed') {
-        forEachRoot(root => clickByText(root, 'button', /^Use Seed$/));
+        getRoots('development').forEach(root => openDevelopmentMenu(root));
+        await wait(120);
+        getRoots('development').forEach(root => clickByText(root, 'button', /My Story Seeds/));
+        await wait(150);
+        getRoots('reference').forEach(root => clickByText(root, 'button', /^Use Seed$/));
+        getRoots('development').forEach(root => clickByText(root, 'button', /^Use Seed$/));
+      } else if (scenario.uiAction === 'open-summary') {
+        getRoots('development').forEach(root => clickByText(root, 'button', /Preview Story Seed/));
       } else if (scenario.uiAction === 'fill-intake') {
-        await runFillIntakeScenario();
+        await runReferenceFillScenario();
+        await runDevelopmentFillScenario();
       }
     })();
     return () => {
@@ -265,12 +382,12 @@ export function StorySeedWorkspace() {
       controls={controls}
       allowCompare
       renderReference={() => (
-        <div key={`reference-${activeState}`} className="min-h-screen bg-void py-10 px-4">
+        <div key={`reference-${activeState}`} data-story-seed-pane="reference" className="min-h-screen bg-void py-10 px-4">
           <ReferenceCreationModal {...chamberProps} />
         </div>
       )}
       renderDevelopment={() => (
-        <div key={`development-${activeState}`} className="min-h-screen bg-void py-10 px-4">
+        <div key={`development-${activeState}`} data-story-seed-pane="development" className="min-h-screen bg-void py-10 px-4">
           <DevelopmentCreationModal {...chamberProps} />
         </div>
       )}

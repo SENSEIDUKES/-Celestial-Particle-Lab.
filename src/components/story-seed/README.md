@@ -2,7 +2,7 @@
 
 - **Source repository:** SENSEIDUKES/Light-Novels
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
-- **Workshop preview:** `?preview=story-seed`
+- **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-01
 - **Last source comparison:** 2026-08-01
@@ -10,6 +10,24 @@
 
 ## Workshop history
 
+- **2026-08-01:** Phase 2 — full user-facing redesign of the Story Seed
+  interface around the Phase 1 Creator / Story / World contract. The numbered
+  accordion intake was **replaced** (not polished) with a two-panel creation
+  workspace: a Story/World selector on the left, one focused editing surface
+  on the right, a Creator strip under the header, an explicit Save Draft
+  action, a sticky action bar that tracks the four required Story inputs and
+  hosts Forge World Blueprint, and a read-only Story Seed summary sheet. On
+  mobile the selector becomes a slide-over drawer opened from the action bar;
+  the active family/section stays visible through the workspace breadcrumb.
+  Small schema corrections connecting the interface: `creator.penName` added
+  to the Creator family, and intake paths added for the previously unreachable
+  schema fields `story.style` (`proseStyle`), `world.optional.universe`
+  (`universeOverview`), and `world.optional.majorMysteries` (newline list).
+  The Phase 1 form files (`CoreSeedForm`, `WorldSettingForm`,
+  `CharacterSetupForm`, `CustomCharactersForm`, `CustomFactionsForm`,
+  `PowerSystemForm`, `PlotControlForm`, `MakeItWorkForm`, `FormSection`) were
+  deleted from `development/` — git history preserves them; `reference/` is
+  untouched and still renders the production accordion for Compare.
 - **2026-08-01:** Added a separate minimal `StoryAdministrativeMetadata`
   spine at the initial-story generation boundary. It contains only story and
   creator identity, timestamps, schema/content versions, story/generation/
@@ -79,19 +97,49 @@ reference/                    — untouched replica of production, locked
     FormInput.tsx
     FormTextarea.tsx
     index.ts
-development/                  — active Workshop version; started as an exact
-                                 copy of reference/ (byte-identical at creation)
+development/                  — active Workshop version (Phase 2 creation workspace)
+  CreationModal.tsx            — two-panel shell: header (Save Draft + actions
+                                 menu), Creator strip, selector/workspace grid,
+                                 sticky action bar, mobile section drawer
+  seedSections.ts              — the Story/World section model: ids, labels,
+                                 icons, required/secondary flags, per-section
+                                 filled checks, missing-required helpers
+  StorySeedSelector.tsx        — left-panel navigation (desktop sidebar and
+                                 mobile drawer share it) + Preview Story Seed card
+  StorySeedSummary.tsx         — read-only summary sheet (required checklist,
+                                 Creator/Story data, World filled-or-generate rows)
+  workspaces/
+    WorkspaceShell.tsx          — shared breadcrumb/title/chip shell, field
+                                  classes, GuidanceNote, WorkspaceSubheading
+    StoryTagsWorkspace.tsx      — required; tag add/suggest/browse + limit
+    PremiseWorkspace.tsx        — required; premise + suggestions + ghost-tag Tab
+    GenreWorkspace.tsx          — required; preset grid + custom genre input
+    StyleWorkspace.tsx          — required; prose style + presets
+    StorySettingsWorkspace.tsx  — optional catch-all (plot, trope, tone,
+                                  pacing, fate pressure, custom rules)
+    WorldIdentityWorkspace.tsx  — optional; title, world type, society, location
+    CharactersWorkspace.tsx     — optional; main character + additional cast
+    FactionsWorkspace.tsx       — optional; faction/sect editor
+    AbilitiesWorkspace.tsx      — optional; starting power concept + unique path
+    PowerSystemWorkspace.tsx    — optional; power flavor + known ranks
+    DestinedEndingWorkspace.tsx — optional; destined ending
+    OtherWorldSettingsWorkspace.tsx — optional; universe overview + major mysteries
   StoryAuthGate.tsx            — Foundation v2 cinematic auth gate (added
                                  2026-08-01); rendered by CreationModal's
-                                 signed-out branch instead of the old inline
-                                 "Sync Spirit" panel
-  (no FateSurvivalExplanation.tsx here — the Genre Path selector and Fate
-   Survival explanation were extracted out of CoreSeedForm.tsx entirely into
-   the separate story-settings/ feature; see Workshop history above)
+                                 signed-out branch
+  BlueprintReview.tsx          — blueprint review stage (unchanged from Phase 1)
+  ImportPanel.tsx              — seed/blueprint JSON import (unchanged)
+  SeedLibraryPanel.tsx         — account seed library; now toggled from the
+                                 header actions menu instead of always rendered
+  constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
+                                   CATEGORIZED_TAGS, STYLE_SUGGESTIONS (Phase 2)
+  form-fields/                 — shared FormInput/FormTextarea used by workspaces
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
-                                  NamedCodexEntry (narrow local subset)
+                                  NamedCodexEntry (narrow local subset). Phase 2
+                                  added view-model fields: creatorPenName,
+                                  proseStyle, universeOverview, majorMysteries.
   storySeedFormat.ts            — verbatim: normalizeStorySeedPayload,
                                   downloadStorySeed, downloadStorySeedCollection,
                                   parseStorySeedJson, and their normalization
@@ -100,13 +148,13 @@ shared/                        — shared infrastructure plus fork-specific data
   dialect.ts                    — verbatim dictionary/logic: getDialectLabel,
                                   resolveDialect, DIALECT_DICTIONARY, useDialect
                                   (only the import of `useAppStore` was rewritten
-                                  to point at ./stubs; PlotControlForm only calls
-                                  getDialectLabel — useDialect is unused here but
-                                  kept for parity with production's export surface)
+                                  to point at ./stubs; StorySettingsWorkspace only
+                                  calls getDialectLabel — useDialect is unused here
+                                  but kept for parity with production's export surface)
   codexContext.ts               — normalizeCodexAliases, parseCodexAliases,
                                   normalizeCodexSurface, findCodexAliasCollisions
                                   (only the alias-normalization subset used by
-                                  CustomCharactersForm/CustomFactionsForm; the
+                                  CharactersWorkspace/FactionsWorkspace; the
                                   legacy-field-stripping helpers that operate on
                                   the full Codex entry shape were not copied,
                                   since the Codex system itself is excluded)
@@ -117,10 +165,9 @@ shared/                        — shared infrastructure plus fork-specific data
                                   storySeedStorage (createStorySeed/
                                   updateStorySeed/listStorySeeds/importStorySeeds),
                                   getApiHeaders, suggestTagsStub
-  storySeedSchema.ts            — development's authoritative Phase 1 creative
-                                  intake contract, field classification,
-                                  validation, form adapters, and generation
-                                  payload builders
+  storySeedSchema.ts            — development's authoritative creative intake
+                                  contract, field classification, validation,
+                                  form adapters, and generation payload builders
   storySeedSerialization.ts     — portable schema-v2 export/import; excludes
                                   operational IDs and narrowly migrates valid
                                   v1 intake/blueprint files
@@ -128,16 +175,19 @@ shared/                        — shared infrastructure plus fork-specific data
                                   backed by Workshop local storage
   storySeedSchema.test.ts       — focused validation, empty-World,
                                   classification, serialization, persistence,
-                                  and generation-payload checks
+                                  and generation-payload checks (8 tests;
+                                  `npm run test:story-seed`)
   storyAdministrativeMetadata.ts — minimal internal story identity, lifecycle,
                                    language, version, and durable-reference spine
 ```
 
-## Phase 1 creative-data structure
+## Creative-data structure (Phase 1 + Phase 2 corrections)
 
 ```ts
 {
-  creator: {},
+  creator: {
+    penName?: string          // Phase 2 — the Creator family's first field
+  },
   story: {
     storyTags: string[],
     premise: string,
@@ -151,17 +201,24 @@ shared/                        — shared infrastructure plus fork-specific data
 }
 ```
 
-The unchanged form still edits a flat `IntakeData` view model. A single
-boundary adapter classifies it before save, export, or generation, so the flat
-prototype shape is no longer durable data.
+The Phase 2 workspace edits a flat `IntakeData` view model section by section
+(one section visible at a time). A single boundary adapter classifies it before
+save, export, or generation, so the flat prototype shape is never durable data.
 
-- **Story:** desired plot direction, length, atmosphere, danger/tension,
-  power pacing, goals/conflicts/antagonist pressure, romance/comedy/trope
-  controls, exclusions/inclusions, Fate settings, absolute custom rules,
-  generated logline/first-arc promise/trope rules, and unresolved plot threads.
-- **World:** title, world type and overview, location, society, main character,
-  additional characters, factions, abilities, power-system definition,
-  destined ending, and major mysteries.
+- **Creator:** pen name only, collected in a quiet strip under the header so it
+  never competes with the required Story inputs.
+- **Story:** required Story Tags / Premise / Genre / Style first (Genre is an
+  explicit preset-or-custom input again; Style is an explicit `proseStyle`
+  input pre-filled with the Library default), then the optional plot
+  direction, length, atmosphere, danger/tension, power pacing,
+  goals/conflicts/antagonist pressure, romance/comedy/trope controls,
+  exclusions/inclusions, Fate settings, absolute custom rules, generated
+  logline/first-arc promise/trope rules, and unresolved plot threads under
+  the secondary Story Settings surface.
+- **World:** title, world type and overview (`universeOverview`), location,
+  society, main character, additional characters, factions, abilities,
+  power-system definition, destined ending, and major mysteries
+  (newline-separated `majorMysteries`) — all optional; empty World stays valid.
 - **Internal metadata:** schema version, seed/account IDs, display title, and
   created/updated timestamps remain on `StorySeedRecord`, outside the creative
   intake families.
@@ -194,27 +251,24 @@ Seed generation payload:
 New records begin as `DRAFT`, `QUEUED`, `PRIVATE`, and `UNPUBLISHED`.
 Current-chapter and cover references begin as `null`; the source Story Seed
 reference is required. No administrative field is included in portable Story
-Seed JSON.
+Seed JSON, and no administrative field is rendered anywhere in the Phase 2 UI.
 
 Both forks render inside
 `src/workshop/previews/story-seed/StorySeedWorkspace.tsx`, which shares one mock
-account/seed-library state and one categorized preview-control panel
-(Intake / Blueprint / Library / Auth) between them via `FeatureWorkspace`.
+account/seed-library state and one categorized preview-control panel (Creation
+Workspace / Blueprint Review / Seed Library / Sign In) between them via
+`FeatureWorkspace`.
 
 ## What was copied
 
 The full Story Seed presentation tree from `src/components/` and
 `src/features/creation/` in Light-Novels: `CreationModal.tsx` (default export),
-every file under `src/features/creation/components/` (`BlueprintReview.tsx`,
-`CharacterSetupForm.tsx`, `CoreSeedForm.tsx`, `CustomCharactersForm.tsx`,
-`CustomFactionsForm.tsx`, `FormSection.tsx`, `ImportPanel.tsx`,
-`MakeItWorkForm.tsx`, `PlotControlForm.tsx`, `PowerSystemForm.tsx`,
-`SeedLibraryPanel.tsx`, `WorldSettingForm.tsx`, `form-fields/FormInput.tsx`,
-`form-fields/FormTextarea.tsx`, `form-fields/index.ts`),
-`src/features/creation/constants.ts`, and `src/components/FateSurvivalExplanation.tsx`
-(rendered inside `CoreSeedForm` for the Fate Survival genre). All markup, class
-names, copy, and interaction logic are byte-identical except for import-path
-rewrites and the two documented mocks below.
+every file under `src/features/creation/components/`, `src/features/creation/constants.ts`,
+and `src/components/FateSurvivalExplanation.tsx` (rendered inside `CoreSeedForm`
+for the Fate Survival genre). All `reference/` markup, class names, copy, and
+interaction logic are byte-identical except for import-path rewrites and the two
+documented mocks below. The `development/` fork was then rebuilt for Phase 2:
+same persistence/generation logic and field contracts, completely new layout.
 
 ## What was mocked
 
@@ -252,88 +306,96 @@ Postgres/persistence, no real network calls):
 - **`hooks/storyEngineHelpers.getApiHeaders`** — inert stub in
   `shared/stubs.ts` returning a plain JSON content-type header (production
   reads API keys out of `secureStorage`, which was not copied).
-- **`fetch('/api/suggest-tags', …)` inside `CoreSeedForm.tsx`** — this is
-  the one line of business logic that could not stay byte-identical: the
-  real `fetch` call was replaced with `suggestTagsStub(...)` from
+- **`fetch('/api/suggest-tags', …)` inside `StoryTagsWorkspace.tsx`** — this is
+  the one line of business logic that could not stay faithful: the real
+  `fetch` call was replaced with `suggestTagsStub(...)` from
   `shared/stubs.ts`, which resolves a canned, genre-aware `{ suggestedTags,
   reasoning }` object after a short simulated delay. No network call is ever
-  made; the "Suggest Tags" button, its loading state, error banner, and
-  "+ Add All Suggestions" flow are otherwise fully functional and
-  interactive. Everything around the call (state, UI, error handling) is
-  unchanged.
+  made; the Suggest/Refresh button, its loading state, error banner, and
+  per-tag add flow are otherwise fully functional and interactive.
 - **`onGenerateBlueprint` / `onStartStory` props** — mocked in
   `StorySeedWorkspace.tsx`: `onGenerateBlueprint` logs to console and
   resolves the canned `WorldBlueprint` from `previewData.ts` after a short
   delay; `onStartStory` logs its arguments. Neither triggers a real AI
   pipeline.
+- **Save Draft in local-only mode** — the Workshop repository
+  (`shared/storySeedRepository.ts`) is local-storage backed, so the new Save
+  Draft action writes under a stable `local-workshop-creator` namespace when
+  no account is signed in, keeping the action real and inspectable in every
+  preview state. On transfer, gate draft saving on real auth exactly like
+  `persistSeed` does (see Transfer notes).
 
 ## Available preview states
 
 The Workshop preview-control menu is split into four categories, selected
-with a compact `Intake | Blueprint | Library | Auth` row. Category
-membership lives on each scenario in
-`src/workshop/previews/story-seed/previewStates.ts` (`category` field).
-`CreationModal` owns `intake`, `stage`, and `showImportPanel` as internal
-component state with no override props, so every scenario that needs
-filled data or a different stage drives the **real rendered controls** —
-typing into the actual inputs and clicking the actual buttons — the same
-approach reader-chamber's `clickInChamber` uses, never a shortcut into
-React internals.
+with a compact `Creation Workspace | Blueprint Review | Seed Library | Sign In`
+row. Category membership lives on each scenario in
+`src/workshop/previews/story-seed/previewStates.ts` (`category` field), and any
+scenario can be deep-linked with `?preview=story-seed&state=<scenario-id>`.
+`CreationModal` owns `intake`, `stage`, and panel visibility as internal
+component state with no override props, so every scenario that needs filled
+data or a different stage drives the **real rendered controls** — typing into
+the actual inputs and clicking the actual buttons — the same approach
+reader-chamber's `clickInChamber` uses, never a shortcut into React internals.
+Since Phase 2 the two panes are structurally different UIs, so pane wrappers
+carry `data-story-seed-pane="reference|development"` and each scenario script
+drives each fork through its own real controls (the reference accordion steps
+are unchanged; the development script walks the new selector).
 
-**Intake** — the intake form (`stage === 'intake'`)
+**Creation Workspace** — the intake stage (`stage === 'intake'`)
 
-- `empty-intake` — default mount, nothing filled
-- `filled-intake` — scripts a representative fill across every FormSection:
-  types into Core Seed (title, MC name, premise, 2 preset tags), opens and
-  fills World Setting, Main Character Setup, Power System, and Plot & Trope
-  Control, adds one Custom Character and one Custom Faction via their real
-  "+ Add" buttons, then reopens the Core Seed section
-- `generating-blueprint` — `isGenerating` prop `true`, showing the "Forge
-  World Blueprint" submit button's spinner state
-- `import-panel-open` — clicks the real "Import World Seed / Blueprint"
-  button to open `ImportPanel`
+- `empty-intake` — default mount, Story Tags active, nothing filled
+- `filled-intake` — scripts a representative fill across both forks: Story
+  Tags (2 preset tags), Premise, Genre (Fate Survival), World Identity,
+  Characters (MC fields + 1 added character), Factions (+1), Abilities, Power
+  System, and Story Settings, landing back on Story Tags
+- `generating-blueprint` — `isGenerating` prop `true`, showing the Forge
+  button's spinner state
+- `import-panel-open` — opens the actions menu and clicks the real "Import
+  Story Seed" item to open `ImportPanel`
+- `summary-open` — clicks the real "Preview Story Seed" card to open the
+  summary sheet
 
-**Blueprint** — the blueprint review stage (`stage === 'blueprint'`)
+**Blueprint Review** — the blueprint review stage (`stage === 'blueprint'`)
 
 - `blueprint-review` — signs in a mock account, populates the seed library,
-  then clicks the real "Use Seed" button on the first saved seed
-  (`handleUseSeed`'s genuine production code path — the only way to reach
-  the blueprint stage without props), landing on `BlueprintReview` with the
-  canned intake + blueprint
+  opens it from the actions menu, then clicks the real "Use Seed" button on
+  the first saved seed (`handleUseSeed`'s genuine production code path),
+  landing on `BlueprintReview` with the canned intake + blueprint
 - `blueprint-generating-story` — same path, plus `isGenerating` and
   `activeAgentId: 'versa'`, showing the "VERSA is writing…" icon/label swap
 
-**Library** — the account-only Seed Library panel (`LOCAL_ONLY_MODE = false`)
+**Seed Library** — the account-only Seed Library panel (`LOCAL_ONLY_MODE = false`)
 
-- `library-empty` — signed in, no saved seeds
+- `library-empty` — signed in, no saved seeds, library opened via the menu
 - `library-populated` — signed in, 2 mock saved seeds ("Ashes of the Ninth
   Meridian", "The Grimoire That Talks Back")
 
-**Auth** — the auth gate
+**Sign In** — the auth gate
 
 - `auth-gated` — `currentUser: null` + `LOCAL_ONLY_MODE = false`, showing
   the redesigned `StoryAuthGate` screen ("Your Destiny Awaits"). Clicking
   any provider mock-signs-in and plays the post-auth dissolve into the
-  intake.
+  workspace.
 
 ## Reusable Workshop dependencies
 
 - `FeatureWorkspace` + one `manifest.ts` entry (`story-seed`, category `other`
   — no existing `WorkshopCategory` fits an intake/creation flow better; the
   union was not extended since `other` already covers `chapter-generation-flow`)
-- `lucide-react`, `motion/react` (already installed; every icon this feature
-  uses — `Copy`, `Cloud`, `ArrowRight`, `MapPin`, `Layers`, `Zap`, `Users`,
-  `Target`, `Wand2`, `FileText`, `HelpCircle`, `GitBranch`, `Check`,
-  `Download`, `BookOpen`, `Sparkles`, `Shield`, `ShieldAlert`, `Database`,
-  `Play`, `Upload`, `ChevronDown`, `ChevronUp` — exists in this repo's
-  `lucide-react@^1.27.0`, unlike reader-chamber no icon aliasing was needed)
+- `lucide-react`, `motion/react` (already installed; every icon Phase 2 uses —
+  `Tag`, `Feather`, `Drama`, `PenLine`, `SlidersHorizontal`, `Landmark`,
+  `Users`, `Shield`, `Sparkles`, `Zap`, `Hourglass`, `Ellipsis`, `BookOpen`,
+  `Globe`, `Check`, `ChevronRight`, `Eye`, `X`, `List`, `Bookmark`, `Copy`,
+  `Database`, `Download`, `RefreshCw`, `Search`, `Wand2`, `ShieldAlert` —
+  was verified against this repo's `lucide-react@^1.27.0` export surface)
 
 ## Production dependencies intentionally excluded
 
 - Firebase (`lib/firebase`, `firebase/auth`) → `shared/stubs.ts`
   (`LOCAL_ONLY_MODE`, `mockLogin`)
 - Postgres / `lib/persistence` via `lib/storySeedStorage` → in-memory mock
-  in `shared/stubs.ts`
+  in `shared/stubs.ts` + local-storage `shared/storySeedRepository.ts`
 - `hooks/storyEngineHelpers.getApiHeaders` (`secureStorage` API-key reads) →
   inert stub
 - `/api/suggest-tags` network call → `suggestTagsStub`
@@ -342,32 +404,43 @@ React internals.
   (`onGenerateBlueprint`, `onStartStory`) → console-logging mocks in
   `StorySeedWorkspace.tsx`
 - Test files (`CustomCharactersForm.test.tsx`, `CustomFactionsForm.test.tsx`,
-  `storySeedFormat.test.ts`) were **not** copied — this Workshop repository
-  has no `vitest`/testing-library setup (`package.json` has no `test`
-  script and no `@testing-library/*` dependency), so a copied `.test.tsx`
-  would not run and would just be dead weight. The three source test files
-  remain useful references for future manual verification of the alias
-  normalization and story-seed-format logic.
+  `storySeedFormat.test.ts`) were **not** copied — the schema contract tests
+  added in Phase 1 (`shared/storySeedSchema.test.ts`) run with
+  `npm run test:story-seed`; the production intake-form tests have no runner
+  here and would be dead weight.
 
 ## Known visual/behavioral differences from the source
 
-- **`development/CreationModal.tsx` heading reads "Story Seed"; production
-  (and `reference/CreationModal.tsx`) still reads "Story Seed Intake"** — a
-  Workshop-side rename pending approval and transfer.
-- **`development/CoreSeedForm.tsx` no longer renders the Genre Path selector
-  or Fate Survival explanation at all** — they moved to the separate
-  [Story Settings](../story-settings/README.md) Workshop feature. `reference/`
-  and production are unchanged: Fate Survival is still inside "1. Core Seed"
-  there. `intake.genrePath` still exists on `IntakeData` and still defaults
-  to `'Fate Survival'` in `createDefaultIntake` — Story Settings' own copy
-  of the selector is not yet wired back to a Seed's `intake` (see that
-  feature's README).
+- **`development/` is a completely different intake UI from production** —
+  that is the point of Phase 2. `reference/` (and production) still render
+  the numbered accordion; Compare mode shows old vs new side by side.
+- **Genre is a required explicit input again** — the Phase 1 extraction of
+  the Genre Path selector into the separate [Story Settings](../story-settings/README.md)
+  Workshop feature left `genrePath` unwired; the Phase 2 Genre workspace binds
+  it directly (preset grid + custom input) because Genre is one of the four
+  required Story inputs. The Story Settings feature remains separate and
+  unchanged; coordinate any transfer so the two do not both own genre.
+- **Style is an explicit required input** — pre-filled with the Library
+  default (`DEFAULT_STORY_STYLE`) and editable; previously `story.style` was
+  only inferred from the blueprint or atmosphere at the boundary. The adapter
+  precedence is now `proseStyle → blueprint.styleBible → generalAtmosphere →
+  DEFAULT_STORY_STYLE`.
+- **Defaults are intentionally emptier** — fresh seeds start with empty
+  Premise, Genre, MC name, and tags (previously a random MC name, `Fate
+  Survival`, and premise suggestion #1 were pre-filled) so the required-input
+  tracking reflects reality. Style keeps its Library default.
+- **Save Draft is a new explicit action** — no production equivalent exists
+  today (persistence only happened implicitly on generate/export). It
+  requires the four required Story inputs (a draft is a valid minimal seed)
+  and, in the Workshop, saves locally under `local-workshop-creator` when
+  signed out.
+- **Drawer and summary sheet render at `z-[250]`** — above the Workshop
+  preview controls that float at `z-[200]` (a modal cannot sit under them).
+  Production has no Workshop controls, so the value is unconstrained there;
+  keep `z-[250]` or drop to the app's modal layer on transfer.
 - **`StoryAuthGate` is scoped to the preview canvas, not the viewport** — its
   root is `absolute inset-0` so the takeover fills FeatureWorkspace's
-  positioned pane and never collides with the Workshop controls floating at
-  `z-[200]`; production should use `fixed inset-0` (transfer note above).
-  Consequence: in the Workshop the gate starts below the header/controls
-  rather than behind them.
+  positioned pane; production should use `fixed inset-0` (transfer note above).
 - **All three auth providers are mock sign-ins** — Google, Apple, and Email
   (including the inline email/password form) resolve through `mockLogin()`
   after a 650ms simulated delay; no provider choice is recorded and the
@@ -382,8 +455,8 @@ React internals.
   `reasoning` text explicitly says "Workshop mock recommendation… No live
   model call was made."
 - **`routingConfig.storyMaker`** is read from the mock store in
-  `CoreSeedForm.tsx` exactly as production does, but is never actually sent
-  anywhere (no `fetch` call exists to send it to).
+  `StoryTagsWorkspace.tsx` exactly as production does, but is never actually
+  sent anywhere (no `fetch` call exists to send it to).
 - **VERSA logo is a live public URL** (`images.seihouse.org`) — kept for
   visual fidelity; same precedent as reader-chamber's R2 backdrop URLs.
 - **Shared mock store/seed library is a module singleton** — in Compare
@@ -391,12 +464,11 @@ React internals.
   in both panes at all times (intended: same data on both sides). The
   intake form itself, however, is genuine **separate component state** per
   pane (`reference`/`development` are two independent `CreationModal`
-  mounts) — the `filled-intake` scenario's DOM script deliberately targets
-  every mounted `#creation-portal-root` so both panes fill identically even
-  though their underlying React state is not shared.
+  mounts), so the `filled-intake` scenario drives each pane through its own
+  DOM script.
 - **`filled-intake` fills a representative sample, not every field** — it
   demonstrates one field or two per section plus one custom character and
-  one custom faction; it does not attempt to fill all ~35 `IntakeData`
+  one custom faction; it does not attempt to fill all ~40 `IntakeData`
   fields, since the goal is a visually trustworthy "filled" state, not an
   exhaustive data-entry replay.
 - **No focus trap / real file-share sheet differences** — `ImportPanel`'s
@@ -407,12 +479,22 @@ React internals.
 
 ## Exact files needed for transfer (verified)
 
-When a `development/` change is approved, transfer these to Light-Novels,
+When the Phase 2 redesign is approved, transfer these to Light-Novels,
 reversing the import rewrites (`../shared/X` → `../../lib/X` /
 `../../store/X` / `../../hooks/X` / `../../types` as appropriate, `./X`
-unchanged):
+unchanged). The Phase 1 production form files under
+`src/features/creation/components/` (`CoreSeedForm.tsx`,
+`WorldSettingForm.tsx`, `CharacterSetupForm.tsx`, `CustomCharactersForm.tsx`,
+`CustomFactionsForm.tsx`, `PowerSystemForm.tsx`, `PlotControlForm.tsx`,
+`MakeItWorkForm.tsx`, `FormSection.tsx`) are **replaced** by the workspace
+tree below and should be removed in the same transfer, with one caution
+(`CoreSeedForm.tsx` — see Transfer notes):
 
 - `development/CreationModal.tsx` → `src/components/CreationModal.tsx`
+- `development/seedSections.ts` → `src/features/creation/seedSections.ts`
+- `development/StorySeedSelector.tsx` → `src/features/creation/components/StorySeedSelector.tsx`
+- `development/StorySeedSummary.tsx` → `src/features/creation/components/StorySeedSummary.tsx`
+- `development/workspaces/*` → `src/features/creation/components/workspaces/*`
 - `development/StoryAuthGate.tsx` → `src/components/StoryAuthGate.tsx`
   (swap the `../shared/stubs` import for `firebase/auth` + `lib/firebase`,
   replace each `mockLogin()` call with the real provider action — Google
@@ -422,33 +504,19 @@ unchanged):
   simulated delay, and change the root `absolute inset-0` to `fixed inset-0`;
   `useAppStore` swaps back to `store/useAppStore`)
 - `development/BlueprintReview.tsx` → `src/features/creation/components/BlueprintReview.tsx`
-- `development/CharacterSetupForm.tsx` → `src/features/creation/components/CharacterSetupForm.tsx`
-- `development/CoreSeedForm.tsx` → `src/features/creation/components/CoreSeedForm.tsx`
-  (restore the real `fetch('/api/suggest-tags', …)` call using
-  `getApiHeaders` from `hooks/storyEngineHelpers` — see "What was mocked";
-  also no longer contains the Genre Path selector or
-  `FateSurvivalExplanation` — removing that block from production's
-  `CoreSeedForm.tsx` must be coordinated with transferring
-  [Story Settings](../story-settings/README.md), which has not been
-  approved yet — do not transfer this file's removal ahead of that feature)
-- `development/CustomCharactersForm.tsx` → `src/features/creation/components/CustomCharactersForm.tsx`
-- `development/CustomFactionsForm.tsx` → `src/features/creation/components/CustomFactionsForm.tsx`
-- `development/FormSection.tsx` → `src/features/creation/components/FormSection.tsx`
 - `development/ImportPanel.tsx` → `src/features/creation/components/ImportPanel.tsx`
-- `development/MakeItWorkForm.tsx` → `src/features/creation/components/MakeItWorkForm.tsx`
-- `development/PlotControlForm.tsx` → `src/features/creation/components/PlotControlForm.tsx`
-- `development/PowerSystemForm.tsx` → `src/features/creation/components/PowerSystemForm.tsx`
 - `development/SeedLibraryPanel.tsx` → `src/features/creation/components/SeedLibraryPanel.tsx`
-- `development/WorldSettingForm.tsx` → `src/features/creation/components/WorldSettingForm.tsx`
 - `development/constants.ts` → `src/features/creation/constants.ts`
-  (still exports `GENRE_PRESETS`, unused here now — kept only so
-  `reference/CoreSeedForm.tsx`, an untouched replica of current production,
-  keeps compiling; do not delete it until production's `CoreSeedForm.tsx`
-  has also had Genre Path removed)
+  (adds `STYLE_SUGGESTIONS`; still exports `GENRE_PRESETS`, used by
+  `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
+  is removed in this transfer)
 - `development/form-fields/*` → `src/features/creation/components/form-fields/*`
+- `shared/storySeedSchema.ts` creator/style/universe/mysteries corrections →
+  production's Phase 1 schema module (the `IntakeData` view-model fields
+  `creatorPenName`, `proseStyle`, `universeOverview`, `majorMysteries` belong
+  to production `src/types.ts`)
 
-Workshop-only — never transfer: `shared/stubs.ts`, `shared/types.ts`
-(production `src/types.ts` is authoritative), `shared/id.ts` and
+Workshop-only — never transfer: `shared/stubs.ts`, `shared/id.ts` and
 `shared/storySeedFormat.ts` and `shared/dialect.ts` and
 `shared/codexContext.ts` (production `src/lib/*` versions are authoritative
 — these were copied *into* the Workshop, never *out of* it), everything
@@ -457,9 +525,14 @@ registry line.
 
 ## Transfer notes and cautions
 
-- On transfer, `CoreSeedForm.tsx` must have its `handleSuggestTags` restored
-  to call the real `fetch('/api/suggest-tags', …)` with `getApiHeaders()`
-  from `hooks/storyEngineHelpers` — do not carry `suggestTagsStub` back.
+- On transfer, `StoryTagsWorkspace.tsx` must have its `handleSuggestTags`
+  restored to call the real `fetch('/api/suggest-tags', …)` with
+  `getApiHeaders()` from `hooks/storyEngineHelpers` — do not carry
+  `suggestTagsStub` back.
+- Gate Save Draft on real auth on transfer (mirror `persistSeed`): in
+  `LOCAL_ONLY_MODE` hide or disable it; the Workshop's
+  `local-workshop-creator` namespace exists only because the Workshop
+  repository is local-storage backed.
 - `CreationModal.tsx` no longer has a `handleLogin` — sign-in lives in
   `StoryAuthGate.tsx`. On transfer, wire the gate's provider actions to real
   Firebase Auth as described above — do not carry `mockLogin` or the
@@ -468,15 +541,25 @@ registry line.
   expectedUid`) were rewritten to `useAppStore.getState().currentUser?.uid
   === expectedUid` against the mock store; restore the `auth.currentUser`
   reads on transfer.
+- `updateIntake` accepts updater functions (`updateIntake('storyTags', prev =>
+  …)`) — keep that signature; the tag and ghost-tag handlers rely on it to
+  avoid lost writes on rapid successive edits.
+- The old `CoreSeedForm.tsx` carries one production-only behavior with no
+  Phase 2 home: the Genre Path selector lives in the Genre workspace now, but
+  `FateSurvivalExplanation` (the Fate Survival genre explainer) was extracted
+  to the separate [Story Settings](../story-settings/README.md) Workshop
+  feature, which has **not** been approved yet. Do not delete production's
+  `CoreSeedForm.tsx` block until that feature's fate is decided.
 - `shared/dialect.ts`, `shared/codexContext.ts`, `shared/id.ts`, and
   `shared/storySeedFormat.ts` are portable/pure and match production's
   `src/lib/*` files closely enough that no changes should be needed beyond
   reversing the import paths back to `../lib/X`; diff before transfer in
   case production has moved on since `2026-08-01`.
 - `shared/types.ts` is a manually-maintained mirror of `src/types.ts` lines
-  ~1026–1143. If production's `IntakeData`/`WorldBlueprint`/`StorySeed`
-  shapes changed since the last comparison date above, re-verify before
-  trusting any Workshop-only type in a transfer.
+  ~1026–1143 plus Phase 2 view-model additions. If production's
+  `IntakeData`/`WorldBlueprint`/`StorySeed` shapes changed since the last
+  comparison date above, re-verify before trusting any Workshop-only type in
+  a transfer.
 
 ## Lifecycle
 

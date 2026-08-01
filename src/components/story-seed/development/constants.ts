@@ -130,3 +130,16 @@ export const PREMISE_SUGGESTIONS = [
   "Failing the martial exam but discovering an ancient forge blueprint that allows infusing weapons with broken fragments of heavenly laws.",
   "Waking up on a barren moon as the sole survivor of a dying stellar sect with an cosmic stellar inheritance diagram in my soul."
 ];
+
+/**
+ * Phase 2 — prose-style presets for the required Style workspace. The first
+ * entry matches the schema's DEFAULT_STORY_STYLE fallback.
+ */
+export const STYLE_SUGGESTIONS = [
+  'Immersive character-focused light-novel prose',
+  'Terse, ominous close-third prose with hard scene breaks',
+  'Lush, poetic narration with slow-burn tension',
+  'Fast-paced, action-first web-novel prose',
+  'Wry, dialogue-driven prose with dry humor',
+  'Mythic, saga-like narration with formal gravity'
+];
