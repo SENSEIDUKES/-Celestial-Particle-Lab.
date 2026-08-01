@@ -1,0 +1,77 @@
+{
+  "name": "SEN TERMS",
+  "children": [
+    {
+      "name": "Story Seed",
+      "description": "Defines what a story is, the kind of narration it should produce, and the essential information needed to recreate it."
+    },
+    {
+      "name": "Story Settings",
+      "description": "User-controlled options that determine how a specific story is experienced without redefining the story itself."
+    },
+    {
+      "name": "Fate Survival",
+      "description": "A narrative pressure system layered on top of any genre."
+    },
+    {
+      "name": "Story Blueprint",
+      "description": "The structured information generated from a Story Seed that the system uses to construct and continue the story."
+    },
+    {
+      "name": "Manifestation",
+      "description": ""
+    },
+    {
+      "name": "Chapter Manifestation",
+      "description": ""
+    },
+    {
+      "name": "Mind Palace",
+      "description": ""
+    },
+    {
+      "name": "Alter Fate",
+      "description": ""
+    },
+    {
+      "name": "Reader Chamber",
+      "description": ""
+    },
+    {
+      "name": "Closed-Door Cultivation",
+      "description": ""
+    },
+    {
+      "name": "Qi",
+      "description": ""
+    },
+    {
+      "name": "Relic",
+      "description": ""
+    },
+    {
+      "name": "Destined Ending",
+      "description": ""
+    },
+    {
+      "name": "Fate Pressure",
+      "description": ""
+    },
+    {
+      "name": "Cultural Prose Style",
+      "description": ""
+    },
+    {
+      "name": "Scene Ending Anchor",
+      "description": ""
+    },
+    {
+      "name": "Continuity Guard",
+      "description": ""
+    },
+    {
+      "name": "Particle Backdrop",
+      "description": ""
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Fate Survival",
+  "children": [
+    {
+      "name": "Activation and controls",
+      "description": ""
+    },
+    {
+      "name": "Fate Events",
+      "description": ""
+    },
+    {
+      "name": "Mind Palace",
+      "description": ""
+    },
+    {
+      "name": "Narrative pressure",
+      "description": ""
+    },
+    {
+      "name": "Survival consequences",
+      "description": ""
+    },
+    {
+      "name": "Reader-facing experience",
+      "description": ""
+    }
+  ]
+}
