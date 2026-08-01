@@ -17,7 +17,6 @@ import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
 // Feature components
 import { FormSectionId } from './FormSection';
 import { CoreSeedForm } from './CoreSeedForm';
-import { StorySettingsForm } from './StorySettingsForm';
 import { WorldSettingForm } from './WorldSettingForm';
 import { CharacterSetupForm } from './CharacterSetupForm';
 import { CustomCharactersForm } from './CustomCharactersForm';
@@ -342,7 +341,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
       <form onSubmit={handleGenerateBlueprintClick} className="space-y-4">
         <CoreSeedForm intake={intake} updateIntake={updateIntake} activeSection={activeSection} setActiveSection={setActiveSection} />
-        <StorySettingsForm intake={intake} updateIntake={updateIntake} activeSection={activeSection} setActiveSection={setActiveSection} />
         <WorldSettingForm intake={intake} updateIntake={updateIntake} activeSection={activeSection} setActiveSection={setActiveSection} />
         <CharacterSetupForm intake={intake} updateIntake={updateIntake} activeSection={activeSection} setActiveSection={setActiveSection} />
         <CustomCharactersForm intake={intake} updateIntake={updateIntake} activeSection={activeSection} setActiveSection={setActiveSection} />

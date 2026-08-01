@@ -112,7 +112,19 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'The full CreationModal intake flow — core seed, story settings, world, characters, factions, power system, plot control, import/export, saved-seed library, and the World Blueprint review stage.',
+    description: 'The full CreationModal intake flow — core seed, world, characters, factions, power system, plot control, import/export, saved-seed library, and the World Blueprint review stage. Genre Path / Fate Survival now lives in the separate Story Settings feature.',
+    category: 'other',
+    version: 'v1.0',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/CreationModal.tsx',
+      lastCompared: '2026-08-01',
+    },
+  },
+  {
+    id: 'story-settings',
+    title: 'Story Settings',
+    description: 'Reusable user choices that shape how a Story Seed is generated and experienced, without changing the Seed itself — starting with the Genre Path / Fate Survival selector extracted out of CreationModal. Accessibility and output-language settings have not been migrated from production yet.',
     category: 'other',
     version: 'v1.0',
     source: {

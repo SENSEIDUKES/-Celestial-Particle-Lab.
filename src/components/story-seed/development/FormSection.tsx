@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-export type FormSectionId = 'core' | 'settings' | 'world' | 'mc' | 'characters' | 'factions' | 'power' | 'plot' | 'makeitwork';
+export type FormSectionId = 'core' | 'world' | 'mc' | 'characters' | 'factions' | 'power' | 'plot' | 'makeitwork';
 
 export interface FormSectionProps {
   id: FormSectionId;
