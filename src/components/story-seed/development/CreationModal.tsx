@@ -298,7 +298,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       <div className="text-center mb-10">
         <span className="font-sc text-human tracking-[0.2em] text-sm uppercase block mb-2">SEIHouse Archive Matrix</span>
         <h1 className="font-display font-bold text-4xl sm:text-5xl text-signal tracking-tight mb-4">
-          Story Seed Intake
+          Story Seed
         </h1>
         <p className="font-sans font-light text-neutral-400 text-sm max-w-xl mx-auto leading-relaxed mb-6">
           Provide as much or as little detail as you want. Empty fields will be intelligently extrapolated using Chinese light-novel logic. We will first generate a World Blueprint for your review.

@@ -6,6 +6,7 @@ import { ClosedDoorCultivationWorkspace } from './workshop/previews/closed-door-
 import { ReaderChamberWorkspace } from './workshop/previews/reader-chamber/ReaderChamberWorkspace';
 import { RelicsWorkspace } from './workshop/previews/relics/RelicsWorkspace';
 import { StorySeedWorkspace } from './workshop/previews/story-seed/StorySeedWorkspace';
+import { StorySettingsWorkspace } from './workshop/previews/story-settings/StorySettingsWorkspace';
 import { WorkshopHome } from './workshop/WorkshopHome';
 import { ArrowLeft } from 'lucide-react';
 import './styles.css';
@@ -24,6 +25,7 @@ const previewRegistry: Record<string, ComponentType> = {
   'reader-chamber': ReaderChamberWorkspace,
   'relics-gallery': RelicsWorkspace,
   'story-seed': StorySeedWorkspace,
+  'story-settings': StorySettingsWorkspace,
 };
 
 function PreviewLayout({ children }: { children: ReactNode }) {

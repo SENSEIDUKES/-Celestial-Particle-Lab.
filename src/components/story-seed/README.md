@@ -1,4 +1,4 @@
-# Story Seed Intake
+# Story Seed
 
 - **Source repository:** SENSEIDUKES/Light-Novels
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
@@ -22,6 +22,22 @@
   provider actions (Google / Apple / Email with an inline email form), and a
   post-sign-in dissolve that keeps the world visible before the intake is
   revealed.
+- **2026-08-01:** Renamed the Workshop-facing feature from "Story Seed Intake"
+  to "Story Seed" (manifest title, `development/CreationModal.tsx` heading,
+  this README) — `reference/CreationModal.tsx` was left untouched since
+  production still uses the old heading. Extracted the Genre Path selector
+  and `FateSurvivalExplanation` out of `development/CoreSeedForm.tsx`
+  entirely into a brand-new standalone Workshop feature,
+  [Story Settings](../story-settings/README.md), with its own manifest
+  entry, Development tab, and preview route (`?preview=story-settings`) —
+  not a section nested inside Story Seed. `development/FateSurvivalExplanation.tsx`
+  was deleted here since it moved to `story-settings/`;
+  `reference/CoreSeedForm.tsx` and `reference/FateSurvivalExplanation.tsx`
+  are untouched, matching production, which still has Fate Survival inside
+  Core Seed. Also relabeled the Workshop's own Preview-State category tabs
+  (Intake → "Intake Form", Blueprint → "Blueprint Review", Library → "Seed
+  Library", Auth → "Sign In") and strengthened their active-tab contrast and
+  touch target size (`min-h-[2.75rem]`) for mobile clarity.
 
 ## Folder layout
 
@@ -55,6 +71,9 @@ development/                  — active Workshop version; started as an exact
                                  2026-08-01); rendered by CreationModal's
                                  signed-out branch instead of the old inline
                                  "Sync Spirit" panel
+  (no FateSurvivalExplanation.tsx here — the Genre Path selector and Fate
+   Survival explanation were extracted out of CoreSeedForm.tsx entirely into
+   the separate story-settings/ feature; see Workshop history above)
 shared/                        — code genuinely identical between the two forks
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -93,7 +112,7 @@ account/seed-library state and one categorized preview-control panel
 
 ## What was copied
 
-The full Story Seed Intake presentation tree from `src/components/` and
+The full Story Seed presentation tree from `src/components/` and
 `src/features/creation/` in Light-Novels: `CreationModal.tsx` (default export),
 every file under `src/features/creation/components/` (`BlueprintReview.tsx`,
 `CharacterSetupForm.tsx`, `CoreSeedForm.tsx`, `CustomCharactersForm.tsx`,
@@ -241,6 +260,17 @@ React internals.
 
 ## Known visual/behavioral differences from the source
 
+- **`development/CreationModal.tsx` heading reads "Story Seed"; production
+  (and `reference/CreationModal.tsx`) still reads "Story Seed Intake"** — a
+  Workshop-side rename pending approval and transfer.
+- **`development/CoreSeedForm.tsx` no longer renders the Genre Path selector
+  or Fate Survival explanation at all** — they moved to the separate
+  [Story Settings](../story-settings/README.md) Workshop feature. `reference/`
+  and production are unchanged: Fate Survival is still inside "1. Core Seed"
+  there. `intake.genrePath` still exists on `IntakeData` and still defaults
+  to `'Fate Survival'` in `createDefaultIntake` — Story Settings' own copy
+  of the selector is not yet wired back to a Seed's `intake` (see that
+  feature's README).
 - **`StoryAuthGate` is scoped to the preview canvas, not the viewport** — its
   root is `absolute inset-0` so the takeover fills FeatureWorkspace's
   positioned pane and never collides with the Workshop controls floating at
@@ -304,7 +334,12 @@ unchanged):
 - `development/CharacterSetupForm.tsx` → `src/features/creation/components/CharacterSetupForm.tsx`
 - `development/CoreSeedForm.tsx` → `src/features/creation/components/CoreSeedForm.tsx`
   (restore the real `fetch('/api/suggest-tags', …)` call using
-  `getApiHeaders` from `hooks/storyEngineHelpers` — see "What was mocked")
+  `getApiHeaders` from `hooks/storyEngineHelpers` — see "What was mocked";
+  also no longer contains the Genre Path selector or
+  `FateSurvivalExplanation` — removing that block from production's
+  `CoreSeedForm.tsx` must be coordinated with transferring
+  [Story Settings](../story-settings/README.md), which has not been
+  approved yet — do not transfer this file's removal ahead of that feature)
 - `development/CustomCharactersForm.tsx` → `src/features/creation/components/CustomCharactersForm.tsx`
 - `development/CustomFactionsForm.tsx` → `src/features/creation/components/CustomFactionsForm.tsx`
 - `development/FormSection.tsx` → `src/features/creation/components/FormSection.tsx`
@@ -314,10 +349,11 @@ unchanged):
 - `development/PowerSystemForm.tsx` → `src/features/creation/components/PowerSystemForm.tsx`
 - `development/SeedLibraryPanel.tsx` → `src/features/creation/components/SeedLibraryPanel.tsx`
 - `development/WorldSettingForm.tsx` → `src/features/creation/components/WorldSettingForm.tsx`
-- `development/FateSurvivalExplanation.tsx` → `src/components/FateSurvivalExplanation.tsx`
-  (compare against production first — this is story-seed's own fork, not
-  reader-chamber's)
 - `development/constants.ts` → `src/features/creation/constants.ts`
+  (still exports `GENRE_PRESETS`, unused here now — kept only so
+  `reference/CoreSeedForm.tsx`, an untouched replica of current production,
+  keeps compiling; do not delete it until production's `CoreSeedForm.tsx`
+  has also had Genre Path removed)
 - `development/form-fields/*` → `src/features/creation/components/form-fields/*`
 
 Workshop-only — never transfer: `shared/stubs.ts`, `shared/types.ts`

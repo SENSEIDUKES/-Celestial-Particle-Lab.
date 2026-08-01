@@ -191,7 +191,7 @@ export function StorySeedWorkspace() {
     'min-h-[2.75rem] rounded-lg border text-xs leading-snug transition-all duration-200';
   const buttonTone = (active: boolean) =>
     active
-      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100'
+      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100 font-medium'
       : 'bg-white/5 border-transparent text-white/60 hover:bg-white/10';
   const stateButton = (active: boolean) =>
     `${buttonBase} ${buttonTone(active)} w-full px-3 py-2 text-left break-words hyphens-auto`;
@@ -220,7 +220,7 @@ export function StorySeedWorkspace() {
         <div
           role="tablist"
           aria-label="Preview control categories"
-          className="grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-black/25 p-1 sm:max-w-md"
+          className="grid grid-cols-4 gap-1.5 rounded-xl border border-white/10 bg-black/25 p-1.5 sm:max-w-md"
         >
           {PREVIEW_CATEGORIES.map(category => (
             <button
@@ -229,10 +229,10 @@ export function StorySeedWorkspace() {
               role="tab"
               aria-selected={activeCategory === category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`min-h-[2.5rem] rounded-lg px-1 text-[11px] font-medium tracking-wide transition-colors sm:text-xs ${
+              className={`min-h-[2.75rem] rounded-lg px-1.5 py-1 text-center text-xs font-medium leading-tight tracking-wide transition-all duration-150 ${
                 activeCategory === category.id
-                  ? 'bg-cyan-500/20 text-cyan-100'
-                  : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                  ? 'border border-cyan-400/60 bg-cyan-500/25 font-semibold text-cyan-100'
+                  : 'border border-transparent text-white/55 hover:bg-white/10 hover:text-white/85'
               }`}
             >
               {category.label}
