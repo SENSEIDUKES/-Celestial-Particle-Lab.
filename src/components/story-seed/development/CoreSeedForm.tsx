@@ -283,8 +283,8 @@ export const CoreSeedForm = ({ intake, updateIntake, activeSection, setActiveSec
       </div>
 
       <div className="pt-2 border-t border-neutral-900/60 mt-4">
-        <label htmlFor="custom-tag-input" className="block font-sc text-xs text-neutral-400 uppercase tracking-widest mb-2">Story Refinement Tags (Optional)</label>
-        <p className="text-neutral-500 font-sans text-xs mb-3">Add tags to further personalize your story (e.g. Slice of Life, Romantic Comedy, Overpowered MC) to help the AI tailor the universe according to your interests.</p>
+        <label htmlFor="custom-tag-input" className="block font-sc text-xs text-neutral-400 uppercase tracking-widest mb-2">Story Tags *</label>
+        <p className="text-neutral-500 font-sans text-xs mb-3">Add at least one core story signal (e.g. Slice of Life, Romantic Comedy, Overpowered MC) for generation.</p>
 
         <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 mb-4 max-w-xl w-full">
           <div className="flex items-center gap-2 w-full sm:flex-1 min-w-[200px]">

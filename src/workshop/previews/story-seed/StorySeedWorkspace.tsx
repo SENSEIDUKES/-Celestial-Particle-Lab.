@@ -7,9 +7,15 @@ import {
   setMockLocalOnlyMode,
   useAppStore,
 } from '../../../components/story-seed/shared/stubs';
+import { resetStorySeedRepository } from '../../../components/story-seed/shared/storySeedRepository';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
-import { createMockBlueprint, createMockSeedLibrary, MOCK_USER_ID } from './previewData';
+import {
+  createMockBlueprint,
+  createMockSeedLibrary,
+  createMockStorySeedLibrary,
+  MOCK_USER_ID,
+} from './previewData';
 import {
   PREVIEW_CATEGORIES,
   PreviewCategory,
@@ -144,6 +150,7 @@ export function StorySeedWorkspace() {
       activeAgentId: scenario.activeAgentId ?? null,
     });
     resetMockSeeds(scenario.seedLibrary === 'populated' ? createMockSeedLibrary() : []);
+    resetStorySeedRepository(scenario.seedLibrary === 'populated' ? createMockStorySeedLibrary() : []);
   }, []);
 
   useEffect(() => {
@@ -160,7 +167,7 @@ export function StorySeedWorkspace() {
       await wait(220);
       if (cancelled) return;
       if (scenario.uiAction === 'open-import-panel') {
-        forEachRoot(root => clickByText(root, 'button', /Import World Seed \/ Blueprint/));
+        forEachRoot(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
       } else if (scenario.uiAction === 'use-first-seed') {
         forEachRoot(root => clickByText(root, 'button', /^Use Seed$/));
       } else if (scenario.uiAction === 'fill-intake') {
@@ -177,13 +184,13 @@ export function StorySeedWorkspace() {
   const chamberProps = {
     isGenerating: Boolean(activeScenario?.isGenerating),
     error: null as string | null,
-    onGenerateBlueprint: async () => {
-      console.log('[Preview] onGenerateBlueprint called — returning canned WorldBlueprint');
+    onGenerateBlueprint: async (payload: unknown) => {
+      console.log('[Preview] onGenerateBlueprint called with Story Seed', payload);
       await wait(300);
       return createMockBlueprint();
     },
-    onStartStory: async (...args: unknown[]) => {
-      console.log('[Preview] onStartStory called', args);
+    onStartStory: async (payload: unknown) => {
+      console.log('[Preview] onStartStory called', payload);
     },
   };
 
