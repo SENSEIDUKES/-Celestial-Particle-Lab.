@@ -11,21 +11,8 @@
  * Imported by `src/workshop/previews/reader-chamber/ReaderChamberWorkspace.tsx`.
  */
 
-/* Custom scrollbar for an immersive feeling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0d0d0d;
-}
-::-webkit-scrollbar-thumb {
-  background: #8b0000;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #a30000;
-}
+/* Scrollbar styling is global in `src/styles.css` — the old red
+   (#8b0000) scrollbar block was removed. */
 
 /* Aesthetic light-novel reading view styling */
 .light-novel-reader {

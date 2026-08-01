@@ -38,6 +38,30 @@ body,
   margin: 0;
 }
 
+/* Global scrollbar — thin, rounded, neutral silver with a restrained glow */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0b0c;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(226, 230, 236, 0.55);
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(226, 230, 236, 0.22);
+  transition: box-shadow 200ms ease, background 200ms ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 243, 248, 0.75);
+  box-shadow: 0 0 10px rgba(226, 230, 236, 0.38);
+}
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(226, 230, 236, 0.55) #0b0b0c;
+}
+
 * { box-sizing: border-box; }
 
 body {
