@@ -1,12 +1,12 @@
 import React from 'react';
 import { Database, Download, Play } from 'lucide-react';
-import type { StorySeed } from '../shared/types';
+import type { StorySeedRecord } from '../shared/storySeedSchema';
 
 interface SeedLibraryPanelProps {
-  seeds: StorySeed[];
+  seeds: StorySeedRecord[];
   isLoading: boolean;
-  onUse: (seed: StorySeed) => void;
-  onExport: (seed: StorySeed) => void;
+  onUse: (seed: StorySeedRecord) => void;
+  onExport: (seed: StorySeedRecord) => void;
   onExportAll: () => void;
 }
 

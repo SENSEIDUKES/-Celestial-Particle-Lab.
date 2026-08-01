@@ -1,17 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Copy, ArrowRight } from 'lucide-react';
-import { IntakeData, StorySeed, StorySeedPayload, WorldBlueprint } from '../shared/types';
+import { IntakeData, WorldBlueprint } from '../shared/types';
+import { generateUUID } from '../shared/id';
 import {
   AGENTS,
   LOCAL_ONLY_MODE,
+  selectIsGenerating,
+  useAppStore,
+} from '../shared/stubs';
+import {
   createStorySeed,
   importStorySeeds,
   listStorySeeds,
-  selectIsGenerating,
   updateStorySeed,
-  useAppStore,
-} from '../shared/stubs';
+} from '../shared/storySeedRepository';
+import {
+  buildBlueprintGenerationPayload,
+  buildInitialStoryGenerationPayload,
+  createStorySeedInput,
+  storySeedToBlueprint,
+  storySeedToIntake,
+  validateStorySeedInput,
+  type BlueprintGenerationPayload,
+  type InitialStoryGenerationPayload,
+  type StorySeedInput,
+  type StorySeedRecord,
+} from '../shared/storySeedSchema';
+import { createStoryAdministrativeMetadata } from '../shared/storyAdministrativeMetadata';
 import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
 
 // Feature components
@@ -27,13 +43,13 @@ import { MakeItWorkForm } from './MakeItWorkForm';
 import { ImportPanel } from './ImportPanel';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
-import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedFormat';
+import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
 
 import { PREMISE_SUGGESTIONS } from './constants';
 
 interface CreationModalProps {
-  onStartStory: (intake: IntakeData, blueprint: WorldBlueprint, chapterCount: number, sourceSeedId?: string) => Promise<void>;
-  onGenerateBlueprint: (intake: IntakeData) => Promise<WorldBlueprint>;
+  onStartStory: (payload: InitialStoryGenerationPayload) => Promise<void>;
+  onGenerateBlueprint: (payload: BlueprintGenerationPayload) => Promise<WorldBlueprint>;
   isGenerating: boolean;
   error: string | null;
 }
@@ -95,8 +111,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [stage, setStage] = useState<'intake' | 'blueprint'>('intake');
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [blueprint, setBlueprint] = useState<WorldBlueprint | null>(null);
-  const [currentSeed, setCurrentSeed] = useState<StorySeed | null>(null);
-  const [savedSeeds, setSavedSeeds] = useState<StorySeed[]>([]);
+  const [currentSeed, setCurrentSeed] = useState<StorySeedRecord | null>(null);
+  const [savedSeeds, setSavedSeeds] = useState<StorySeedRecord[]>([]);
   const [isLoadingSeeds, setIsLoadingSeeds] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [chapterCount] = useState(10);
@@ -116,7 +132,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     let cancelled = false;
     setIsLoadingSeeds(true);
     setSeedError(null);
-    listStorySeeds()
+    listStorySeeds(expectedUid)
       .then(seeds => {
         if (!cancelled && useAppStore.getState().currentUser?.uid === expectedUid) setSavedSeeds(seeds);
       })
@@ -154,24 +170,24 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     return () => clearTimeout(timer);
   }, [currentUser]);
 
-  const rememberSeed = (seed: StorySeed) => {
+  const rememberSeed = (seed: StorySeedRecord) => {
     setCurrentSeed(seed);
     setSavedSeeds(previous => [seed, ...previous.filter(item => item.id !== seed.id)]);
   };
 
-  const persistSeed = async (payload: StorySeedPayload): Promise<StorySeed | null> => {
+  const persistSeed = async (payload: StorySeedInput): Promise<StorySeedRecord | null> => {
     if (LOCAL_ONLY_MODE) return null;
     if (!currentUser) throw new Error('Sign in to save this story seed to your account.');
     const saved = currentSeed
-      ? await updateStorySeed(currentSeed, payload)
-      : await createStorySeed(payload);
+      ? await updateStorySeed(currentUser.uid, currentSeed, payload)
+      : await createStorySeed(currentUser.uid, payload);
     rememberSeed(saved);
     return saved;
   };
 
-  const handleImport = async (payloads: StorySeedPayload[]) => {
+  const handleImport = async (payloads: StorySeedInput[]) => {
     if (payloads.length === 0) return;
-    const imported = LOCAL_ONLY_MODE ? [] : await importStorySeeds(payloads);
+    const imported = LOCAL_ONLY_MODE || !currentUser ? [] : await importStorySeeds(currentUser.uid, payloads);
     if (imported.length > 0) {
       setSavedSeeds(previous => [
         ...imported,
@@ -182,17 +198,17 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       setCurrentSeed(null);
     }
     const selected = imported[0] || payloads[0];
-    setIntake({ ...createDefaultIntake(), ...selected.intake });
-    setBlueprint(selected.blueprint);
+    setIntake({ ...createDefaultIntake(), ...storySeedToIntake(selected) });
+    setBlueprint(storySeedToBlueprint(selected));
     setStage('blueprint');
     setShowImportPanel(false);
     setSeedError(null);
   };
 
-  const handleUseSeed = (seed: StorySeed) => {
+  const handleUseSeed = (seed: StorySeedRecord) => {
     setCurrentSeed(seed);
-    setIntake({ ...createDefaultIntake(), ...seed.intake });
-    setBlueprint(seed.blueprint);
+    setIntake({ ...createDefaultIntake(), ...storySeedToIntake(seed) });
+    setBlueprint(storySeedToBlueprint(seed));
     setStage('blueprint');
     setSeedError(null);
   };
@@ -200,13 +216,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const handleGenerateBlueprintClick = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
-    if (!intake.corePremise?.trim() || !intake.genrePath) return;
+    const seedInput = createStorySeedInput(intake);
+    const validation = validateStorySeedInput(seedInput);
+    if (!validation.valid) {
+      setSeedError(validation.errors.join(' '));
+      return;
+    }
     try {
-      const bp = await onGenerateBlueprint(intake);
+      const bp = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
       setBlueprint(bp);
       setStage('blueprint');
       try {
-        await persistSeed({ intake, blueprint: bp });
+        await persistSeed(createStorySeedInput(intake, bp));
         setSeedError(null);
       } catch (seedSaveError) {
         console.error('Failed to save generated story seed:', seedSaveError);
@@ -228,10 +249,23 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       unresolvedPlotThreads: (blueprint.unresolvedPlotThreads || []).map(f => f.trim()).filter(Boolean),
     };
     try {
-      const savedSeed = await persistSeed({ intake, blueprint: cleanBlueprint });
+      const seedInput = createStorySeedInput(intake, cleanBlueprint);
+      const savedSeed = await persistSeed(seedInput);
       if (!LOCAL_ONLY_MODE && !savedSeed) return;
+      const sourceSeedId = savedSeed?.id || currentSeed?.id || `local-seed-${generateUUID()}`;
+      const administrative = createStoryAdministrativeMetadata({
+        storyId: `story-${generateUUID()}`,
+        creatorId: currentUser?.uid || 'local-workshop-creator',
+        sourceSeedId,
+        originalLanguage: 'en',
+      });
       setSeedError(null);
-      await onStartStory(intake, cleanBlueprint, chapterCount, savedSeed?.id);
+      await onStartStory(buildInitialStoryGenerationPayload(
+        seedInput,
+        administrative,
+        cleanBlueprint,
+        chapterCount,
+      ));
     } catch (seedSaveError) {
       console.error('Failed to persist source story seed:', seedSaveError);
       setSeedError('The story was not started because its source seed could not be saved to your account.');
@@ -240,7 +274,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const handleExportCurrentSeed = () => {
     if (!blueprint) return;
-    const payload = { intake, blueprint };
+    const payload = createStorySeedInput(intake, blueprint);
     // Start sharing immediately so iOS Safari retains the user gesture needed
     // to present Save to Files. Persistence can finish independently.
     setSeedError(null);
@@ -254,7 +288,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     });
   };
 
-  const handleExportSavedSeed = (seed: StorySeed) => {
+  const handleExportSavedSeed = (seed: StorySeedRecord) => {
     void downloadStorySeed(seed).catch(downloadError => {
       console.error('Failed to export saved story seed:', downloadError);
       setSeedError('The seed could not be exported. Please try again.');
@@ -312,7 +346,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             className="font-sc px-5 py-2.5 rounded text-xs uppercase tracking-widest font-bold flex items-center space-x-2 bg-neutral-950 text-portal border border-neutral-900 hover:border-portal hover:bg-portal/5 transition-all shadow-[0_0_12px_rgba(4,172,255,0.05)] cursor-pointer"
           >
             <Copy size={14} />
-            <span>Import World Seed / Blueprint</span>
+            <span>Import Story Seed</span>
           </button>
         </div>
       </div>
@@ -358,7 +392,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         <div className="flex justify-end pt-8">
           <button
             type="submit"
-            disabled={isGenerating || !intake.corePremise?.trim()}
+            disabled={isGenerating || !validateStorySeedInput(createStorySeedInput(intake)).valid}
             className="font-sc px-8 py-4 rounded text-sm uppercase tracking-widest font-bold inline-flex items-center space-x-2 bg-human text-signal border border-human hover:bg-void hover:text-human hover:border-human shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
           >
             {isGenerating ? (

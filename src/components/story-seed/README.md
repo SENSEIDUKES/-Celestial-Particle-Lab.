@@ -10,6 +10,20 @@
 
 ## Workshop history
 
+- **2026-08-01:** Added a separate minimal `StoryAdministrativeMetadata`
+  spine at the initial-story generation boundary. It contains only story and
+  creator identity, timestamps, schema/content versions, story/generation/
+  visibility/publishing states, original/current language, and durable
+  references to the source seed, current chapter, and cover asset. It is not
+  serialized into the user-facing Creator / Story / World seed.
+- **2026-08-01:** Completed Story Seed Phase 1 data reconstruction for the
+  development fork without redesigning its form. The active record is now
+  schema version 2 with explicit `creator`, `story`, and `world` families;
+  Story Tags, Premise, Genre, and Style are required; World accepts an empty
+  `optional` object. Added strict normalization/validation, portable v2 JSON,
+  a development repository with save/load support, generation request
+  builders, a narrow v1 intake/blueprint import adapter, and focused contract
+  tests. The locked reference fork still uses the production v1 replica.
 - **2026-08-01:** Created faithful Workshop replica and local state simulator (9
   preview states across Intake / Blueprint / Library / Auth categories, in-memory
   seed storage, DOM-driven scenario scripting that fills the real form and clicks
@@ -74,7 +88,7 @@ development/                  — active Workshop version; started as an exact
   (no FateSurvivalExplanation.tsx here — the Genre Path selector and Fate
    Survival explanation were extracted out of CoreSeedForm.tsx entirely into
    the separate story-settings/ feature; see Workshop history above)
-shared/                        — code genuinely identical between the two forks
+shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
                                   NamedCodexEntry (narrow local subset)
@@ -103,7 +117,84 @@ shared/                        — code genuinely identical between the two fork
                                   storySeedStorage (createStorySeed/
                                   updateStorySeed/listStorySeeds/importStorySeeds),
                                   getApiHeaders, suggestTagsStub
+  storySeedSchema.ts            — development's authoritative Phase 1 creative
+                                  intake contract, field classification,
+                                  validation, form adapters, and generation
+                                  payload builders
+  storySeedSerialization.ts     — portable schema-v2 export/import; excludes
+                                  operational IDs and narrowly migrates valid
+                                  v1 intake/blueprint files
+  storySeedRepository.ts        — account-scoped development save/load adapter
+                                  backed by Workshop local storage
+  storySeedSchema.test.ts       — focused validation, empty-World,
+                                  classification, serialization, persistence,
+                                  and generation-payload checks
+  storyAdministrativeMetadata.ts — minimal internal story identity, lifecycle,
+                                   language, version, and durable-reference spine
 ```
+
+## Phase 1 creative-data structure
+
+```ts
+{
+  creator: {},
+  story: {
+    storyTags: string[],
+    premise: string,
+    genre: string,
+    style: string,
+    optional: {}
+  },
+  world: {
+    optional: {}
+  }
+}
+```
+
+The unchanged form still edits a flat `IntakeData` view model. A single
+boundary adapter classifies it before save, export, or generation, so the flat
+prototype shape is no longer durable data.
+
+- **Story:** desired plot direction, length, atmosphere, danger/tension,
+  power pacing, goals/conflicts/antagonist pressure, romance/comedy/trope
+  controls, exclusions/inclusions, Fate settings, absolute custom rules,
+  generated logline/first-arc promise/trope rules, and unresolved plot threads.
+- **World:** title, world type and overview, location, society, main character,
+  additional characters, factions, abilities, power-system definition,
+  destined ending, and major mysteries.
+- **Internal metadata:** schema version, seed/account IDs, display title, and
+  created/updated timestamps remain on `StorySeedRecord`, outside the creative
+  intake families.
+
+## Internal story administration
+
+Story creation carries a separate administrative record alongside the Story
+Seed generation payload:
+
+```ts
+{
+  storyId,
+  creatorId,
+  createdAt,
+  updatedAt,
+  schemaVersion,
+  contentVersion,
+  storyStatus,
+  generationStatus,
+  visibility,
+  publishingState,
+  originalLanguage,
+  currentLanguage,
+  sourceSeedId,
+  currentChapterId,
+  coverAssetId
+}
+```
+
+New records begin as `DRAFT`, `QUEUED`, `PRIVATE`, and `UNPUBLISHED`.
+Current-chapter and cover references begin as `null`; the source Story Seed
+reference is required. No administrative field is included in portable Story
+Seed JSON.
 
 Both forks render inside
 `src/workshop/previews/story-seed/StorySeedWorkspace.tsx`, which shares one mock

@@ -1,4 +1,9 @@
 import type { IntakeData, StorySeed, WorldBlueprint } from '../../../components/story-seed/shared/types';
+import {
+  STORY_SEED_SCHEMA_VERSION,
+  createStorySeedInput,
+  type StorySeedRecord,
+} from '../../../components/story-seed/shared/storySeedSchema';
 
 export const MOCK_USER_ID = 'mock-user-workshop';
 
@@ -144,6 +149,36 @@ export const createMockSeedLibrary = (): StorySeed[] => [
       ...createMockBlueprint(),
       title: 'The Grimoire That Talks Back',
       logline: 'A quiet apprentice librarian finds a forgotten manual that talks back and demands snacks.',
+    },
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+  }),
+];
+
+export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = {}): StorySeedRecord => {
+  const now = new Date().toISOString();
+  const input = createStorySeedInput(createFilledIntake(), createMockBlueprint());
+  return {
+    ...input,
+    schemaVersion: STORY_SEED_SCHEMA_VERSION,
+    id: 'preview-seed-v2-1',
+    userId: MOCK_USER_ID,
+    title: input.world.optional.title || 'Ashes of the Ninth Meridian',
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+};
+
+export const createMockStorySeedLibrary = (): StorySeedRecord[] => [
+  createMockStorySeedRecord(),
+  createMockStorySeedRecord({
+    id: 'preview-seed-v2-2',
+    title: 'The Grimoire That Talks Back',
+    world: {
+      optional: {
+        ...createMockStorySeedRecord().world.optional,
+        title: 'The Grimoire That Talks Back',
+      },
     },
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
   }),
