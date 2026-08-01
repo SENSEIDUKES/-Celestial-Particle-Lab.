@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Copy, Cloud, ArrowRight } from 'lucide-react';
+import { Copy, ArrowRight } from 'lucide-react';
 import { IntakeData, StorySeed, StorySeedPayload, WorldBlueprint } from '../shared/types';
 import {
   AGENTS,
@@ -8,11 +8,11 @@ import {
   createStorySeed,
   importStorySeeds,
   listStorySeeds,
-  mockLogin,
   selectIsGenerating,
   updateStorySeed,
   useAppStore,
 } from '../shared/stubs';
+import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
 
 // Feature components
 import { FormSectionId } from './FormSection';
@@ -101,6 +101,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [seedError, setSeedError] = useState<string | null>(null);
   const [chapterCount] = useState(10);
   const [activeSection, setActiveSection] = useState<FormSectionId>('core');
+  const [authDissolving, setAuthDissolving] = useState(false);
+  const wasAuthGatedRef = useRef(false);
 
   const [intake, setIntake] = useState<IntakeData>(createDefaultIntake);
 
@@ -136,13 +138,21 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     setIntake(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogin = async () => {
-    try {
-      await mockLogin();
-    } catch (error) {
-      console.error("Login failed", error);
+  // Post-auth visual transition: once a gated guest signs in, keep the gate
+  // mounted for STORY_AUTH_DISSOLVE_MS so StoryAuthGate's shell can dissolve
+  // over the still-visible backdrop before the intake is revealed.
+  useEffect(() => {
+    if (LOCAL_ONLY_MODE) return;
+    if (!currentUser) {
+      wasAuthGatedRef.current = true;
+      return;
     }
-  };
+    if (!wasAuthGatedRef.current) return;
+    wasAuthGatedRef.current = false;
+    setAuthDissolving(true);
+    const timer = setTimeout(() => setAuthDissolving(false), STORY_AUTH_DISSOLVE_MS);
+    return () => clearTimeout(timer);
+  }, [currentUser]);
 
   const rememberSeed = (seed: StorySeed) => {
     setCurrentSeed(seed);
@@ -258,24 +268,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     });
   };
 
-  if (!currentUser && !LOCAL_ONLY_MODE) {
-    return (
-      <div className="max-w-xl mx-auto pb-20 pt-20 text-center" id="creation-portal-root">
-        <h1 className="font-display font-bold text-3xl sm:text-4xl text-signal tracking-tight mb-4">
-          Authentication Required
-        </h1>
-        <p className="font-sans font-light text-neutral-400 text-sm mx-auto leading-relaxed mb-8">
-          You must link your spirit to the matrix before forging a new destiny. Anonymous creation is sealed to prevent celestial authorization breaches.
-        </p>
-        <button
-           tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={handleLogin}
-          className="font-sc px-8 py-3 rounded text-sm uppercase tracking-widest font-bold inline-flex items-center space-x-2 bg-human text-signal border border-human hover:bg-void hover:text-human hover:border-human shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all"
-        >
-          <Cloud size={18} />
-          <span>Sync Spirit (Sign In)</span>
-        </button>
-      </div>
-    );
+  if ((!currentUser || authDissolving) && !LOCAL_ONLY_MODE) {
+    return <StoryAuthGate />;
   }
 
   if (stage === 'blueprint' && blueprint) {

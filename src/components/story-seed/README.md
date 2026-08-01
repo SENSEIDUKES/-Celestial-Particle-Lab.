@@ -6,7 +6,7 @@
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-01
 - **Last source comparison:** 2026-08-01
-- **Replica status:** faithful replica
+- **Replica status:** under refinement
 
 ## Workshop history
 
@@ -14,6 +14,14 @@
   preview states across Intake / Blueprint / Library / Auth categories, in-memory
   seed storage, DOM-driven scenario scripting that fills the real form and clicks
   the real buttons rather than reaching into component internals).
+- **2026-08-01:** Redesigned the auth gate (Foundation v2): replaced the "Sync
+  Spirit" panel with `development/StoryAuthGate.tsx` — a cinematic full-canvas
+  takeover with a video backdrop (poster fallback + soft crossfade, no video
+  under reduced motion), a nearly-invisible glass shell, exact new copy
+  ("Your Destiny Awaits" / "Your Story Seed will not be lost."), three mock
+  provider actions (Google / Apple / Email with an inline email form), and a
+  post-sign-in dissolve that keeps the world visible before the intake is
+  revealed.
 
 ## Folder layout
 
@@ -43,6 +51,10 @@ reference/                    — untouched replica of production, locked
     index.ts
 development/                  — active Workshop version; started as an exact
                                  copy of reference/ (byte-identical at creation)
+  StoryAuthGate.tsx            — Foundation v2 cinematic auth gate (added
+                                 2026-08-01); rendered by CreationModal's
+                                 signed-out branch instead of the old inline
+                                 "Sync Spirit" panel
 shared/                        — code genuinely identical between the two forks
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -109,9 +121,14 @@ Postgres/persistence, no real network calls):
   `let` (default `true`) with a `setMockLocalOnlyMode` setter, unlike
   reader-chamber's frozen `true` constant: `CreationModal`'s auth-gated
   screen (`!currentUser && !LOCAL_ONLY_MODE`) is a real, reachable preview
-  state here (`auth-gated`), not permanently excluded. `handleLogin` calls a
-  `mockLogin()` stub that flips the mock `currentUser` instead of opening a
-  real Google OAuth popup.
+  state here (`auth-gated`), not permanently excluded. `StoryAuthGate`'s
+  three provider actions (Google / Apple / Email, including the inline
+  email/password form) all resolve through the same `mockLogin()` stub after
+  a short simulated delay so their loading states are inspectable; the
+  mock never fails, so the gate's Firebase-code error mapping is dormant
+  here. `CreationModal` keeps the gate mounted for
+  `STORY_AUTH_DISSOLVE_MS` (900ms) after sign-in so the shell dissolves
+  over the still-visible backdrop before the intake is revealed.
 - **`lib/storySeedStorage`** (`createStorySeed`, `updateStorySeed`,
   `listStorySeeds`, `importStorySeeds`) — replaced with an in-memory
   module-level array in `shared/stubs.ts` implementing the exact same call
@@ -185,7 +202,9 @@ React internals.
 **Auth** — the auth gate
 
 - `auth-gated` — `currentUser: null` + `LOCAL_ONLY_MODE = false`, showing
-  the real "Sync Spirit (Sign In)" screen
+  the redesigned `StoryAuthGate` screen ("Your Destiny Awaits"). Clicking
+  any provider mock-signs-in and plays the post-auth dissolve into the
+  intake.
 
 ## Reusable Workshop dependencies
 
@@ -222,6 +241,21 @@ React internals.
 
 ## Known visual/behavioral differences from the source
 
+- **`StoryAuthGate` is scoped to the preview canvas, not the viewport** — its
+  root is `absolute inset-0` so the takeover fills FeatureWorkspace's
+  positioned pane and never collides with the Workshop controls floating at
+  `z-[200]`; production should use `fixed inset-0` (transfer note above).
+  Consequence: in the Workshop the gate starts below the header/controls
+  rather than behind them.
+- **All three auth providers are mock sign-ins** — Google, Apple, and Email
+  (including the inline email/password form) resolve through `mockLogin()`
+  after a 650ms simulated delay; no provider choice is recorded and the
+  email address is discarded. The Firebase-code error mapping in the gate
+  never fires here because the mock cannot fail.
+- **Backdrop media is live public R2 URLs** (video + poster + emblem) —
+  kept for visual fidelity; same precedent as reader-chamber's R2 backdrop
+  URLs and the VERSA logo. The poster is a still, not the video's first
+  frame; the crossfade layer handles the difference.
 - **Tag suggestions are canned, not model-generated** — `suggestTagsStub`
   returns a fixed, genre-aware tag list instead of a real AI response; the
   `reasoning` text explicitly says "Workshop mock recommendation… No live
@@ -258,6 +292,14 @@ reversing the import rewrites (`../shared/X` → `../../lib/X` /
 unchanged):
 
 - `development/CreationModal.tsx` → `src/components/CreationModal.tsx`
+- `development/StoryAuthGate.tsx` → `src/components/StoryAuthGate.tsx`
+  (swap the `../shared/stubs` import for `firebase/auth` + `lib/firebase`,
+  replace each `mockLogin()` call with the real provider action — Google
+  `signInWithPopup(auth, new GoogleAuthProvider())`, Apple
+  `signInWithPopup(auth, new OAuthProvider('apple.com'))`, email/password
+  `signInWithEmailAndPassword` / `createUserWithEmailAndPassword` — drop the
+  simulated delay, and change the root `absolute inset-0` to `fixed inset-0`;
+  `useAppStore` swaps back to `store/useAppStore`)
 - `development/BlueprintReview.tsx` → `src/features/creation/components/BlueprintReview.tsx`
 - `development/CharacterSetupForm.tsx` → `src/features/creation/components/CharacterSetupForm.tsx`
 - `development/CoreSeedForm.tsx` → `src/features/creation/components/CoreSeedForm.tsx`
@@ -291,9 +333,10 @@ registry line.
 - On transfer, `CoreSeedForm.tsx` must have its `handleSuggestTags` restored
   to call the real `fetch('/api/suggest-tags', …)` with `getApiHeaders()`
   from `hooks/storyEngineHelpers` — do not carry `suggestTagsStub` back.
-- `CreationModal.tsx`'s `handleLogin` must be restored to call
-  `signInWithPopup(auth, new GoogleAuthProvider())` — do not carry
-  `mockLogin` back.
+- `CreationModal.tsx` no longer has a `handleLogin` — sign-in lives in
+  `StoryAuthGate.tsx`. On transfer, wire the gate's provider actions to real
+  Firebase Auth as described above — do not carry `mockLogin` or the
+  simulated provider delay back.
 - The `useEffect` account-change guards (`auth.currentUser?.uid ===
   expectedUid`) were rewritten to `useAppStore.getState().currentUser?.uid
   === expectedUid` against the mock store; restore the `auth.currentUser`
