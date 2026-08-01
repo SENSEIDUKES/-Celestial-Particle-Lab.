@@ -8,6 +8,12 @@ This repository is the **SEN Development space**: a centralized visual developme
 
 Use it to isolate, preview, and refine UI components, animations, icons, rewards, and visual effects without needing the production app, authentication, story data, or migration infrastructure.
 
+### Major system reconstruction
+
+For tasks that rebuild a real product system rather than only refining a visual Workshop component, read [`DEVELOPMENT_RECONSTRUCTION.md`](./DEVELOPMENT_RECONSTRUCTION.md) before implementation.
+
+That policy permits real frontend, backend, persistence, schema, and integration work inside development. For those tasks, it overrides the visual-only, mock-only, and no-backend restrictions in this file. All unrelated Workshop organization and quality rules still apply where relevant.
+
 ## Required skills
 
 Before beginning any implementation, download, install or otherwise make available, and read all required skills for this repository.
@@ -90,7 +96,7 @@ Use the real current calendar date. Update the history whenever the replica rece
 - Keep previews mobile-first and easy to inspect on the deployed Vercel site.
 - Make visual changes directly from the user's instructions.
 - Avoid unnecessary dashboards, controls, settings, or architecture unless requested.
-- Do not add database, authentication, API, persistence, or migration work.
+- Do not add database, authentication, API, persistence, or migration work unless the task is governed by `DEVELOPMENT_RECONSTRUCTION.md`.
 - Reuse the existing app stack and keep dependencies minimal.
 - Preserve currently approved work while adding new workshop entries.
 
