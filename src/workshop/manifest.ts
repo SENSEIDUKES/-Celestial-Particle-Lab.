@@ -110,6 +110,18 @@ export const workshopEntries: WorkshopEntry[] = [
     },
   },
   {
+    id: 'story-seed',
+    title: 'Story Seed Intake',
+    description: 'The full CreationModal intake flow — core seed, world, characters, factions, power system, plot control, import/export, saved-seed library, and the World Blueprint review stage.',
+    category: 'other',
+    version: 'v1.0',
+    source: {
+      repository: 'SENSEIDUKES/Light-Novels',
+      path: 'src/components/CreationModal.tsx',
+      lastCompared: '2026-08-01',
+    },
+  },
+  {
     id: 'reader-chamber',
     title: 'Reader Chamber',
     description: 'The full reading UI — header, viewport with system blocks and world cards, playback controls, preferences, bookmarks, and Alter Fate — running on a local mock story.',
