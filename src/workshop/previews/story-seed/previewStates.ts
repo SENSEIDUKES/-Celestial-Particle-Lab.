@@ -1,10 +1,10 @@
 export type PreviewCategory = 'intake' | 'blueprint' | 'library' | 'auth';
 
 export const PREVIEW_CATEGORIES: { id: PreviewCategory; label: string }[] = [
-  { id: 'intake', label: 'Intake' },
-  { id: 'blueprint', label: 'Blueprint' },
-  { id: 'library', label: 'Library' },
-  { id: 'auth', label: 'Auth' },
+  { id: 'intake', label: 'Intake Form' },
+  { id: 'blueprint', label: 'Blueprint Review' },
+  { id: 'library', label: 'Seed Library' },
+  { id: 'auth', label: 'Sign In' },
 ];
 
 export type PreviewState =

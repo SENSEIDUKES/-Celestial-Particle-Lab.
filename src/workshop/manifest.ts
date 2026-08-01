@@ -111,8 +111,8 @@ export const workshopEntries: WorkshopEntry[] = [
   },
   {
     id: 'story-seed',
-    title: 'Story Seed Intake',
-    description: 'The full CreationModal intake flow — core seed, world, characters, factions, power system, plot control, import/export, saved-seed library, and the World Blueprint review stage.',
+    title: 'Story Seed',
+    description: 'The full CreationModal intake flow — core seed, story settings, world, characters, factions, power system, plot control, import/export, saved-seed library, and the World Blueprint review stage.',
     category: 'other',
     version: 'v1.0',
     source: {
