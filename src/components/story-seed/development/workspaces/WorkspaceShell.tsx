@@ -17,10 +17,13 @@ const accentText = (section: SeedSection) =>
 export const WorkspaceShell = ({
   section,
   complete,
+  optionalNote,
   children,
 }: {
   section: SeedSection;
   complete: boolean;
+  /** Replaces the plain "Optional" chip on optional sections (e.g. Story Tags). */
+  optionalNote?: string;
   children: React.ReactNode;
 }) => {
   const family = SEED_FAMILIES[section.family];
@@ -56,8 +59,13 @@ export const WorkspaceShell = ({
           )
         )}
         {!section.required && (
-          <span className="inline-flex items-center rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-0.5 font-sc text-[10px] uppercase tracking-widest text-neutral-500">
+          <span className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-0.5 font-sc text-[10px] uppercase tracking-widest text-neutral-500">
             Optional
+            {optionalNote && (
+              <span className="border-l border-neutral-800 pl-2 normal-case tracking-normal text-neutral-500">
+                {optionalNote}
+              </span>
+            )}
           </span>
         )}
       </div>

@@ -16,9 +16,10 @@ const TAG_LIMIT = 20;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 
 /**
- * Required Story workspace: the tag editor. Add custom tags, take AI-style
- * suggestions (Workshop stub), or browse the full preset grimoire. Ported from
- * the Phase 1 CoreSeedForm tag block; DOM ids are kept so Workshop preview
+ * Optional Story workspace: the tag editor. Tags remain critical system data,
+ * but they are never required by hand — an empty set is inferred from Premise,
+ * Genre, and Style at generation time (`shared/storyTagInference.ts`). Manual
+ * tags are always preserved as-is. DOM ids are kept so Workshop preview
  * scripting keeps working.
  */
 export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceProps) => {
@@ -102,7 +103,11 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
   );
 
   return (
-    <WorkspaceShell section={section} complete={activeTags.length > 0}>
+    <WorkspaceShell
+      section={section}
+      complete={activeTags.length > 0}
+      optionalNote="Automatically generated if left empty"
+    >
       {/* Add a tag */}
       <div>
         <label htmlFor="custom-tag-input" className="sr-only">Add a custom tag</label>
@@ -182,14 +187,15 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
             ))}
           </div>
         ) : (
-          <p className="rounded border border-dashed border-neutral-800 px-3 py-4 text-center font-sans text-xs italic text-neutral-600">
-            No tags yet — Story Tags are required before generation. Add your own, take a suggestion, or browse the library below.
+          <p className="font-sans text-xs italic leading-relaxed text-neutral-600">
+            No tags yet. The Library will read your Premise, Genre, and Style and generate a tag set
+            when you forge the blueprint — or add your own here to steer it.
           </p>
         )}
       </div>
 
       {/* Suggested tags */}
-      <div className="rounded-lg border border-neutral-900 bg-neutral-950/50 p-4">
+      <div className="border-t border-neutral-900/70 pt-6">
         <div className="flex items-center justify-between gap-3 pb-3">
           <span className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal">
             <Wand2 size={13} className="text-portal" />
@@ -253,8 +259,8 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       </div>
 
       {/* Browse the tag library */}
-      <div className="space-y-4 rounded-lg border border-neutral-900 bg-neutral-950/50 p-4">
-        <div className="flex flex-col justify-between gap-3 border-b border-neutral-900 pb-3 sm:flex-row sm:items-center">
+      <div className="space-y-4 border-t border-neutral-900/70 pt-6">
+        <div className="flex flex-col justify-between gap-3 pb-1 sm:flex-row sm:items-center">
           <div className="flex items-center space-x-2">
             <span className="font-sc text-[11px] font-bold uppercase tracking-widest text-signal">Tag Library</span>
             <span className="rounded border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] text-neutral-400">
@@ -319,7 +325,9 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       </div>
 
       <GuidanceNote title="How tags help">
-        Tags guide the Library to tailor the world, characters, conflicts, and events to match the themes and tones you care about most.
+        Tags guide the Library to tailor the world, characters, conflicts, and events to match the
+        themes and tones you care about most. Leave them empty and a set is generated from your
+        Premise, Genre, and Style — then saved into the seed so the novel can always be recreated.
       </GuidanceNote>
     </WorkspaceShell>
   );

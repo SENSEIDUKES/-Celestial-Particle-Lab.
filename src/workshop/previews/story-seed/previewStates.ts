@@ -12,7 +12,6 @@ export type PreviewState =
   | 'filled-intake'
   | 'generating-blueprint'
   | 'import-panel-open'
-  | 'summary-open'
   | 'blueprint-review'
   | 'blueprint-generating-story'
   | 'library-empty'
@@ -43,18 +42,18 @@ export interface PreviewScenario {
    * clicking the actual rendered control (never a shortcut into internal
    * state) — same approach as `reader-chamber`'s `clickInChamber`.
    */
-  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed' | 'open-library' | 'open-summary';
+  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed' | 'open-library';
 }
 
 export const scenarios: PreviewScenario[] = [
   {
     id: 'empty-intake',
-    label: 'Empty creation workspace (Story Tags active)',
+    label: 'Empty creation workspace (Premise active)',
     category: 'intake',
   },
   {
     id: 'filled-intake',
-    label: 'Filled workspace (tags, premise, genre, world, characters, faction, settings)',
+    label: 'Filled workspace (premise, genre, style, tags, plot, world, characters, faction)',
     category: 'intake',
     uiAction: 'fill-intake',
   },
@@ -69,12 +68,6 @@ export const scenarios: PreviewScenario[] = [
     label: 'Import Story Seed panel open',
     category: 'intake',
     uiAction: 'open-import-panel',
-  },
-  {
-    id: 'summary-open',
-    label: 'Story Seed summary sheet open',
-    category: 'intake',
-    uiAction: 'open-summary',
   },
   {
     id: 'blueprint-review',

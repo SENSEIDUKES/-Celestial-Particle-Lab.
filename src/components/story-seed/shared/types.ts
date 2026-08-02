@@ -31,14 +31,12 @@ export interface IntakeFaction {
 }
 
 export interface IntakeData {
-  // Creator (Phase 2 — the creator family's first user-facing field)
-  creatorPenName?: string;
-
   // 1. Core Seed
   novelTitle?: string;
   mcName?: string;
   genrePath?: string;
   corePremise?: string;
+  /** The required Story input "Style" — the prose voice the Library writes in. */
   proseStyle?: string;
   desiredPlotDirection?: string;
   storyTags?: string[];
@@ -51,10 +49,6 @@ export interface IntakeData {
   societyStructure?: string;
   dangerLevel?: string;
   generalAtmosphere?: string;
-  /** Wider reality beyond the starting region (Phase 2 — feeds world.optional.universe). */
-  universeOverview?: string;
-  /** One mystery per line (Phase 2 — feeds world.optional.majorMysteries). */
-  majorMysteries?: string;
 
   // 3. Main Character Setup
   startingIdentity?: string;

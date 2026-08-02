@@ -62,10 +62,6 @@ function clickByText(root: Element, selector: string, pattern: RegExp) {
   target?.click();
 }
 
-function clickByAriaLabel(root: Element, label: string) {
-  (root.querySelector(`[aria-label="${label}"]`) as HTMLElement | null)?.click();
-}
-
 /** Reference pane: fills the locked Phase 1 accordion replica (unchanged steps). */
 async function runReferenceFillScenario() {
   getRoots('reference').forEach(root => {
@@ -150,14 +146,7 @@ async function runDevelopmentFillScenario() {
     await wait(150);
   };
 
-  // Story Tags (default active section) — two preset tags
-  await selectSection(/^Story Tags/);
-  getRoots('development').forEach(root => {
-    clickByText(root, 'button', /^\+ death flags$/);
-    clickByText(root, 'button', /^\+ sect politics$/);
-  });
-
-  // Premise
+  // Premise (default active section) — the first required Story input
   await selectSection(/^Premise/);
   getRoots('development').forEach(root => setFieldValue(
     root,
@@ -168,6 +157,18 @@ async function runDevelopmentFillScenario() {
   // Genre
   await selectSection(/^Genre/);
   getRoots('development').forEach(root => clickByText(root, 'button', /Fate Survival/));
+
+  // Style — accepting the Library default is an explicit choice
+  await selectSection(/^Style/);
+  getRoots('development').forEach(root =>
+    (root.querySelector('[id="accept-default-style-button"]') as HTMLElement | null)?.click());
+
+  // Story Tags — optional, but manual tags must survive untouched
+  await selectSection(/^Story Tags/);
+  getRoots('development').forEach(root => {
+    clickByText(root, 'button', /^\+ death flags$/);
+    clickByText(root, 'button', /^\+ sect politics$/);
+  });
 
   // World Identity
   await selectSection(/^World Identity$/);
@@ -211,21 +212,15 @@ async function runDevelopmentFillScenario() {
   await selectSection(/^Power System$/);
   getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist'));
 
-  // Story Settings (danger + plot controls)
-  await selectSection(/^Story Settings/);
+  // Plot & Tropes (seed-level narrative direction only)
+  await selectSection(/^Plot & Tropes/);
   getRoots('development').forEach(root => {
-    setFieldValue(root, 'danger-level-input', 'Cutthroat, grimdark, mystical');
     setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
   });
 
-  // Land back on Story Tags
-  await selectSection(/^Story Tags/);
-}
-
-/** Development pane: opens the header overflow menu (the "···" button). */
-function openDevelopmentMenu(root: Element) {
-  clickByAriaLabel(root, 'Story Seed actions');
+  // Land back on Premise
+  await selectSection(/^Premise/);
 }
 
 export function StorySeedWorkspace() {
@@ -266,26 +261,14 @@ export function StorySeedWorkspace() {
       if (cancelled) return;
       if (scenario.uiAction === 'open-import-panel') {
         getRoots('reference').forEach(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
-        getRoots('development').forEach(root => {
-          openDevelopmentMenu(root);
-        });
-        await wait(120);
-        getRoots('development').forEach(root => clickByText(root, 'button', /Import Story Seed/));
+        getRoots('development').forEach(root => clickByText(root, 'button', /^Import$/));
       } else if (scenario.uiAction === 'open-library') {
-        // The reference fork renders the account library inline; the
-        // development fork tucks it behind the header overflow menu.
-        getRoots('development').forEach(root => openDevelopmentMenu(root));
-        await wait(120);
-        getRoots('development').forEach(root => clickByText(root, 'button', /My Story Seeds/));
+        getRoots('development').forEach(root => clickByText(root, 'button', /^My Seeds$/));
       } else if (scenario.uiAction === 'use-first-seed') {
-        getRoots('development').forEach(root => openDevelopmentMenu(root));
-        await wait(120);
-        getRoots('development').forEach(root => clickByText(root, 'button', /My Story Seeds/));
+        getRoots('development').forEach(root => clickByText(root, 'button', /^My Seeds$/));
         await wait(150);
         getRoots('reference').forEach(root => clickByText(root, 'button', /^Use Seed$/));
         getRoots('development').forEach(root => clickByText(root, 'button', /^Use Seed$/));
-      } else if (scenario.uiAction === 'open-summary') {
-        getRoots('development').forEach(root => clickByText(root, 'button', /Preview Story Seed/));
       } else if (scenario.uiAction === 'fill-intake') {
         await runReferenceFillScenario();
         await runDevelopmentFillScenario();

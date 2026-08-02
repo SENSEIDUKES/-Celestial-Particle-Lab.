@@ -3,13 +3,14 @@ import {
   assertValidStoryAdministrativeMetadata,
   type StoryAdministrativeMetadata,
 } from './storyAdministrativeMetadata';
+import { inferStoryTags } from './storyTagInference';
 
 export const STORY_SEED_SCHEMA_VERSION = 2 as const;
 export const DEFAULT_STORY_STYLE = 'Immersive character-focused light-novel prose';
 
 export interface StorySeedCreator {
-  /** The creator's public-facing name or pen name. Optional; never required. */
-  penName?: string;
+  // Reserved for creator-controlled settings. The family is required even
+  // while there are no creator fields to collect.
 }
 
 export interface StorySeedStoryOptional {
@@ -274,18 +275,19 @@ const normalizeWorldOptional = (value: unknown): StorySeedWorldOptional => {
   return normalized;
 };
 
-export const validateStorySeedInput = (value: unknown): StorySeedValidationResult => {
+/**
+ * Structural validation only — the rule a *draft* has to satisfy. Creative
+ * content may be entirely missing: a draft exists to preserve progress, so
+ * Premise, Genre, Style, and Story Tags are all allowed to be empty here.
+ */
+export const validateStorySeedDraft = (value: unknown): StorySeedValidationResult => {
   const errors: string[] = [];
   if (!isRecord(value)) return { valid: false, errors: ['Story Seed must be an object.'] };
   if (!isRecord(value.creator)) errors.push('Creator is required.');
   if (!isRecord(value.story)) {
     errors.push('Story is required.');
-  } else {
-    if (stringList(value.story.storyTags).length === 0) errors.push('Story Tags are required.');
-    if (!text(value.story.premise)) errors.push('Premise is required.');
-    if (!text(value.story.genre)) errors.push('Genre is required.');
-    if (!text(value.story.style)) errors.push('Style is required.');
-    if (!isRecord(value.story.optional)) errors.push('Story optional settings must be an object.');
+  } else if (!isRecord(value.story.optional)) {
+    errors.push('Story optional settings must be an object.');
   }
   if (!isRecord(value.world)) {
     errors.push('World is required.');
@@ -295,29 +297,71 @@ export const validateStorySeedInput = (value: unknown): StorySeedValidationResul
   return { valid: errors.length === 0, errors };
 };
 
+/**
+ * Generation readiness — the three required Story inputs. Story Tags are
+ * deliberately absent: when empty they are inferred from Premise, Genre, and
+ * Style (see `applyInferredStoryTags`), so they can never block generation.
+ * World is required to exist as a family but never to hold content.
+ */
+export const validateStorySeedInput = (value: unknown): StorySeedValidationResult => {
+  const draft = validateStorySeedDraft(value);
+  const errors = [...draft.errors];
+  if (isRecord(value) && isRecord(value.story)) {
+    if (!text(value.story.premise)) errors.push('Premise is required.');
+    if (!text(value.story.genre)) errors.push('Genre is required.');
+    if (!text(value.story.style)) errors.push('Style is required.');
+  }
+  return { valid: errors.length === 0, errors };
+};
+
+export function assertValidStorySeedDraft(value: unknown): asserts value is StorySeedInput {
+  const result = validateStorySeedDraft(value);
+  if (!result.valid) throw new Error(result.errors.join(' '));
+}
+
 export function assertValidStorySeedInput(value: unknown): asserts value is StorySeedInput {
   const result = validateStorySeedInput(value);
   if (!result.valid) throw new Error(result.errors.join(' '));
 }
 
+/**
+ * Normalizes any structurally valid seed — including an incomplete draft, so
+ * saving never depends on creative completeness. Generation payload builders
+ * assert generation readiness separately.
+ */
 export const normalizeStorySeedInput = (value: unknown): StorySeedInput => {
-  assertValidStorySeedInput(value);
-  const creator = value.creator as unknown as Record<string, unknown>;
+  assertValidStorySeedDraft(value);
   const story = value.story as unknown as Record<string, unknown>;
   const world = value.world as unknown as Record<string, unknown>;
   return {
-    creator: optionalTextFields<StorySeedCreator>(creator, ['penName']),
+    creator: {},
     story: {
       storyTags: stringList(story.storyTags),
-      premise: text(story.premise)!,
-      genre: text(story.genre)!,
-      style: text(story.style)!,
+      premise: text(story.premise) || '',
+      genre: text(story.genre) || '',
+      style: text(story.style) || '',
       optional: normalizeStoryOptional(story.optional),
     },
     world: {
       optional: normalizeWorldOptional(world.optional),
     },
   };
+};
+
+/**
+ * Fills empty Story Tags from Premise, Genre, and Style. Manually chosen tags
+ * are always preserved untouched; this only ever fires on an empty set. The
+ * returned seed is what gets saved *and* what enters the generation pipeline,
+ * so the stored seed and the generated novel always share one tag set.
+ */
+export const applyInferredStoryTags = (seed: StorySeedInput): StorySeedInput => {
+  if (seed.story.storyTags.length > 0) return seed;
+  const storyTags = inferStoryTags({
+    premise: seed.story.premise,
+    genre: seed.story.genre,
+    style: seed.story.style,
+  });
+  return { ...seed, story: { ...seed.story, storyTags } };
 };
 
 const compact = <T extends object>(value: T): T | undefined =>
@@ -364,23 +408,16 @@ const mergeNamedFactions = (intake: IntakeData, blueprint?: WorldBlueprint): Int
 export const createStorySeedInput = (
   intake: IntakeData,
   blueprint?: WorldBlueprint,
-): StorySeedInput => {
-  const majorMysteries = Array.from(new Set([
-    ...stringList(blueprint?.majorMysteries),
-    ...stringList((intake.majorMysteries || '').split('\n')),
-  ]));
-  return {
-  creator: {
-    ...(text(intake.creatorPenName) ? { penName: text(intake.creatorPenName) } : {}),
-  },
+): StorySeedInput => ({
+  creator: {},
   story: {
     storyTags: stringList(intake.storyTags),
     premise: intake.corePremise?.trim() || '',
     genre: intake.genrePath?.trim() || '',
-    style: intake.proseStyle?.trim()
-      || blueprint?.styleBible?.trim()
-      || intake.generalAtmosphere?.trim()
-      || DEFAULT_STORY_STYLE,
+    // No hidden default: Style is a required input, so an untouched Style
+    // must stay empty and read as incomplete. A blueprint's style bible is a
+    // real prior choice (imported or reused seed), so it still carries over.
+    style: intake.proseStyle?.trim() || blueprint?.styleBible?.trim() || '',
     optional: {
       ...optionalTextFields<StorySeedStoryOptional>(intake as unknown as Record<string, unknown>, [
         'desiredPlotDirection',
@@ -417,9 +454,7 @@ export const createStorySeedInput = (
     optional: {
       ...(text(blueprint?.title || intake.novelTitle) ? { title: text(blueprint?.title || intake.novelTitle) } : {}),
       ...(text(intake.worldType) ? { worldType: text(intake.worldType) } : {}),
-      ...(text(blueprint?.worldOverview || intake.universeOverview)
-        ? { universe: text(blueprint?.worldOverview || intake.universeOverview) }
-        : {}),
+      ...(text(blueprint?.worldOverview) ? { universe: text(blueprint?.worldOverview) } : {}),
       ...(text(blueprint?.startingLocation || intake.startingLocation)
         ? { startingLocation: text(blueprint?.startingLocation || intake.startingLocation) }
         : {}),
@@ -472,18 +507,18 @@ export const createStorySeedInput = (
       ...(text(blueprint?.destinedEnding || intake.destinedEnding)
         ? { destinedEnding: text(blueprint?.destinedEnding || intake.destinedEnding) }
         : {}),
-      ...(majorMysteries.length > 0 ? { majorMysteries } : {}),
+      ...(stringList(blueprint?.majorMysteries).length > 0
+        ? { majorMysteries: stringList(blueprint?.majorMysteries) }
+        : {}),
     },
   },
-};
-};
+});
 
 export const storySeedToIntake = (seed: StorySeedInput): IntakeData => {
   const { optional: story } = seed.story;
   const { optional: world } = seed.world;
   const mainCharacter = world.mainCharacter || {};
   return {
-    creatorPenName: seed.creator.penName || '',
     novelTitle: world.title || '',
     mcName: mainCharacter.name || '',
     genrePath: seed.story.genre,
@@ -498,8 +533,6 @@ export const storySeedToIntake = (seed: StorySeedInput): IntakeData => {
     societyStructure: world.societyStructure || '',
     dangerLevel: story.dangerLevel || '',
     generalAtmosphere: story.generalAtmosphere || '',
-    universeOverview: world.universe || '',
-    majorMysteries: (world.majorMysteries || []).join('\n'),
     startingIdentity: mainCharacter.startingIdentity || '',
     personality: mainCharacter.personality || '',
     mainFlaw: mainCharacter.mainFlaw || '',
@@ -554,9 +587,10 @@ export const storySeedToBlueprint = (seed: StorySeedInput): WorldBlueprint => {
   };
 };
 
-export const buildBlueprintGenerationPayload = (seed: StorySeedInput): BlueprintGenerationPayload => ({
-  storySeed: normalizeStorySeedInput(seed),
-});
+export const buildBlueprintGenerationPayload = (seed: StorySeedInput): BlueprintGenerationPayload => {
+  assertValidStorySeedInput(seed);
+  return { storySeed: applyInferredStoryTags(normalizeStorySeedInput(seed)) };
+};
 
 export const buildInitialStoryGenerationPayload = (
   seed: StorySeedInput,
@@ -564,9 +598,10 @@ export const buildInitialStoryGenerationPayload = (
   blueprint: WorldBlueprint,
   chapterCount: number,
 ): InitialStoryGenerationPayload => {
+  assertValidStorySeedInput(seed);
   assertValidStoryAdministrativeMetadata(administrative);
   return {
-    storySeed: normalizeStorySeedInput(seed),
+    storySeed: applyInferredStoryTags(normalizeStorySeedInput(seed)),
     administrative,
     blueprint,
     chapterCount,

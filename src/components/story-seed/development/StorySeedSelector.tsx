@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronRight, Eye } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import type { IntakeData } from '../shared/types';
 import {
   FAMILY_ICONS,
@@ -14,7 +14,6 @@ interface StorySeedSelectorProps {
   intake: IntakeData;
   activeSection: SeedSectionId;
   onSelect: (id: SeedSectionId) => void;
-  onPreview: () => void;
 }
 
 const SelectorItem = ({
@@ -41,18 +40,14 @@ const SelectorItem = ({
             ? 'border-portal/50 bg-portal/10 text-signal shadow-[0_0_14px_rgba(4,172,255,0.08)]'
             : 'border-gold-accent/40 bg-gold-accent/10 text-signal'
           : 'border-transparent text-neutral-400 hover:bg-white/5 hover:text-neutral-200'
-      } ${section.secondary ? 'opacity-80' : ''}`}
+      }`}
     >
       <Icon
         size={15}
         aria-hidden="true"
         className={active ? familyAccent : 'text-neutral-500 group-hover:text-neutral-400'}
       />
-      <span
-        className={`flex-1 font-sc text-xs font-bold uppercase tracking-widest ${
-          section.secondary ? 'text-[11px]' : ''
-        }`}
-      >
+      <span className="flex-1 font-sc text-xs font-bold uppercase tracking-widest">
         {section.label}
         {section.required && (
           <span className="ml-1 text-human" aria-label="required">*</span>
@@ -110,11 +105,11 @@ const FamilyBlock = ({
           />
         ))}
       </div>
-      {family === 'world' && (
-        <p className="mt-2 px-1 font-sans text-[10px] leading-relaxed text-neutral-600">
-          Optional — the Library can generate the complete world automatically.
-        </p>
-      )}
+      <p className="mt-2 px-1 font-sans text-[10px] leading-relaxed text-neutral-600">
+        {family === 'story'
+          ? 'Premise, Genre, and Style are required. Everything below them is optional.'
+          : 'Optional — the Library can generate the complete world automatically.'}
+      </p>
     </div>
   );
 };
@@ -123,29 +118,13 @@ const FamilyBlock = ({
  * The left-panel navigation hierarchy (Story → World) for the creation
  * workspace. Rendered in the desktop sidebar and inside the mobile drawer.
  */
-export const StorySeedSelector = ({ intake, activeSection, onSelect, onPreview }: StorySeedSelectorProps) => (
-  <div className="flex h-full flex-col gap-6">
+export const StorySeedSelector = ({ intake, activeSection, onSelect }: StorySeedSelectorProps) => (
+  <div className="flex h-full flex-col gap-7">
     <p className="px-1 font-sc text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500">
       Build Your Novel
     </p>
 
     <FamilyBlock family="story" intake={intake} activeSection={activeSection} onSelect={onSelect} />
     <FamilyBlock family="world" intake={intake} activeSection={activeSection} onSelect={onSelect} />
-
-    <div className="mt-auto pt-2">
-      <button
-        type="button"
-        onClick={onPreview}
-        className="w-full rounded-xl border border-neutral-800 bg-neutral-950/60 p-4 text-left transition-colors hover:border-portal/40"
-      >
-        <span className="flex items-center gap-2 font-sc text-xs font-bold uppercase tracking-widest text-signal">
-          <Eye size={14} className="text-portal" aria-hidden="true" />
-          Preview Story Seed
-        </span>
-        <span className="mt-1 block font-sans text-[11px] text-neutral-500">
-          See a summary of your story seed.
-        </span>
-      </button>
-    </div>
   </div>
 );

@@ -1,6 +1,8 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { STYLE_SUGGESTIONS } from '../constants';
+import { DEFAULT_STORY_STYLE } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
@@ -10,12 +12,18 @@ interface StyleWorkspaceProps {
 }
 
 /**
- * Required Story workspace: prose style. Pre-filled with the Library default
- * so a fresh seed is valid; any preset chip or free edit replaces it.
+ * Required Story workspace: prose style.
+ *
+ * Style starts empty and stays incomplete until the creator makes a real
+ * choice — the Library default is offered as an explicit, visible option they
+ * can accept, never as an invisible prefill that silently marks the section
+ * done.
  */
 export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) => {
   const section = getSeedSection('style');
   const style = intake.proseStyle || '';
+  const defaultAccepted = style.trim() === DEFAULT_STORY_STYLE;
+  const presets = STYLE_SUGGESTIONS.filter(suggestion => suggestion !== DEFAULT_STORY_STYLE);
 
   return (
     <WorkspaceShell section={section} complete={Boolean(style.trim())}>
@@ -32,17 +40,45 @@ export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) =>
           value={style}
           onChange={(e) => updateIntake('proseStyle', e.target.value)}
           rows={3}
-          placeholder="e.g., Immersive character-focused light-novel prose"
+          placeholder="Describe the voice every chapter should be written in..."
           className="w-full resize-none rounded border border-neutral-800 bg-neutral-950/80 p-3 font-sans text-sm text-signal placeholder-neutral-600 focus:border-portal focus:outline-none"
         />
       </div>
 
+      {/* The Library default as an explicit choice the creator confirms. */}
+      <button
+        type="button"
+        id="accept-default-style-button"
+        onClick={() => updateIntake('proseStyle', defaultAccepted ? '' : DEFAULT_STORY_STYLE)}
+        aria-pressed={defaultAccepted}
+        className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
+          defaultAccepted
+            ? 'border-portal/50 bg-portal/10'
+            : 'border-neutral-800 bg-neutral-950/40 hover:border-portal/40'
+        }`}
+      >
+        <span
+          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+            defaultAccepted ? 'border-portal bg-portal text-void' : 'border-neutral-700'
+          }`}
+          aria-hidden="true"
+        >
+          {defaultAccepted && <Check size={11} strokeWidth={3} />}
+        </span>
+        <span className="min-w-0">
+          <span className="block font-sc text-[11px] font-bold uppercase tracking-widest text-signal">
+            Use the Library default
+          </span>
+          <span className="mt-0.5 block font-sans text-xs text-neutral-400">{DEFAULT_STORY_STYLE}</span>
+        </span>
+      </button>
+
       <div>
         <p className="mb-2 block font-sc text-xs uppercase tracking-widest text-neutral-400">
-          Style presets
+          Or choose a voice
         </p>
         <div className="flex flex-wrap gap-2">
-          {STYLE_SUGGESTIONS.map((suggestion) => {
+          {presets.map((suggestion) => {
             const isSelected = style.trim() === suggestion;
             return (
               <button
@@ -65,8 +101,8 @@ export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) =>
 
       <GuidanceNote title="How style helps">
         Style is the voice every chapter is written in — pacing of sentences, density of description,
-        how humor and violence land. The Library default is already filled in; refine it only if the
-        novel should sound different.
+        how humor and violence land. Accept the Library default or write your own; either counts as
+        your choice.
       </GuidanceNote>
     </WorkspaceShell>
   );

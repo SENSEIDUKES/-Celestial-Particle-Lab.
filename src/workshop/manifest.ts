@@ -112,7 +112,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Phase 2 two-panel creation workspace on the Creator / Story / World contract — Story/World selector with focused section workspaces, Creator strip, Save Draft, required-input tracking, summary sheet, and a mobile section drawer. Blueprint review, import/export, and saved-seed library included.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with focused section workspaces, three required Story inputs (Premise, Genre, Style), automatic Story Tag inference, always-available Save Draft, and a mobile section drawer. Blueprint review, import/export, and saved-seed library included; Fate Survival and experience settings live in the separate Story Settings feature.',
     category: 'other',
     version: 'v2.0',
     source: {

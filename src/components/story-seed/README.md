@@ -10,6 +10,35 @@
 
 ## Workshop history
 
+- **2026-08-02:** Phase 2 correction — removed the product drift that had crept
+  into the redesign and realigned it with the Story Seed philosophy. The
+  architecture was **kept**: left selector / right workspace, Story and World
+  as the two families, one active workspace, mobile drawer, optional World,
+  Phase 1 schema wiring. Changes:
+  - **Three required inputs, not four** — Premise, Genre, Style. Story Tags are
+    now optional and inferred from those three when left empty
+    (`shared/storyTagInference.ts`), saved into the seed, and passed into
+    generation. Manual tags are always preserved.
+  - **Story Settings removed from Story Seed** — the oversized catch-all
+    workspace (plot, pacing, tone, romance, harem, comedy, Fate Pressure,
+    conflict, antagonist pressure, Make It Work) is gone, not renamed. Only a
+    curated **Plot & Tropes** branch remains: plot direction, long-term goal,
+    first major conflict, antagonist pressure.
+  - **Fate Survival removed from Story Seed** — Fate Pressure, the
+    Relaxed/Balanced/Hardcore/Dao Master control, and `hardcoreFateMode`
+    interaction logic no longer appear here. The underlying fields are
+    untouched; they belong to the separate
+    [Story Settings](../story-settings/README.md) feature.
+  - **Draft saving fixed** — `validateStorySeedDraft` (structure only) gates
+    saving; `validateStorySeedInput` (Premise/Genre/Style) gates generation.
+    Save Draft is never disabled for incomplete creative data.
+  - **Style completion is a real choice** — Style starts empty and the Library
+    default is offered as an explicit, visible option instead of an invisible
+    prefill.
+  - **Speculative additions removed** — `creator.penName` and the Creator
+    strip, Universe Overview / Major Mysteries (with the Other World Settings
+    workspace), the Story Seed summary sheet, and the header overflow menu
+    (import / library / export are now plain always-visible actions).
 - **2026-08-01:** Phase 2 — full user-facing redesign of the Story Seed
   interface around the Phase 1 Creator / Story / World contract. The numbered
   accordion intake was **replaced** (not polished) with a two-panel creation
@@ -98,39 +127,40 @@ reference/                    — untouched replica of production, locked
     FormTextarea.tsx
     index.ts
 development/                  — active Workshop version (Phase 2 creation workspace)
-  CreationModal.tsx            — two-panel shell: header (Save Draft + actions
-                                 menu), Creator strip, selector/workspace grid,
-                                 sticky action bar, mobile section drawer
+  CreationModal.tsx            — two-panel shell: header (Save Draft + plain
+                                 Import / My Seeds / Export All actions),
+                                 selector/workspace grid, sticky action bar,
+                                 mobile section drawer
   seedSections.ts              — the Story/World section model: ids, labels,
-                                 icons, required/secondary flags, per-section
-                                 filled checks, missing-required helpers
+                                 icons, required flags, per-section filled
+                                 checks, missing-required helpers
   StorySeedSelector.tsx        — left-panel navigation (desktop sidebar and
-                                 mobile drawer share it) + Preview Story Seed card
-  StorySeedSummary.tsx         — read-only summary sheet (required checklist,
-                                 Creator/Story data, World filled-or-generate rows)
+                                 mobile drawer share it)
   workspaces/
     WorkspaceShell.tsx          — shared breadcrumb/title/chip shell, field
                                   classes, GuidanceNote, WorkspaceSubheading
-    StoryTagsWorkspace.tsx      — required; tag add/suggest/browse + limit
     PremiseWorkspace.tsx        — required; premise + suggestions + ghost-tag Tab
     GenreWorkspace.tsx          — required; preset grid + custom genre input
-    StyleWorkspace.tsx          — required; prose style + presets
-    StorySettingsWorkspace.tsx  — optional catch-all (plot, trope, tone,
-                                  pacing, fate pressure, custom rules)
+    StyleWorkspace.tsx          — required; prose style, an explicit "use the
+                                  Library default" option, and voice presets
+    StoryTagsWorkspace.tsx      — optional (inferred if empty); tag
+                                  add/suggest/browse + limit
+    PlotTropesWorkspace.tsx     — optional; the four seed-level plot direction
+                                  fields (direction, goal, first conflict,
+                                  antagonist pressure)
     WorldIdentityWorkspace.tsx  — optional; title, world type, society, location
     CharactersWorkspace.tsx     — optional; main character + additional cast
     FactionsWorkspace.tsx       — optional; faction/sect editor
     AbilitiesWorkspace.tsx      — optional; starting power concept + unique path
     PowerSystemWorkspace.tsx    — optional; power flavor + known ranks
     DestinedEndingWorkspace.tsx — optional; destined ending
-    OtherWorldSettingsWorkspace.tsx — optional; universe overview + major mysteries
   StoryAuthGate.tsx            — Foundation v2 cinematic auth gate (added
                                  2026-08-01); rendered by CreationModal's
                                  signed-out branch
   BlueprintReview.tsx          — blueprint review stage (unchanged from Phase 1)
   ImportPanel.tsx              — seed/blueprint JSON import (unchanged)
-  SeedLibraryPanel.tsx         — account seed library; now toggled from the
-                                 header actions menu instead of always rendered
+  SeedLibraryPanel.tsx         — account seed library; toggled from the header
+                                 "My Seeds" action instead of always rendered
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
                                    CATEGORIZED_TAGS, STYLE_SUGGESTIONS (Phase 2)
   form-fields/                 — shared FormInput/FormTextarea used by workspaces
@@ -138,8 +168,11 @@ shared/                        — shared infrastructure plus fork-specific data
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
                                   NamedCodexEntry (narrow local subset). Phase 2
-                                  added view-model fields: creatorPenName,
-                                  proseStyle, universeOverview, majorMysteries.
+                                  added one view-model field: proseStyle (the
+                                  required Style input).
+  storyTagInference.ts          — deterministic Story Tag inference from
+                                  Premise / Genre / Style (genre map + keyword
+                                  rules); used when tags are left empty
   storySeedFormat.ts            — verbatim: normalizeStorySeedPayload,
                                   downloadStorySeed, downloadStorySeedCollection,
                                   parseStorySeedJson, and their normalization
@@ -185,9 +218,7 @@ shared/                        — shared infrastructure plus fork-specific data
 
 ```ts
 {
-  creator: {
-    penName?: string          // Phase 2 — the Creator family's first field
-  },
+  creator: {},                // reserved; no creator-controlled fields yet
   story: {
     storyTags: string[],
     premise: string,
@@ -205,20 +236,21 @@ The Phase 2 workspace edits a flat `IntakeData` view model section by section
 (one section visible at a time). A single boundary adapter classifies it before
 save, export, or generation, so the flat prototype shape is never durable data.
 
-- **Creator:** pen name only, collected in a quiet strip under the header so it
-  never competes with the required Story inputs.
-- **Story:** required Story Tags / Premise / Genre / Style first (Genre is an
-  explicit preset-or-custom input again; Style is an explicit `proseStyle`
-  input pre-filled with the Library default), then the optional plot
-  direction, length, atmosphere, danger/tension, power pacing,
-  goals/conflicts/antagonist pressure, romance/comedy/trope controls,
-  exclusions/inclusions, Fate settings, absolute custom rules, generated
-  logline/first-arc promise/trope rules, and unresolved plot threads under
-  the secondary Story Settings surface.
-- **World:** title, world type and overview (`universeOverview`), location,
-  society, main character, additional characters, factions, abilities,
-  power-system definition, destined ending, and major mysteries
-  (newline-separated `majorMysteries`) — all optional; empty World stays valid.
+- **Creator:** no user-facing fields. The family stays in the contract for
+  future creator-controlled settings.
+- **Story:** required Premise / Genre / Style first (Genre is an explicit
+  preset-or-custom input; Style is an explicit `proseStyle` input that starts
+  empty), then optional Story Tags (inferred when empty) and the curated
+  Plot & Tropes branch. The remaining `story.optional` fields — atmosphere,
+  danger, pacing, romance/comedy/trope levels, Fate settings, custom rules —
+  stay in the schema and still round-trip through import/export, but they are
+  **not presented in Story Seed**: they are experience settings owned by the
+  separate [Story Settings](../story-settings/README.md) feature.
+- **World:** title, world type, location, society, main character, additional
+  characters, factions, abilities, power-system definition, and destined
+  ending — all optional; empty World stays valid. `universe` and
+  `majorMysteries` are populated from the generated blueprint, not collected
+  as intake.
 - **Internal metadata:** schema version, seed/account IDs, display title, and
   created/updated timestamps remain on `StorySeedRecord`, outside the creative
   intake families.
@@ -344,22 +376,21 @@ are unchanged; the development script walks the new selector).
 
 **Creation Workspace** — the intake stage (`stage === 'intake'`)
 
-- `empty-intake` — default mount, Story Tags active, nothing filled
-- `filled-intake` — scripts a representative fill across both forks: Story
-  Tags (2 preset tags), Premise, Genre (Fate Survival), World Identity,
-  Characters (MC fields + 1 added character), Factions (+1), Abilities, Power
-  System, and Story Settings, landing back on Story Tags
+- `empty-intake` — default mount, Premise active, nothing filled
+- `filled-intake` — scripts a representative fill across both forks: Premise,
+  Genre (Fate Survival), Style (accepting the Library default), Story Tags
+  (2 preset tags), World Identity, Characters (MC fields + 1 added character),
+  Factions (+1), Abilities, Power System, and Plot & Tropes, landing back on
+  Premise
 - `generating-blueprint` — `isGenerating` prop `true`, showing the Forge
   button's spinner state
-- `import-panel-open` — opens the actions menu and clicks the real "Import
-  Story Seed" item to open `ImportPanel`
-- `summary-open` — clicks the real "Preview Story Seed" card to open the
-  summary sheet
+- `import-panel-open` — clicks the real header "Import" action to open
+  `ImportPanel`
 
 **Blueprint Review** — the blueprint review stage (`stage === 'blueprint'`)
 
 - `blueprint-review` — signs in a mock account, populates the seed library,
-  opens it from the actions menu, then clicks the real "Use Seed" button on
+  opens it from the header "My Seeds" action, then clicks the real "Use Seed" button on
   the first saved seed (`handleUseSeed`'s genuine production code path),
   landing on `BlueprintReview` with the canned intake + blueprint
 - `blueprint-generating-story` — same path, plus `isGenerating` and
@@ -416,25 +447,32 @@ are unchanged; the development script walks the new selector).
   the numbered accordion; Compare mode shows old vs new side by side.
 - **Genre is a required explicit input again** — the Phase 1 extraction of
   the Genre Path selector into the separate [Story Settings](../story-settings/README.md)
-  Workshop feature left `genrePath` unwired; the Phase 2 Genre workspace binds
-  it directly (preset grid + custom input) because Genre is one of the four
+  Workshop feature left `genrePath` unwired; the Genre workspace binds it
+  directly (preset grid + custom input) because Genre is one of the three
   required Story inputs. The Story Settings feature remains separate and
   unchanged; coordinate any transfer so the two do not both own genre.
-- **Style is an explicit required input** — pre-filled with the Library
-  default (`DEFAULT_STORY_STYLE`) and editable; previously `story.style` was
-  only inferred from the blueprint or atmosphere at the boundary. The adapter
-  precedence is now `proseStyle → blueprint.styleBible → generalAtmosphere →
-  DEFAULT_STORY_STYLE`.
-- **Defaults are intentionally emptier** — fresh seeds start with empty
-  Premise, Genre, MC name, and tags (previously a random MC name, `Fate
+- **Style is an explicit required input with no hidden default** — it starts
+  empty and the Library default (`DEFAULT_STORY_STYLE`) is offered as a
+  visible option the creator confirms, so the completion indicator always
+  reflects a real choice. Adapter precedence is
+  `proseStyle → blueprint.styleBible → ''`.
+- **Story Tags are optional and inferred** — an empty tag set is filled from
+  Premise, Genre, and Style at generation time by
+  `shared/storyTagInference.ts` (deterministic; no model call), written back
+  into the workspace, saved into the seed, and sent to both generation
+  payload builders. Manual tags are never modified. Production may swap the
+  inference for the `/api/suggest-tags` model call on transfer — keep the
+  save-into-seed and pass-into-pipeline behavior either way.
+- **Defaults are intentionally empty** — fresh seeds start with empty Premise,
+  Genre, Style, MC name, and tags (previously a random MC name, `Fate
   Survival`, and premise suggestion #1 were pre-filled) so the required-input
-  tracking reflects reality. Style keeps its Library default.
+  tracking reflects reality.
 - **Save Draft is a new explicit action** — no production equivalent exists
-  today (persistence only happened implicitly on generate/export). It
-  requires the four required Story inputs (a draft is a valid minimal seed)
-  and, in the Workshop, saves locally under `local-workshop-creator` when
-  signed out.
-- **Drawer and summary sheet render at `z-[250]`** — above the Workshop
+  today (persistence only happened implicitly on generate/export). It uses
+  draft validation only, so it never requires Premise, Genre, Style, or Story
+  Tags, and in the Workshop it saves locally under `local-workshop-creator`
+  when signed out.
+- **The mobile drawer renders at `z-[250]`** — above the Workshop
   preview controls that float at `z-[200]` (a modal cannot sit under them).
   Production has no Workshop controls, so the value is unconstrained there;
   keep `z-[250]` or drop to the app's modal layer on transfer.
@@ -511,10 +549,13 @@ tree below and should be removed in the same transfer, with one caution
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
   is removed in this transfer)
 - `development/form-fields/*` → `src/features/creation/components/form-fields/*`
-- `shared/storySeedSchema.ts` creator/style/universe/mysteries corrections →
-  production's Phase 1 schema module (the `IntakeData` view-model fields
-  `creatorPenName`, `proseStyle`, `universeOverview`, `majorMysteries` belong
-  to production `src/types.ts`)
+- `shared/storySeedSchema.ts` draft/generation validation split, the Style
+  correction, and `applyInferredStoryTags` → production's Phase 1 schema
+  module (the `IntakeData` view-model field `proseStyle` belongs to
+  production `src/types.ts`)
+- `shared/storyTagInference.ts` → production's creation feature (or replace it
+  there with the `/api/suggest-tags` model call, keeping the same contract:
+  infer only when empty, save into the seed, pass into generation)
 
 Workshop-only — never transfer: `shared/stubs.ts`, `shared/id.ts` and
 `shared/storySeedFormat.ts` and `shared/dialect.ts` and
