@@ -1,8 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
-import { STYLE_SUGGESTIONS } from '../constants';
-import { DEFAULT_STORY_STYLE } from '../../shared/storySeedSchema';
+import { normalizeStoryStyle, STORY_STYLE_OPTIONS } from '../../shared/storyStyle';
 import { getSeedSection } from '../seedSections';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
@@ -12,97 +11,53 @@ interface StyleWorkspaceProps {
 }
 
 /**
- * Required Story workspace: prose style.
+ * The first required Story workspace: the novel's storytelling tradition.
  *
- * Style starts empty and stays incomplete until the creator makes a real
- * choice — the Library default is offered as an explicit, visible option they
- * can accept, never as an invisible prefill that silently marks the section
- * done.
+ * Three foundational choices, nothing more. This is the structural skeleton —
+ * the tradition is stored and carried through save, export, and generation,
+ * but no tradition-specific generation behavior exists yet (see
+ * `shared/storyStyle.ts` for where that will attach).
  */
 export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) => {
   const section = getSeedSection('style');
-  const style = intake.proseStyle || '';
-  const defaultAccepted = style.trim() === DEFAULT_STORY_STYLE;
-  const presets = STYLE_SUGGESTIONS.filter(suggestion => suggestion !== DEFAULT_STORY_STYLE);
+  const selected = normalizeStoryStyle(intake.proseStyle);
 
   return (
-    <WorkspaceShell section={section} complete={Boolean(style.trim())}>
-      <div>
-        <div className="mb-2 flex items-end justify-between">
-          <label htmlFor="story-style-input" className="block font-sc text-xs uppercase tracking-widest text-neutral-400">
-            Prose Style
-          </label>
-          <span className="font-mono text-[10px] text-neutral-500">{style.length} / 600</span>
-        </div>
-        <textarea
-          id="story-style-input"
-          maxLength={600}
-          value={style}
-          onChange={(e) => updateIntake('proseStyle', e.target.value)}
-          rows={3}
-          placeholder="Describe the voice every chapter should be written in..."
-          className="w-full resize-none rounded border border-neutral-800 bg-neutral-950/80 p-3 font-sans text-sm text-signal placeholder-neutral-600 focus:border-portal focus:outline-none"
-        />
-      </div>
-
-      {/* The Library default as an explicit choice the creator confirms. */}
-      <button
-        type="button"
-        id="accept-default-style-button"
-        onClick={() => updateIntake('proseStyle', defaultAccepted ? '' : DEFAULT_STORY_STYLE)}
-        aria-pressed={defaultAccepted}
-        className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
-          defaultAccepted
-            ? 'border-portal/50 bg-portal/10'
-            : 'border-neutral-800 bg-neutral-950/40 hover:border-portal/40'
-        }`}
+    <WorkspaceShell section={section} complete={Boolean(selected)}>
+      <div
+        role="radiogroup"
+        aria-label="Novel tradition"
+        id="story-style-options"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
-        <span
-          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-            defaultAccepted ? 'border-portal bg-portal text-void' : 'border-neutral-700'
-          }`}
-          aria-hidden="true"
-        >
-          {defaultAccepted && <Check size={11} strokeWidth={3} />}
-        </span>
-        <span className="min-w-0">
-          <span className="block font-sc text-[11px] font-bold uppercase tracking-widest text-signal">
-            Use the Library default
-          </span>
-          <span className="mt-0.5 block font-sans text-xs text-neutral-400">{DEFAULT_STORY_STYLE}</span>
-        </span>
-      </button>
-
-      <div>
-        <p className="mb-2 block font-sc text-xs uppercase tracking-widest text-neutral-400">
-          Or choose a voice
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((suggestion) => {
-            const isSelected = style.trim() === suggestion;
-            return (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => updateIntake('proseStyle', suggestion)}
-                aria-pressed={isSelected}
-                className={`rounded border px-2.5 py-1 font-sans text-xs transition-all duration-200 ${
-                  isSelected
-                    ? 'border-portal bg-portal/10 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                    : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
-                }`}
-              >
-                {suggestion}
-              </button>
-            );
-          })}
-        </div>
+        {STORY_STYLE_OPTIONS.map(option => {
+          const isSelected = selected === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              id={`story-style-${option.value}`}
+              onClick={() => updateIntake('proseStyle', option.value)}
+              className={`flex min-h-[5rem] flex-col items-center justify-center gap-2 rounded-xl border px-4 py-4 transition-all duration-200 ${
+                isSelected
+                  ? 'border-portal bg-portal/10 text-signal shadow-[0_0_16px_rgba(4,172,255,0.15)]'
+                  : 'border-neutral-900 bg-neutral-950/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+              }`}
+            >
+              <span className="flex items-center gap-2 font-display text-lg font-bold uppercase tracking-[0.12em]">
+                {isSelected && <Check size={14} className="text-portal" aria-hidden="true" />}
+                {option.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <GuidanceNote title="How style helps">
-        Style is the voice every chapter is written in — pacing of sentences, density of description,
-        how humor and violence land. Accept the Library default or write your own; either counts as
-        your choice.
+        Style is the storytelling tradition your novel belongs to. It is the first decision because
+        everything after it — genre, premise, tags, the world — is read through that tradition.
       </GuidanceNote>
     </WorkspaceShell>
   );

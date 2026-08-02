@@ -9,9 +9,15 @@ export const CATEGORIZED_TAGS: Record<string, string[]> = {
     'system shop', 'system diagnostics', 'hidden stats', 'karma points', 'influence points', 
     'admin points', 'military points', 'diplomacy points', 'logistics points'
   ],
-  'Fate Survival': [
+  // Fate is not a genre — it is a set of narrative ingredients. These tags
+  // tell the Library what kinds of fate mechanics, consequences, and
+  // distortions the novel may contain. They are unrelated to the Fate
+  // Survival experience layer, which lives in the Story Settings feature.
+  'Fate & Destiny': [
     'death flags', 'doom timers', 'fate intervention', 'changing timelines', 'assassination plots',
-    'survival games', 'foreknowledge', 'destined death', 'saving the doomed'
+    'survival games', 'foreknowledge', 'destined death', 'saving the doomed',
+    'stolen fate', 'fate exchange', 'broken prophecy', "heaven's punishment",
+    'borrowed lifespan', 'reincarnation debt', 'blood debt', 'karmic bonds'
   ],
   'Society & Economics': [
     'kingdom economy', 'resource management', 'territory control', 'trade routes', 'supply chains', 
@@ -98,8 +104,9 @@ export const CATEGORIZED_TAGS: Record<string, string[]> = {
 
 export const TAG_PRESETS = Array.from(new Set(Object.values(CATEGORIZED_TAGS).flat()));
 
+// `Fate Survival` is deliberately absent: it is an experience layer owned by
+// the Story Settings feature, not a genre a novel can be written in.
 export const GENRE_PRESETS = [
-  { id: 'Fate Survival', name: 'Fate Survival', icon: '💀' },
   { id: 'Xianxia', name: 'Xianxia', icon: '⚔️' },
   { id: 'Xuanhuan', name: 'Xuanhuan', icon: '🔥' },
   { id: 'LitRPG / System', name: 'System', icon: '⚡' },
@@ -131,15 +138,5 @@ export const PREMISE_SUGGESTIONS = [
   "Waking up on a barren moon as the sole survivor of a dying stellar sect with an cosmic stellar inheritance diagram in my soul."
 ];
 
-/**
- * Phase 2 — prose-style presets for the required Style workspace. The first
- * entry matches the schema's DEFAULT_STORY_STYLE fallback.
- */
-export const STYLE_SUGGESTIONS = [
-  'Immersive character-focused light-novel prose',
-  'Terse, ominous close-third prose with hard scene breaks',
-  'Lush, poetic narration with slow-burn tension',
-  'Fast-paced, action-first web-novel prose',
-  'Wry, dialogue-driven prose with dry humor',
-  'Mythic, saga-like narration with formal gravity'
-];
+// Style presets are no longer defined here: Style is the novel tradition
+// (Chinese / Korean / Japanese), a closed set owned by `shared/storyStyle.ts`.

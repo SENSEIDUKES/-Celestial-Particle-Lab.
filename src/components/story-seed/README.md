@@ -4,12 +4,36 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-01
+- **Last Workshop update:** 2026-08-02
 - **Last source comparison:** 2026-08-01
 - **Replica status:** under refinement
 
 ## Workshop history
 
+- **2026-08-02:** Style became the novel tradition, and the Story order was
+  fixed. Structure and the previous correction pass are unchanged.
+  - **Style is now Chinese / Korean / Japanese** — a closed set of stable
+    values (`'chinese' | 'korean' | 'japanese'`) owned by
+    `shared/storyStyle.ts` and stored in the existing required `story.style`.
+    The freeform prose textarea, the descriptive presets, `STYLE_SUGGESTIONS`,
+    and `DEFAULT_STORY_STYLE` are gone. **This is the skeleton only** — no
+    tradition-specific pacing, naming, prompting, or cultural rules exist yet;
+    `shared/storyStyle.ts` documents where they attach.
+  - **Required order is now Style → Genre → Premise** — Style is the first
+    decision, so a new seed opens on it. Selector, mobile drawer, progress
+    dots, missing-field messaging, validation error order, and preview
+    scenarios all follow that order.
+  - **Fate Survival removed as a genre** — dropped from `GENRE_PRESETS`, the
+    tag-suggestion stub's genre hints, the tag-inference genre map, and the
+    preview fixtures (now `Xianxia`). The locked `reference/` fork and the
+    separate Story Settings feature still have it, correctly.
+  - **Fate Story Tags preserved and extended** — the tag category was renamed
+    `Fate & Destiny` and gained `stolen fate`, `fate exchange`,
+    `broken prophecy`, `heaven's punishment`, `borrowed lifespan`,
+    `reincarnation debt`, `blood debt`, and `karmic bonds`. Fate tags are
+    narrative ingredients (what fate mechanics the novel may contain), not the
+    Fate Survival experience layer. Inference reaches them through keyword
+    rules now that no genre implies them.
 - **2026-08-02:** Phase 2 correction — removed the product drift that had crept
   into the redesign and realigned it with the Story Seed philosophy. The
   architecture was **kept**: left selector / right workspace, Story and World
@@ -141,8 +165,8 @@ development/                  — active Workshop version (Phase 2 creation work
                                   classes, GuidanceNote, WorkspaceSubheading
     PremiseWorkspace.tsx        — required; premise + suggestions + ghost-tag Tab
     GenreWorkspace.tsx          — required; preset grid + custom genre input
-    StyleWorkspace.tsx          — required; prose style, an explicit "use the
-                                  Library default" option, and voice presets
+    StyleWorkspace.tsx          — required, first; the three novel traditions
+                                  (Chinese / Korean / Japanese)
     StoryTagsWorkspace.tsx      — optional (inferred if empty); tag
                                   add/suggest/browse + limit
     PlotTropesWorkspace.tsx     — optional; the four seed-level plot direction
@@ -162,7 +186,8 @@ development/                  — active Workshop version (Phase 2 creation work
   SeedLibraryPanel.tsx         — account seed library; toggled from the header
                                  "My Seeds" action instead of always rendered
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
-                                   CATEGORIZED_TAGS, STYLE_SUGGESTIONS (Phase 2)
+                                   CATEGORIZED_TAGS (no Fate Survival genre;
+                                   fate tags live in the Fate & Destiny category)
   form-fields/                 — shared FormInput/FormTextarea used by workspaces
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
@@ -172,7 +197,12 @@ shared/                        — shared infrastructure plus fork-specific data
                                   required Style input).
   storyTagInference.ts          — deterministic Story Tag inference from
                                   Premise / Genre / Style (genre map + keyword
-                                  rules); used when tags are left empty
+                                  rules, including fate ingredients); used when
+                                  tags are left empty
+  storyStyle.ts                 — the novel traditions: StoryStyle values,
+                                  labels, normalization. Skeleton only — the
+                                  documented extension point for future
+                                  tradition-specific generation behavior
   storySeedFormat.ts            — verbatim: normalizeStorySeedPayload,
                                   downloadStorySeed, downloadStorySeedCollection,
                                   parseStorySeedJson, and their normalization
@@ -238,9 +268,10 @@ save, export, or generation, so the flat prototype shape is never durable data.
 
 - **Creator:** no user-facing fields. The family stays in the contract for
   future creator-controlled settings.
-- **Story:** required Premise / Genre / Style first (Genre is an explicit
-  preset-or-custom input; Style is an explicit `proseStyle` input that starts
-  empty), then optional Story Tags (inferred when empty) and the curated
+- **Story:** required Style / Genre / Premise first, in that order (Style is
+  the novel tradition — Chinese, Korean, or Japanese — stored in
+  `story.style`; Genre is an explicit preset-or-custom input), then optional
+  Story Tags (inferred when empty) and the curated
   Plot & Tropes branch. The remaining `story.optional` fields — atmosphere,
   danger, pacing, romance/comedy/trope levels, Fate settings, custom rules —
   stay in the schema and still round-trip through import/export, but they are
@@ -378,7 +409,7 @@ are unchanged; the development script walks the new selector).
 
 - `empty-intake` — default mount, Premise active, nothing filled
 - `filled-intake` — scripts a representative fill across both forks: Premise,
-  Genre (Fate Survival), Style (accepting the Library default), Story Tags
+  Style (Chinese), Genre (Xianxia), Story Tags
   (2 preset tags), World Identity, Characters (MC fields + 1 added character),
   Factions (+1), Abilities, Power System, and Plot & Tropes, landing back on
   Premise
@@ -451,11 +482,21 @@ are unchanged; the development script walks the new selector).
   directly (preset grid + custom input) because Genre is one of the three
   required Story inputs. The Story Settings feature remains separate and
   unchanged; coordinate any transfer so the two do not both own genre.
-- **Style is an explicit required input with no hidden default** — it starts
-  empty and the Library default (`DEFAULT_STORY_STYLE`) is offered as a
-  visible option the creator confirms, so the completion indicator always
+- **Style is the novel tradition, not a prose description** — a closed set
+  of three values with no default, so the completion indicator always
   reflects a real choice. Adapter precedence is
-  `proseStyle → blueprint.styleBible → ''`.
+  `proseStyle → blueprint.styleBible → ''`, and each source must already hold
+  a valid tradition; the freeform prose text older seeds carried in
+  `story.style` normalizes to `''` and reads as "not chosen yet".
+- **`Fate Survival` is not a selectable genre here** — it is an experience
+  layer (Story Settings), so it is absent from `GENRE_PRESETS`, the tag
+  suggestion hints, and the inference genre map. The locked `reference/` fork
+  still offers it, matching production; align them on transfer.
+- **Fate Story Tags are narrative ingredients and stay** — `Fate & Destiny`
+  (death flags, stolen fate, blood debt, borrowed lifespan, broken prophecy,
+  heaven's punishment, reincarnation debt, …) plus `Fate & Karmic Bonds`
+  remain selectable and inferable. They describe what fate mechanics a novel
+  may contain; they do not turn Fate Survival back on.
 - **Story Tags are optional and inferred** — an empty tag set is filled from
   Premise, Genre, and Style at generation time by
   `shared/storyTagInference.ts` (deterministic; no model call), written back
@@ -469,7 +510,7 @@ are unchanged; the development script walks the new selector).
   tracking reflects reality.
 - **Save Draft is a new explicit action** — no production equivalent exists
   today (persistence only happened implicitly on generate/export). It uses
-  draft validation only, so it never requires Premise, Genre, Style, or Story
+  draft validation only, so it never requires Style, Genre, Premise, or Story
   Tags, and in the Workshop it saves locally under `local-workshop-creator`
   when signed out.
 - **The mobile drawer renders at `z-[250]`** — above the Workshop
@@ -545,14 +586,17 @@ tree below and should be removed in the same transfer, with one caution
 - `development/ImportPanel.tsx` → `src/features/creation/components/ImportPanel.tsx`
 - `development/SeedLibraryPanel.tsx` → `src/features/creation/components/SeedLibraryPanel.tsx`
 - `development/constants.ts` → `src/features/creation/constants.ts`
-  (adds `STYLE_SUGGESTIONS`; still exports `GENRE_PRESETS`, used by
+  (still exports `GENRE_PRESETS`, used by
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
   is removed in this transfer)
 - `development/form-fields/*` → `src/features/creation/components/form-fields/*`
 - `shared/storySeedSchema.ts` draft/generation validation split, the Style
   correction, and `applyInferredStoryTags` → production's Phase 1 schema
   module (the `IntakeData` view-model field `proseStyle` belongs to
-  production `src/types.ts`)
+  production `src/types.ts`, and now holds a `StoryStyle` value)
+- `shared/storyStyle.ts` → production's creation feature. Transfer before any
+  tradition-specific generation work starts, so both sides key off the same
+  three stable values
 - `shared/storyTagInference.ts` → production's creation feature (or replace it
   there with the `/api/suggest-tags` model call, keeping the same contract:
   infer only when empty, save into the seed, pass into generation)

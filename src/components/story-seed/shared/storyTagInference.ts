@@ -12,9 +12,12 @@
  * never imports presentation code.
  */
 
-/** Tags every seed of a given genre can safely assume. */
+/**
+ * Tags every seed of a given genre can safely assume. `Fate Survival` is
+ * deliberately absent — it is not a genre. Fate ingredients are inferred from
+ * the keyword rules below instead, so a novel of any genre can carry them.
+ */
 const GENRE_TAGS: Record<string, string[]> = {
-  'Fate Survival': ['death flags', 'foreknowledge', 'fate intervention', 'destined death'],
   Xianxia: ['cultivation realms', 'sect politics', 'dao comprehension', 'tribulation events'],
   Xuanhuan: ['bloodline awakening', 'martial techniques', 'tribulation events'],
   'LitRPG / System': ['game systems', 'level progression', 'system missions', 'skill trees'],
@@ -38,6 +41,15 @@ const KEYWORD_TAGS: { match: RegExp; tags: string[] }[] = [
   { match: /\bbetray|traitor\b/i, tags: ['betrayal fallout', 'trust rupture'] },
   { match: /\bassassin|murder|killed?\b/i, tags: ['assassination plots', 'death flags'] },
   { match: /\bregress|reincarnat|reborn|time ?loop|timeline/i, tags: ['regression/reincarnation', 'time loops', 'future knowledge'] },
+  // Fate ingredients — what kinds of fate mechanics the novel may contain.
+  // Unrelated to the Fate Survival experience layer in Story Settings.
+  { match: /\bdoomed?|dies|death sentence|destined to\b/i, tags: ['destined death', 'doom timers'] },
+  { match: /\bstolen (?:fate|destiny)|fate (?:theft|exchange|trade)\b/i, tags: ['stolen fate', 'fate exchange'] },
+  { match: /\b(?:blood|life|karmic) debt|owes? (?:a life|blood)\b/i, tags: ['blood debt', 'life debt'] },
+  { match: /\bkarma|karmic\b/i, tags: ['karmic bonds', 'moral debt'] },
+  { match: /\b(?:broken|failed|false) prophec|prophecy (?:breaks|shatters)\b/i, tags: ['broken prophecy', 'prophecy tracking'] },
+  { match: /\bheaven'?s? (?:punishment|wrath|judgment)|tribulation\b/i, tags: ["heaven's punishment", 'tribulation events'] },
+  { match: /\bborrowed (?:life|lifespan|time)|lifespan\b/i, tags: ['borrowed lifespan', 'curse tracking'] },
   { match: /\bsystem\b|\binterface\b|\bstatus (?:screen|window)\b/i, tags: ['game systems', 'system missions'] },
   { match: /\bsect|clan\b/i, tags: ['sect politics', 'clan politics'] },
   { match: /\bacademy|school|exam|student\b/i, tags: ['academy cultivation', 'exam arcs'] },
@@ -47,7 +59,7 @@ const KEYWORD_TAGS: { match: RegExp; tags: string[] }[] = [
   { match: /\bromance|lover|marriage|beloved\b/i, tags: ['slow-burn romance', 'romantic tension'] },
   { match: /\bharem\b/i, tags: ['harem harmony'] },
   { match: /\bcripple|weak|trash|discarded|abandoned\b/i, tags: ['rising from nothing', 'antihero rise'] },
-  { match: /\bprophec|destin|fate|karma\b/i, tags: ['prophecy tracking', 'fate bonds'] },
+  { match: /\bprophec|destin|fate\b/i, tags: ['fate bonds', 'fate intervention', 'foreknowledge'] },
   { match: /\bmystery|secret|hidden|buried truth\b/i, tags: ['mystery clues', 'hidden identities'] },
   { match: /\bdungeon|tower|floor\b/i, tags: ['dungeon/tower climb', 'floor bosses'] },
   { match: /\bbeast|monster|tame\b/i, tags: ['beast-taming / monster evolution', 'monster evolution'] },

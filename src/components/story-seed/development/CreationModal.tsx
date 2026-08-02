@@ -79,9 +79,9 @@ const createDefaultIntake = (): IntakeData => ({
   mcName: '',
   genrePath: '',
   corePremise: '',
-  // Style starts empty on purpose: a hidden prefill would mark a required
-  // input complete without the creator ever choosing it. StyleWorkspace
-  // offers the Library default as an explicit option instead.
+  // Style holds the chosen novel tradition ('chinese' | 'korean' |
+  // 'japanese'). It starts empty on purpose: a prefill would mark a required
+  // input complete without the creator ever choosing it.
   proseStyle: '',
   desiredPlotDirection: '',
   storyTags: [],
@@ -140,7 +140,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const wasAuthRef = useRef(false);
 
   // Creation workspace state
-  const [activeSection, setActiveSection] = useState<SeedSectionId>('premise');
+  const [activeSection, setActiveSection] = useState<SeedSectionId>('style');
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);

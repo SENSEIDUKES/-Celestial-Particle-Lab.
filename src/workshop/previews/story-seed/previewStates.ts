@@ -48,12 +48,12 @@ export interface PreviewScenario {
 export const scenarios: PreviewScenario[] = [
   {
     id: 'empty-intake',
-    label: 'Empty creation workspace (Premise active)',
+    label: 'Empty creation workspace (Style active)',
     category: 'intake',
   },
   {
     id: 'filled-intake',
-    label: 'Filled workspace (premise, genre, style, tags, plot, world, characters, faction)',
+    label: 'Filled workspace (style, genre, premise, tags, plot, world, characters, faction)',
     category: 'intake',
     uiAction: 'fill-intake',
   },

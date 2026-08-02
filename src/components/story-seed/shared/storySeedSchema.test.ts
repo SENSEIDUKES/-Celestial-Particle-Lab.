@@ -5,6 +5,7 @@ import {
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
   createStorySeedInput,
+  normalizeStorySeedInput,
   storySeedToIntake,
   validateStorySeedDraft,
   validateStorySeedInput,
@@ -28,9 +29,9 @@ import {
 const intake: IntakeData = {
   novelTitle: 'Ashes of the Ninth Meridian',
   mcName: 'Ye Chen',
-  genrePath: 'Fate Survival',
+  genrePath: 'Xianxia',
   corePremise: 'A prince must survive the seven timelines that say he dies.',
-  proseStyle: 'Close-third prose with ledger-like fate entries.',
+  proseStyle: 'chinese',
   storyTags: ['death flags', 'foreknowledge'],
   desiredPlotDirection: 'Escalating court intrigue.',
   destinedEnding: 'The prince survives and severs the court from fate.',
@@ -83,7 +84,7 @@ const blueprint: WorldBlueprint = {
   majorMysteries: ['Who wrote the fate ledgers?'],
   firstArcPromise: 'The first assassination attempt begins at the tournament.',
   tropeRules: 'Consequences before triumph.',
-  styleBible: 'Terse, ominous close-third prose.',
+  styleBible: 'korean',
   destinedEnding: 'The prince survives and severs the court from fate.',
   estimatedArcs: 7,
   unresolvedPlotThreads: ['Identify the court infiltrator'],
@@ -98,14 +99,14 @@ describe('Story Seed creator/story/world contract', () => {
     expect(emptyDraft.story).toMatchObject({ storyTags: [], premise: '', genre: '', style: '' });
   });
 
-  it('requires only Premise, Genre, and Style for generation', () => {
+  it('requires only Style, Genre, and Premise for generation, in that order', () => {
     const generationReady = {
       creator: {},
       story: {
         storyTags: [],
         premise: 'A doomed prince gets one final timeline.',
-        genre: 'Fate Survival',
-        style: 'Tense close-third prose',
+        genre: 'Xianxia',
+        style: 'korean',
         optional: {},
       },
       world: { optional: {} },
@@ -121,11 +122,27 @@ describe('Story Seed creator/story/world contract', () => {
       valid: false,
       errors: [
         'Creator is required.',
-        'Premise is required.',
-        'Genre is required.',
         'Style is required.',
+        'Genre is required.',
+        'Premise is required.',
       ],
     });
+  });
+
+  it('accepts only the three novel traditions as Style', () => {
+    const withStyle = (style: string) => ({
+      creator: {},
+      story: { storyTags: [], premise: 'A premise.', genre: 'Xianxia', style, optional: {} },
+      world: { optional: {} },
+    });
+    for (const tradition of ['chinese', 'korean', 'japanese']) {
+      expect(validateStorySeedInput(withStyle(tradition)).valid).toBe(true);
+      expect(normalizeStorySeedInput(withStyle(tradition)).story.style).toBe(tradition);
+    }
+    // Labels normalize to the stable value; freeform prose never counts.
+    expect(normalizeStorySeedInput(withStyle('Japanese')).story.style).toBe('japanese');
+    expect(validateStorySeedInput(withStyle('Lush, poetic narration')).errors).toEqual(['Style is required.']);
+    expect(normalizeStorySeedInput(withStyle('Lush, poetic narration')).story.style).toBe('');
   });
 
   it('infers Story Tags from Premise, Genre, and Style when they are left empty', () => {
@@ -134,7 +151,10 @@ describe('Story Seed creator/story/world contract', () => {
 
     const inferred = applyInferredStoryTags(untagged).story.storyTags;
     expect(inferred.length).toBeGreaterThan(0);
-    expect(inferred).toContain('death flags');
+    // Genre tags plus fate ingredients read out of the premise — fate tags
+    // survive even though Fate Survival is no longer a genre.
+    expect(inferred).toContain('cultivation realms');
+    expect(inferred).toContain('destined death');
 
     // The inferred set reaches both generation entry points.
     expect(buildBlueprintGenerationPayload(untagged).storySeed.story.storyTags).toEqual(inferred);
@@ -161,8 +181,11 @@ describe('Story Seed creator/story/world contract', () => {
     const { proseStyle: _proseStyle, ...styleless } = intake;
     expect(createStorySeedInput(styleless).story.style).toBe('');
     expect(validateStorySeedInput(createStorySeedInput(styleless)).errors).toEqual(['Style is required.']);
-    // A style bible on a reused blueprint is a real prior choice, so it carries over.
-    expect(createStorySeedInput(styleless, blueprint).story.style).toBe(blueprint.styleBible);
+    // A reused blueprint carries a tradition over; legacy prose text does not.
+    expect(createStorySeedInput(styleless, blueprint).story.style).toBe('korean');
+    expect(
+      createStorySeedInput(styleless, { ...blueprint, styleBible: 'Terse, ominous close-third prose.' }).story.style,
+    ).toBe('');
   });
 
   it('classifies every legacy intake and blueprint field into Creator, Story, or World', () => {

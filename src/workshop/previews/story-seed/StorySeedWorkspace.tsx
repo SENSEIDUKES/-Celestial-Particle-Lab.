@@ -146,22 +146,22 @@ async function runDevelopmentFillScenario() {
     await wait(150);
   };
 
-  // Premise (default active section) — the first required Story input
+  // Style (default active section) — the first decision: the novel tradition
+  await selectSection(/^Style/);
+  getRoots('development').forEach(root =>
+    (root.querySelector('[id="story-style-chinese"]') as HTMLElement | null)?.click());
+
+  // Genre
+  await selectSection(/^Genre/);
+  getRoots('development').forEach(root => clickByText(root, 'button', /^Xianxia$/));
+
+  // Premise
   await selectSection(/^Premise/);
   getRoots('development').forEach(root => setFieldValue(
     root,
     'core-premise-input',
     'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
   ));
-
-  // Genre
-  await selectSection(/^Genre/);
-  getRoots('development').forEach(root => clickByText(root, 'button', /Fate Survival/));
-
-  // Style — accepting the Library default is an explicit choice
-  await selectSection(/^Style/);
-  getRoots('development').forEach(root =>
-    (root.querySelector('[id="accept-default-style-button"]') as HTMLElement | null)?.click());
 
   // Story Tags — optional, but manual tags must survive untouched
   await selectSection(/^Story Tags/);
@@ -219,8 +219,8 @@ async function runDevelopmentFillScenario() {
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
   });
 
-  // Land back on Premise
-  await selectSection(/^Premise/);
+  // Land back on Style
+  await selectSection(/^Style/);
 }
 
 export function StorySeedWorkspace() {

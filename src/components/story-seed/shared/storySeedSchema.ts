@@ -4,9 +4,9 @@ import {
   type StoryAdministrativeMetadata,
 } from './storyAdministrativeMetadata';
 import { inferStoryTags } from './storyTagInference';
+import { normalizeStoryStyle, type StoryStyle } from './storyStyle';
 
 export const STORY_SEED_SCHEMA_VERSION = 2 as const;
-export const DEFAULT_STORY_STYLE = 'Immersive character-focused light-novel prose';
 
 export interface StorySeedCreator {
   // Reserved for creator-controlled settings. The family is required even
@@ -43,7 +43,8 @@ export interface StorySeedStory {
   storyTags: string[];
   premise: string;
   genre: string;
-  style: string;
+  /** The novel's storytelling tradition; `''` until the creator chooses one. */
+  style: StoryStyle | '';
   optional: StorySeedStoryOptional;
 }
 
@@ -307,9 +308,10 @@ export const validateStorySeedInput = (value: unknown): StorySeedValidationResul
   const draft = validateStorySeedDraft(value);
   const errors = [...draft.errors];
   if (isRecord(value) && isRecord(value.story)) {
-    if (!text(value.story.premise)) errors.push('Premise is required.');
+    // Style first: it is the first decision the creation flow asks for.
+    if (!normalizeStoryStyle(value.story.style)) errors.push('Style is required.');
     if (!text(value.story.genre)) errors.push('Genre is required.');
-    if (!text(value.story.style)) errors.push('Style is required.');
+    if (!text(value.story.premise)) errors.push('Premise is required.');
   }
   return { valid: errors.length === 0, errors };
 };
@@ -339,7 +341,7 @@ export const normalizeStorySeedInput = (value: unknown): StorySeedInput => {
       storyTags: stringList(story.storyTags),
       premise: text(story.premise) || '',
       genre: text(story.genre) || '',
-      style: text(story.style) || '',
+      style: normalizeStoryStyle(story.style) || '',
       optional: normalizeStoryOptional(story.optional),
     },
     world: {
@@ -414,10 +416,11 @@ export const createStorySeedInput = (
     storyTags: stringList(intake.storyTags),
     premise: intake.corePremise?.trim() || '',
     genre: intake.genrePath?.trim() || '',
-    // No hidden default: Style is a required input, so an untouched Style
-    // must stay empty and read as incomplete. A blueprint's style bible is a
-    // real prior choice (imported or reused seed), so it still carries over.
-    style: intake.proseStyle?.trim() || blueprint?.styleBible?.trim() || '',
+    // Style is the chosen novel tradition. No hidden default: an untouched
+    // Style stays empty and reads as incomplete. A blueprint's style bible
+    // carries over only when it already holds a valid tradition (a reused or
+    // imported seed); freeform prose text from older seeds does not qualify.
+    style: normalizeStoryStyle(intake.proseStyle) || normalizeStoryStyle(blueprint?.styleBible) || '',
     optional: {
       ...optionalTextFields<StorySeedStoryOptional>(intake as unknown as Record<string, unknown>, [
         'desiredPlotDirection',

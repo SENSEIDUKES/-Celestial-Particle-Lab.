@@ -15,12 +15,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { IntakeData } from '../shared/types';
+import { normalizeStoryStyle } from '../shared/storyStyle';
 
 /**
  * The navigation hierarchy of the creation workspace.
  *
- * Story is the novel's direction — three required inputs (Premise, Genre,
- * Style) followed by seed-level optional direction. World is the novel's
+ * Story is the novel's direction — three required inputs in the order the
+ * flow asks for them (Style, Genre, Premise) followed by seed-level optional
+ * direction. World is the novel's
  * history, fully optional: the Library can generate all of it.
  *
  * A section earns its place here only if it helps *define or recreate the
@@ -36,9 +38,9 @@ import type { IntakeData } from '../shared/types';
 export type SeedFamily = 'story' | 'world';
 
 export type SeedSectionId =
-  | 'premise'
-  | 'genre'
   | 'style'
+  | 'genre'
+  | 'premise'
   | 'story-tags'
   | 'plot-tropes'
   | 'world-identity'
@@ -77,14 +79,15 @@ export const PLOT_TROPE_FIELDS = [
 ] as const;
 
 export const SEED_SECTIONS: SeedSection[] = [
+  // Style first: the tradition frames how every later section is read.
   {
-    id: 'premise',
+    id: 'style',
     family: 'story',
-    label: 'Premise',
-    icon: Feather,
+    label: 'Style',
+    icon: PenLine,
     required: true,
-    tagline: 'The hook or secret catalyst the whole novel bends around.',
-    isFilled: intake => hasText(intake.corePremise),
+    tagline: 'The storytelling tradition your novel belongs to.',
+    isFilled: intake => Boolean(normalizeStoryStyle(intake.proseStyle)),
   },
   {
     id: 'genre',
@@ -96,13 +99,13 @@ export const SEED_SECTIONS: SeedSection[] = [
     isFilled: intake => hasText(intake.genrePath),
   },
   {
-    id: 'style',
+    id: 'premise',
     family: 'story',
-    label: 'Style',
-    icon: PenLine,
+    label: 'Premise',
+    icon: Feather,
     required: true,
-    tagline: 'The prose voice the Library writes in.',
-    isFilled: intake => hasText(intake.proseStyle),
+    tagline: 'The hook or secret catalyst the whole novel bends around.',
+    isFilled: intake => hasText(intake.corePremise),
   },
   {
     id: 'story-tags',
