@@ -5,7 +5,7 @@ import { IntakeData } from '../../shared/types';
 import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
-import { GuidanceNote, WorkspaceShell, workspaceInputClass } from './WorkspaceShell';
+import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass, workspaceInputClass } from './WorkspaceShell';
 
 interface StoryTagsWorkspaceProps {
   intake: IntakeData;
@@ -283,24 +283,33 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1" id="tag-categories">
-          {['All', ...Object.keys(CATEGORIZED_TAGS)].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`rounded-lg border px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-wider transition-all ${
-                activeCategory === cat
-                  ? 'border-portal bg-portal/10 font-bold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                  : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Parent families read as filter tabs — pill-shaped, small-caps
+            serif, brighter edge — so they can never be mistaken for the
+            child tag chips listed below them. */}
+        <div className="space-y-2">
+          <p className={workspaceCompactLabelClass}>Families</p>
+          <div className="flex flex-wrap gap-1.5" id="tag-categories">
+            {['All', ...Object.keys(CATEGORIZED_TAGS)].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`rounded-full border px-3 py-1.5 font-sc text-[10px] font-bold uppercase tracking-[0.18em] transition-all ${
+                  activeCategory === cat
+                    ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]'
+                    : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="scrollbar-thin flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-1" id="filtered-tags-list">
+        {/* Child tags live inside their own glass panel under the tabs. */}
+        <div className="space-y-2">
+          <p className={workspaceCompactLabelClass}>Tags</p>
+          <div className="glass-panel scrollbar-thin flex max-h-56 flex-wrap content-start gap-1.5 overflow-y-auto p-3" id="filtered-tags-list">
           {filteredPresets.length === 0 ? (
             <div className="w-full py-4 text-center font-sans text-xs italic text-neutral-600">
               No celestial tag matches your search within this category.
@@ -324,6 +333,7 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
               );
             })
           )}
+          </div>
         </div>
       </div>
 

@@ -10,6 +10,22 @@
 
 ## Workshop history
 
+- **2026-08-02:** Glass touch-ups from review — the Style tradition buttons
+  and the Story Tag library join the glass system.
+  - **Style choices are now glass choice cards** (`.glass-choice` in
+    `glass-field.css`) — the same glass surface as the fields, driven by a
+    per-option `--choice-accent` custom property. Each tradition has a
+    custom icon and its own color: Chinese blue (`Scroll`, `#04ACFF`),
+    Korean red (`Gem`, `#FF4545`), Japanese green (`Flower2`, `#34D399`)
+    — all verified against `lucide-react@^1.27.0`. Hover brightens, the
+    selected card gets its accent edge and a restrained glow. The stored
+    values remain the stable `'chinese' | 'korean' | 'japanese'` keys; the
+    color/icon mapping is presentation-only and lives in the workspace.
+  - **Story Tag families are unmistakable now** — the parent category
+    buttons became pill-shaped small-caps serif filter tabs under a
+    "Families" label, while the child tags keep their lowercase chip style
+    inside their own labeled `.glass-panel` ("Tags"). Tags themselves are
+    unchanged; only the visual hierarchy between parent and child.
 - **2026-08-02:** Modern glass field system — replaced the flat black form
   controls across every active workspace with one shared glass language
   (translucent dark glass, blue-violet internal gradient, thin cool edge,
