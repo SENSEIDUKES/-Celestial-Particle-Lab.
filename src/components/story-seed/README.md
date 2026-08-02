@@ -10,6 +10,47 @@
 
 ## Workshop history
 
+- **2026-08-02:** Modern glass field system — replaced the flat black form
+  controls across every active workspace with one shared glass language
+  (translucent dark glass, blue-violet internal gradient, thin cool edge,
+  inner highlight, restrained focus glow), matching the approved design
+  reference. Layout, Story/World hierarchy, section order, data wiring, and
+  navigation are unchanged. Details:
+  - **`form-fields/glass-field.css` (new)** — the shared system, applied as
+    one `glass-field` class plus Tailwind layout utilities. Pure gradients
+    and box-shadows, no `backdrop-filter`, so mobile scrolling stays cheap.
+    Covers text inputs, textareas, selects (`.glass-select` wrapper with a
+    custom chevron — never native chrome), tag chips (`.glass-chip`), group
+    panels (`.glass-panel`), and the workspace ambience
+    (`.seed-workspace-ambience`). States: default, hover, focus (strongest
+    cool-blue edge + glow), completed (`data-complete`, a quiet cool
+    accent), invalid (`data-invalid`, the existing warning color on the
+    same glass surface), and native disabled.
+  - **`FormInput` / `FormTextarea` rebuilt on it** — optional leading
+    `icon` resting inside the field's left edge (warms to the focus color
+    via `.glass-field-wrap:focus-within`), touch-friendly
+    `min-h-[2.75rem]`, entered text clearly brighter than placeholder, an
+    automatic subtle completed accent when filled, and an `invalid` prop.
+    Character counts, help text, right elements, overlay children, and
+    every DOM id the preview scripts drive are unchanged.
+  - **All 11 workspaces share it** — `workspaceInputClass` /
+    `workspaceCompactInputClass` / `workspaceCompactLabelClass` in
+    `WorkspaceShell`; contextual icons per field (`User`, `Shield`, `Star`,
+    `Sparkles`, `ShieldAlert`, `HeartCrack`, `Scale`, `BookOpen`, `Globe`,
+    `Landmark`, `MapPin`, `Compass`, `Target`, `Swords`, `Zap`, `Route`,
+    `Flame`, `Layers`, `Hourglass`, `Feather`, `Drama`, `Tag` — all
+    verified against `lucide-react@^1.27.0`); character/faction cards are
+    `.glass-panel`; active Story Tags are `.glass-chip` with the Story
+    accent kept restrained; Premise keeps its ghost-tag Tab overlay on the
+    glass textarea.
+  - **Ambient depth** — a restrained blue-violet radial light field behind
+    the active workspace (gradients only) lets the glass read as floating
+    over the celestial atmosphere; the Story Seed background itself is
+    untouched.
+  - **Deliberately out of scope** — `BlueprintReview`, `ImportPanel`,
+    `SeedLibraryPanel`, and `StoryAuthGate` keep their existing styling
+    (the gate already has its own glass language). No schema, validation,
+    tag-inference, classification, selector, or generation changes.
 - **2026-08-02:** Style became the novel tradition, and the Story order was
   fixed. Structure and the previous correction pass are unchanged.
   - **Style is now Chinese / Korean / Japanese** — a closed set of stable
@@ -188,7 +229,12 @@ development/                  — active Workshop version (Phase 2 creation work
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
                                    CATEGORIZED_TAGS (no Fate Survival genre;
                                    fate tags live in the Fate & Destiny category)
-  form-fields/                 — shared FormInput/FormTextarea used by workspaces
+  form-fields/                 — shared glass field system used by workspaces
+    glass-field.css             — glass surface + select/chip/panel/ambience
+                                  variants and all interactive states
+    FormInput.tsx
+    FormTextarea.tsx
+    index.ts                    — imports glass-field.css, re-exports both
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -445,12 +491,15 @@ are unchanged; the development script walks the new selector).
 - `FeatureWorkspace` + one `manifest.ts` entry (`story-seed`, category `other`
   — no existing `WorkshopCategory` fits an intake/creation flow better; the
   union was not extended since `other` already covers `chapter-generation-flow`)
-- `lucide-react`, `motion/react` (already installed; every icon Phase 2 uses —
-  `Tag`, `Feather`, `Drama`, `PenLine`, `SlidersHorizontal`, `Landmark`,
-  `Users`, `Shield`, `Sparkles`, `Zap`, `Hourglass`, `Ellipsis`, `BookOpen`,
-  `Globe`, `Check`, `ChevronRight`, `Eye`, `X`, `List`, `Bookmark`, `Copy`,
-  `Database`, `Download`, `RefreshCw`, `Search`, `Wand2`, `ShieldAlert` —
-  was verified against this repo's `lucide-react@^1.27.0` export surface)
+- `lucide-react`, `motion/react` (already installed; every icon the
+  development fork uses — `Tag`, `Feather`, `Drama`, `PenLine`,
+  `SlidersHorizontal`, `Landmark`, `Users`, `Shield`, `Sparkles`, `Zap`,
+  `Hourglass`, `Ellipsis`, `BookOpen`, `Globe`, `Check`, `ChevronRight`,
+  `Eye`, `X`, `List`, `Bookmark`, `Copy`, `Database`, `Download`,
+  `RefreshCw`, `Search`, `Wand2`, `ShieldAlert`, plus the glass field
+  icons `User`, `Star`, `HeartCrack`, `Scale`, `MapPin`, `Compass`,
+  `Target`, `Swords`, `Route`, `Flame`, `Layers` — was verified against
+  this repo's `lucide-react@^1.27.0` export surface)
 
 ## Production dependencies intentionally excluded
 

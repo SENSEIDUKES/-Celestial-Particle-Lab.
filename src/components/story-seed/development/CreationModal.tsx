@@ -515,8 +515,11 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           />
         </aside>
 
-        <div className="min-w-0">
-          <main className="p-4 sm:p-8">
+        <div className="relative min-w-0">
+          {/* Restrained celestial ambience the glass fields float over —
+              gradients only, no blur, so mobile scrolling stays cheap. */}
+          <div aria-hidden="true" className="seed-workspace-ambience" />
+          <main className="relative p-4 sm:p-8">
             <motion.div
               key={activeSection}
               initial={{ opacity: 0, y: 8 }}

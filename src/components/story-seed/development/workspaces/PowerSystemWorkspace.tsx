@@ -1,4 +1,5 @@
 import React from 'react';
+import { Flame, Layers } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { getSeedSection } from '../seedSections';
 import { FormInput, FormTextarea } from '../form-fields';
@@ -19,6 +20,7 @@ export const PowerSystemWorkspace = ({ intake, updateIntake }: PowerSystemWorksp
         <FormInput
           id="a11y-control-kytc0oh"
           label="Power Flavor"
+          icon={Flame}
           value={intake.powerFlavor || ''}
           onChange={(val) => updateIntake('powerFlavor', val)}
           placeholder="e.g., Martial arts, Daoist, Demonic, Sword..."
@@ -26,6 +28,7 @@ export const PowerSystemWorkspace = ({ intake, updateIntake }: PowerSystemWorksp
         <FormTextarea
           id="a11y-control-6rmg4xp"
           label="Known Ranks"
+          icon={Layers}
           value={intake.knownRanks || ''}
           onChange={(val) => updateIntake('knownRanks', val)}
           rows={3}

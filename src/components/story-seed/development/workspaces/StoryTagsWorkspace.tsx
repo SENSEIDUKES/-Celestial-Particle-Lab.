@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, Search, Wand2, X } from 'lucide-react';
+import { RefreshCw, Search, Tag, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { IntakeData } from '../../shared/types';
 import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
@@ -112,20 +112,23 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       <div>
         <label htmlFor="custom-tag-input" className="sr-only">Add a custom tag</label>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            id="custom-tag-input"
-            type="text"
-            value={customTagInput}
-            onChange={(e) => setCustomTagInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddCustomTag();
-              }
-            }}
-            placeholder="Type a tag and press Enter..."
-            className={`${workspaceInputClass} flex-1`}
-          />
+          <div className="glass-field-wrap flex-1">
+            <Tag size={15} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
+            <input
+              id="custom-tag-input"
+              type="text"
+              value={customTagInput}
+              onChange={(e) => setCustomTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustomTag();
+                }
+              }}
+              placeholder="Type a tag and press Enter..."
+              className={`${workspaceInputClass} pl-10`}
+            />
+          </div>
           <button
             type="button"
             onClick={handleAddCustomTag}
@@ -172,7 +175,7 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
             {activeTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex animate-fadeIn items-center gap-1.5 rounded border border-portal/30 bg-portal/10 px-2.5 py-1 font-sans text-xs text-portal shadow-[0_0_8px_rgba(4,172,255,0.05)]"
+                className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs"
               >
                 <span className="font-semibold">{tag}</span>
                 <button
@@ -232,10 +235,10 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
                       key={tag}
                       type="button"
                       onClick={() => handleTogglePresetTag(tag)}
-                      className={`flex items-center gap-1 rounded border px-2.5 py-1 font-sans text-xs transition-all duration-300 ${
+                      className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 font-sans text-xs transition-all duration-300 ${
                         isSelected
                           ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                          : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
+                          : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'
                       }`}
                     >
                       {isSelected ? '✓' : '+'} {tag}
@@ -267,14 +270,14 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
               {filteredPresets.length} / {TAG_PRESETS.length}
             </span>
           </div>
-          <div className="relative w-full sm:max-w-xs">
-            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
+          <div className="glass-field-wrap w-full sm:max-w-xs">
+            <Search size={14} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
               placeholder="Filter celestial tags..."
-              className={`${workspaceInputClass} pl-8`}
+              className={`${workspaceInputClass} pl-10`}
               id="celestial-tag-search-input"
             />
           </div>
@@ -286,10 +289,10 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
               key={cat}
               type="button"
               onClick={() => setActiveCategory(cat)}
-              className={`rounded border px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-wider transition-all ${
+              className={`rounded-lg border px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-wider transition-all ${
                 activeCategory === cat
                   ? 'border-portal bg-portal/10 font-bold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                  : 'border-neutral-900 bg-void text-neutral-500 hover:border-neutral-850 hover:text-neutral-350'
+                  : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
               }`}
             >
               {cat}
@@ -310,10 +313,10 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
                   key={preset}
                   type="button"
                   onClick={() => handleTogglePresetTag(preset)}
-                  className={`rounded border px-2.5 py-1 text-xs transition-all duration-300 ${
+                  className={`rounded-lg border px-2.5 py-1 text-xs transition-all duration-300 ${
                     isSelected
                       ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                      : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
+                      : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'
                   }`}
                 >
                   {isSelected ? '✓' : '+'} {preset}
