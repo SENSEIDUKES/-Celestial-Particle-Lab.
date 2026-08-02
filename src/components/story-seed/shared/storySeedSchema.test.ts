@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { IntakeData, WorldBlueprint } from './types';
 import {
+  applyInferredStoryTags,
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
   createStorySeedInput,
+  normalizeStorySeedInput,
+  storySeedToIntake,
+  validateStorySeedDraft,
   validateStorySeedInput,
 } from './storySeedSchema';
 import {
@@ -25,8 +29,9 @@ import {
 const intake: IntakeData = {
   novelTitle: 'Ashes of the Ninth Meridian',
   mcName: 'Ye Chen',
-  genrePath: 'Fate Survival',
+  genrePath: 'Xianxia',
   corePremise: 'A prince must survive the seven timelines that say he dies.',
+  proseStyle: 'chinese',
   storyTags: ['death flags', 'foreknowledge'],
   desiredPlotDirection: 'Escalating court intrigue.',
   destinedEnding: 'The prince survives and severs the court from fate.',
@@ -79,7 +84,7 @@ const blueprint: WorldBlueprint = {
   majorMysteries: ['Who wrote the fate ledgers?'],
   firstArcPromise: 'The first assassination attempt begins at the tournament.',
   tropeRules: 'Consequences before triumph.',
-  styleBible: 'Terse, ominous close-third prose.',
+  styleBible: 'korean',
   destinedEnding: 'The prince survives and severs the court from fate.',
   estimatedArcs: 7,
   unresolvedPlotThreads: ['Identify the court infiltrator'],
@@ -88,44 +93,110 @@ const blueprint: WorldBlueprint = {
 describe('Story Seed creator/story/world contract', () => {
   beforeEach(() => resetStorySeedRepository());
 
-  it('requires Creator and all four Story inputs while accepting an empty World', () => {
-    const valid = {
+  it('lets a draft save with no creative data at all', () => {
+    const emptyDraft = createStorySeedInput({});
+    expect(validateStorySeedDraft(emptyDraft)).toEqual({ valid: true, errors: [] });
+    expect(emptyDraft.story).toMatchObject({ storyTags: [], premise: '', genre: '', style: '' });
+  });
+
+  it('requires only Style, Genre, and Premise for generation, in that order', () => {
+    const generationReady = {
       creator: {},
       story: {
-        storyTags: ['fate survival'],
+        storyTags: [],
         premise: 'A doomed prince gets one final timeline.',
-        genre: 'Fate Survival',
-        style: 'Tense close-third prose',
+        genre: 'Xianxia',
+        style: 'korean',
         optional: {},
       },
       world: { optional: {} },
     };
-    expect(validateStorySeedInput(valid)).toEqual({ valid: true, errors: [] });
+    // Empty Story Tags and an empty World are both valid.
+    expect(validateStorySeedInput(generationReady)).toEqual({ valid: true, errors: [] });
 
-    const invalid = {
+    const empty = {
       story: { storyTags: [], premise: '', genre: '', style: '', optional: {} },
       world: { optional: {} },
     };
-    expect(validateStorySeedInput(invalid)).toEqual({
+    expect(validateStorySeedInput(empty)).toEqual({
       valid: false,
       errors: [
         'Creator is required.',
-        'Story Tags are required.',
-        'Premise is required.',
-        'Genre is required.',
         'Style is required.',
+        'Genre is required.',
+        'Premise is required.',
       ],
     });
   });
 
-  it('classifies every legacy intake and blueprint field into Story or World', () => {
+  it('accepts only the three novel traditions as Style', () => {
+    const withStyle = (style: string) => ({
+      creator: {},
+      story: { storyTags: [], premise: 'A premise.', genre: 'Xianxia', style, optional: {} },
+      world: { optional: {} },
+    });
+    for (const tradition of ['chinese', 'korean', 'japanese']) {
+      expect(validateStorySeedInput(withStyle(tradition)).valid).toBe(true);
+      expect(normalizeStorySeedInput(withStyle(tradition)).story.style).toBe(tradition);
+    }
+    // Labels normalize to the stable value; freeform prose never counts.
+    expect(normalizeStorySeedInput(withStyle('Japanese')).story.style).toBe('japanese');
+    expect(validateStorySeedInput(withStyle('Lush, poetic narration')).errors).toEqual(['Style is required.']);
+    expect(normalizeStorySeedInput(withStyle('Lush, poetic narration')).story.style).toBe('');
+  });
+
+  it('infers Story Tags from Premise, Genre, and Style when they are left empty', () => {
+    const untagged = createStorySeedInput({ ...intake, storyTags: [] });
+    expect(untagged.story.storyTags).toEqual([]);
+
+    const inferred = applyInferredStoryTags(untagged).story.storyTags;
+    expect(inferred.length).toBeGreaterThan(0);
+    // Genre tags plus fate ingredients read out of the premise — fate tags
+    // survive even though Fate Survival is no longer a genre.
+    expect(inferred).toContain('cultivation realms');
+    expect(inferred).toContain('destined death');
+
+    // The inferred set reaches both generation entry points.
+    expect(buildBlueprintGenerationPayload(untagged).storySeed.story.storyTags).toEqual(inferred);
+    const administrative = createStoryAdministrativeMetadata({
+      storyId: 'story-1',
+      creatorId: 'creator-1',
+      sourceSeedId: 'seed-1',
+      originalLanguage: 'en',
+    });
+    expect(
+      buildInitialStoryGenerationPayload(untagged, administrative, blueprint, 10).storySeed.story.storyTags,
+    ).toEqual(inferred);
+  });
+
+  it('preserves manually chosen Story Tags untouched', () => {
+    const seed = createStorySeedInput(intake, blueprint);
+    expect(seed.story.storyTags).toEqual(['death flags', 'foreknowledge']);
+    expect(applyInferredStoryTags(seed).story.storyTags).toEqual(['death flags', 'foreknowledge']);
+    expect(buildBlueprintGenerationPayload(seed).storySeed.story.storyTags)
+      .toEqual(['death flags', 'foreknowledge']);
+  });
+
+  it('never fills Style from a hidden default', () => {
+    const { proseStyle: _proseStyle, ...styleless } = intake;
+    expect(createStorySeedInput(styleless).story.style).toBe('');
+    expect(validateStorySeedInput(createStorySeedInput(styleless)).errors).toEqual(['Style is required.']);
+    // A reused blueprint carries a tradition over; legacy prose text does not.
+    expect(createStorySeedInput(styleless, blueprint).story.style).toBe('korean');
+    expect(
+      createStorySeedInput(styleless, { ...blueprint, styleBible: 'Terse, ominous close-third prose.' }).story.style,
+    ).toBe('');
+  });
+
+  it('classifies every legacy intake and blueprint field into Creator, Story, or World', () => {
     const seed = createStorySeedInput(intake, blueprint);
 
+    expect(seed.creator).toEqual({});
     expect(seed.story).toMatchObject({
       storyTags: ['death flags', 'foreknowledge'],
       premise: intake.corePremise,
       genre: intake.genrePath,
-      style: blueprint.styleBible,
+      style: intake.proseStyle,
       optional: {
         desiredPlotDirection: intake.desiredPlotDirection,
         dangerLevel: intake.dangerLevel,
@@ -147,6 +218,17 @@ describe('Story Seed creator/story/world contract', () => {
     });
     expect(seed.world.optional.additionalCharacters?.map(character => character.name)).toEqual(['Elder Qin', 'Ninth Prince']);
     expect(seed.world.optional.factions?.map(faction => faction.name)).toEqual(['Heavenly Sword Sect', 'Celestial Court']);
+  });
+
+  it('round-trips Style and the World families through the intake view model', () => {
+    const seed = createStorySeedInput(intake, blueprint);
+    const restored = storySeedToIntake(seed);
+    expect(restored.proseStyle).toBe(intake.proseStyle);
+    expect(restored.genrePath).toBe(intake.genrePath);
+    expect(restored.corePremise).toBe(intake.corePremise);
+    expect(restored.storyTags).toEqual(intake.storyTags);
+    expect(restored.worldType).toBe(intake.worldType);
+    expect(restored.customFactions?.map(faction => faction.name)).toContain('Heavenly Sword Sect');
   });
 
   it('serializes only creator/story/world and round-trips portable files', () => {
@@ -171,6 +253,16 @@ describe('Story Seed creator/story/world contract', () => {
       story: { storyTags: intake.storyTags, premise: intake.corePremise },
       world: { optional: { title: blueprint.title } },
     });
+  });
+
+  it('persists an incomplete draft and reloads it', async () => {
+    const draft = createStorySeedInput({ corePremise: 'Only the premise so far.' });
+    const saved = await createStorySeed('creator-1', draft);
+    expect(saved.story).toMatchObject({ premise: 'Only the premise so far.', genre: '', style: '', storyTags: [] });
+
+    const [reloaded] = await listStorySeeds('creator-1');
+    expect(reloaded.story.premise).toBe('Only the premise so far.');
+    expect(reloaded.world.optional).toEqual({});
   });
 
   it('saves, loads, and updates an account-owned seed record', async () => {
@@ -218,7 +310,7 @@ describe('Story Seed creator/story/world contract', () => {
     expect(createStorySeedInput(intake, blueprint)).not.toHaveProperty('administrative');
   });
 
-  it('places required Story Tags and administrative references in generation requests', () => {
+  it('places the final Story Tags and administrative references in generation requests', () => {
     const seed = createStorySeedInput(intake, blueprint);
     const administrative = createStoryAdministrativeMetadata({
       storyId: 'story-1',

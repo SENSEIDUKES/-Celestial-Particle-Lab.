@@ -36,6 +36,8 @@ export interface IntakeData {
   mcName?: string;
   genrePath?: string;
   corePremise?: string;
+  /** The required Story input "Style" — the prose voice the Library writes in. */
+  proseStyle?: string;
   desiredPlotDirection?: string;
   storyTags?: string[];
   destinedEnding?: string;

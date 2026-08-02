@@ -112,9 +112,9 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'The full CreationModal flow on the Phase 1 Creator / Story / World data contract — intake, import/export, saved-seed library, and World Blueprint review. Genre Path / Fate Survival now lives in the separate Story Settings feature.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with focused section workspaces, three required Story inputs in order (Style — the Chinese/Korean/Japanese novel tradition — then Genre and Premise), automatic Story Tag inference, always-available Save Draft, and a mobile section drawer. Blueprint review, import/export, and saved-seed library included; Fate Survival and experience settings live in the separate Story Settings feature.',
     category: 'other',
-    version: 'v2.0',
+    version: 'v1.3',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',

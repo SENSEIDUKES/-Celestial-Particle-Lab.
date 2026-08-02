@@ -1,7 +1,7 @@
 export type PreviewCategory = 'intake' | 'blueprint' | 'library' | 'auth';
 
 export const PREVIEW_CATEGORIES: { id: PreviewCategory; label: string }[] = [
-  { id: 'intake', label: 'Intake Form' },
+  { id: 'intake', label: 'Creation Workspace' },
   { id: 'blueprint', label: 'Blueprint Review' },
   { id: 'library', label: 'Seed Library' },
   { id: 'auth', label: 'Sign In' },
@@ -30,9 +30,9 @@ export interface PreviewScenario {
   signedIn?: boolean;
   /**
    * Mirrors production's `LOCAL_ONLY_MODE`. Defaults to `true` (no auth
-   * gate, Seed Library panel hidden — matches almost every production
-   * deployment). Set `false` to reach the auth-gated screen or show the
-   * account-only Seed Library panel, both hidden whenever `true`.
+   * gate, Seed Library menu item hidden — matches almost every production
+   * deployment). Set `false` to reach the auth-gated screen or enable the
+   * account-only Seed Library, both hidden whenever `true`.
    */
   localOnlyMode?: boolean;
   /** Populate the mock seed library for this scenario. */
@@ -42,18 +42,18 @@ export interface PreviewScenario {
    * clicking the actual rendered control (never a shortcut into internal
    * state) — same approach as `reader-chamber`'s `clickInChamber`.
    */
-  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed';
+  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed' | 'open-library';
 }
 
 export const scenarios: PreviewScenario[] = [
   {
     id: 'empty-intake',
-    label: 'Empty intake form',
+    label: 'Empty creation workspace (Style active)',
     category: 'intake',
   },
   {
     id: 'filled-intake',
-    label: 'Filled intake (core, world, MC, power, plot, +1 character, +1 faction)',
+    label: 'Filled workspace (style, genre, premise, tags, plot, world, characters, faction)',
     category: 'intake',
     uiAction: 'fill-intake',
   },
@@ -65,7 +65,7 @@ export const scenarios: PreviewScenario[] = [
   },
   {
     id: 'import-panel-open',
-    label: 'Import World Seed panel open',
+    label: 'Import Story Seed panel open',
     category: 'intake',
     uiAction: 'open-import-panel',
   },
@@ -96,6 +96,7 @@ export const scenarios: PreviewScenario[] = [
     signedIn: true,
     localOnlyMode: false,
     seedLibrary: 'empty',
+    uiAction: 'open-library',
   },
   {
     id: 'library-populated',
@@ -104,6 +105,7 @@ export const scenarios: PreviewScenario[] = [
     signedIn: true,
     localOnlyMode: false,
     seedLibrary: 'populated',
+    uiAction: 'open-library',
   },
   {
     id: 'auth-gated',
