@@ -6,8 +6,9 @@ import React from 'react';
  * Frosted-glass title plaque with the cool fluid glow behind it
  * (.seed-rainbow-glow), luminous ivory-to-gold title
  * (.seed-title-presence), and an optional gold-shimmer subtitle
- * (.seed-subtitle-shimmer). An optional emblem can sit to the left;
- * pass `emblemHref` to make it a home button.
+ * (.seed-subtitle-shimmer). An optional emblem can sit to the left inside
+ * the same animated portal spectrum as the plaque; pass `emblemHref` to
+ * make it a home button.
  *
  * The seed-* styles live globally in src/styles.css.
  *
@@ -37,12 +38,24 @@ export function LibraryHeaderBadge({
   emblemHref,
 }: LibraryHeaderBadgeProps) {
   const emblem = emblemSrc ? (
-    <img
-      src={emblemSrc}
-      alt={emblemAlt}
-      referrerPolicy="no-referrer"
-      className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_18px_rgba(212,175,55,0.5),0_0_48px_rgba(212,175,55,0.28)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(212,175,55,0.75),0_0_72px_rgba(212,175,55,0.4)]"
-    />
+    <span className="relative isolate inline-flex h-10 w-10 shrink-0 items-center justify-center sm:h-12 sm:w-12">
+      {/* Reuse the plaque spectrum as both a soft portal aura and a crisp
+          chromatic rim. The emblem remains gold at its core for contrast. */}
+      <span
+        aria-hidden="true"
+        className="seed-rainbow-glow absolute -inset-2 rounded-full opacity-60 blur-[10px] transition-all duration-500 group-hover:scale-110 group-hover:opacity-90 group-hover:blur-[13px]"
+      />
+      <span
+        aria-hidden="true"
+        className="seed-rainbow-glow absolute -inset-[2px] rounded-full opacity-90 shadow-[0_0_14px_rgba(124,92,255,0.35)] transition-opacity duration-300 group-hover:opacity-100"
+      />
+      <img
+        src={emblemSrc}
+        alt={emblemAlt}
+        referrerPolicy="no-referrer"
+        className="relative z-10 h-full w-full rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_14px_rgba(212,175,55,0.45),0_0_34px_rgba(4,172,255,0.18)] transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(212,175,55,0.65),0_0_52px_rgba(124,92,255,0.34)]"
+      />
+    </span>
   ) : null;
 
   return (

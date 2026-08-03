@@ -10,6 +10,12 @@
 
 ## Workshop history
 
+- **2026-08-03:** Extended the title plaque's animated blue-violet-gold
+  spectrum into the Celestial Library `S` emblem. The development badge now
+  uses that exact portal gradient as a soft outer aura and a crisp chromatic
+  rim, while retaining a restrained gold core for legibility. Hover deepens
+  the portal glow without changing the emblem size or header layout, and the
+  existing reduced-motion rule keeps the spectrum static when requested.
 - **2026-08-03:** Mobile refinement pass on the `LibraryHeaderBadge` title
   plaque — on phones the badge dominated the header and the subtitle wrapped
   onto two lines. Below `sm` the emblem is now 40px (was 48px), the title is
