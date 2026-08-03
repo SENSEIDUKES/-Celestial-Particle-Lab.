@@ -53,6 +53,7 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
+import { LibraryHeaderBadge } from './form-fields';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
@@ -375,37 +376,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     <div className="mx-auto max-w-7xl pb-24" id="creation-portal-root">
       {/* Header */}
       <header className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {/* S emblem doubles as the home button — back to the main page. */}
-          <a
-            href="/"
-            title="Story Seed home"
-            aria-label="Story Seed home"
-            className="group shrink-0 rounded-full"
-          >
-            <img
-              src={CELESTIAL_LIBRARY_EMBLEM_URL}
-              alt="Celestial Library"
-              referrerPolicy="no-referrer"
-              className="h-12 w-12 rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_18px_rgba(212,175,55,0.5),0_0_48px_rgba(212,175,55,0.28)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(212,175,55,0.75),0_0_72px_rgba(212,175,55,0.4)]"
-            />
-          </a>
-          <div className="relative">
-            {/* Fluid rainbow glow bleeding out from behind the glass shell. */}
-            <div
-              aria-hidden="true"
-              className="seed-rainbow-glow absolute -inset-0.5 rounded-2xl opacity-25 blur-lg"
-            />
-            <div className="relative rounded-xl border border-white/15 bg-white/[0.05] px-5 py-3 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05)]">
-              <h1 className="seed-title-presence font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em]">
-                Story Seed
-              </h1>
-              <p className="seed-subtitle-shimmer mt-1 font-sc text-[11px] font-bold uppercase tracking-[0.3em]">
-                Grow Your Universe
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* S emblem doubles as the home button — back to the main page. */}
+        <LibraryHeaderBadge
+          title="Story Seed"
+          subtitle="Grow Your Universe"
+          emblemSrc={CELESTIAL_LIBRARY_EMBLEM_URL}
+          emblemAlt="Celestial Library"
+          emblemHref="/"
+        />
 
         {/* Save Draft is never gated on creative completeness — a draft exists
             to preserve progress. Seed import/library/export stay plain,
