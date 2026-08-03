@@ -54,6 +54,7 @@ import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { LibraryHeaderBadge } from './library';
+import { LibraryButton } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
@@ -391,46 +392,44 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             to preserve progress. Seed import/library/export stay plain,
             always-visible actions rather than a hidden overflow menu. */}
         <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
-          <button
-            type="button"
+          <LibraryButton
             onClick={handleSaveDraft}
             disabled={isGenerating}
             title="Save this Story Seed draft"
-            className="inline-flex min-h-[2.5rem] items-center gap-2 rounded border border-neutral-800 bg-neutral-950 px-3.5 py-2 font-sc text-[11px] font-bold uppercase tracking-widest text-neutral-200 transition-all hover:border-portal/60 hover:text-portal disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
+            icon={savedFeedback ? Check : Bookmark}
           >
-            {savedFeedback ? <Check size={13} className="text-portal" /> : <Bookmark size={13} />}
             <span className="hidden sm:inline">{savedFeedback ? 'Saved' : 'Save Draft'}</span>
             <span className="sm:hidden">{savedFeedback ? 'Saved' : 'Save'}</span>
-          </button>
+          </LibraryButton>
 
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
+          <div className="flex items-center gap-1">
+            <LibraryButton
+              variant="ghost"
+              size="sm"
               onClick={() => setShowImportPanel(open => !open)}
-              className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
+              icon={Copy}
             >
-              <Copy size={12} />
               Import
-            </button>
+            </LibraryButton>
             {accountSignedIn && (
-              <button
-                type="button"
+              <LibraryButton
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowLibrary(open => !open)}
-                className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
+                icon={Database}
               >
-                <Database size={12} />
                 My Seeds
-              </button>
+              </LibraryButton>
             )}
             {accountSignedIn && savedSeeds.length > 0 && (
-              <button
-                type="button"
+              <LibraryButton
+                variant="ghost"
+                size="sm"
                 onClick={handleExportAllSeeds}
-                className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
+                icon={Download}
               >
-                <Download size={12} />
                 Export All
-              </button>
+              </LibraryButton>
             )}
           </div>
         </div>
@@ -482,14 +481,13 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           {/* Action bar — required tracking + generation */}
           <div className="sticky bottom-0 z-30 border-t border-neutral-900/80 bg-black/85 px-4 py-3.5 backdrop-blur-md sm:px-8">
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <LibraryButton
                 onClick={() => setSelectorOpen(true)}
-                className="inline-flex min-h-[2.5rem] items-center gap-2 rounded border border-neutral-800 bg-neutral-950 px-3.5 py-2 font-sc text-[11px] font-bold uppercase tracking-widest text-neutral-300 transition-colors hover:border-portal/50 hover:text-portal lg:hidden"
+                icon={List}
+                className="lg:hidden"
               >
-                <List size={14} />
                 Sections
-              </button>
+              </LibraryButton>
 
               <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
                 <div className="flex shrink-0 items-center gap-1.5" aria-label={`${requiredComplete} of ${REQUIRED_STORY_SECTIONS.length} required Story inputs complete`}>
@@ -511,29 +509,28 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 {requiredComplete}/{REQUIRED_STORY_SECTIONS.length} required
               </p>
 
-              <button
-                type="button"
+              <LibraryButton
+                variant="primary"
+                size="lg"
                 onClick={handleGenerateBlueprintClick}
                 disabled={!canGenerate}
+                loading={isGenerating}
+                // While VERSA drafts, its mark replaces the generic spinner.
+                loadingIndicator={activeAgentId === 'versa' ? (
+                  <img src={AGENTS.VERSA.logoUrl} className="h-5 w-5 shrink-0 animate-pulse object-contain" alt="" aria-hidden="true" />
+                ) : undefined}
                 title={missing.length > 0 ? `Missing required: ${missing.map(section => section.label).join(', ')}` : 'Generate the World Blueprint'}
-                className="inline-flex min-h-[2.75rem] shrink-0 cursor-pointer items-center gap-2 rounded border border-human bg-human px-4 py-2.5 font-sc text-xs font-bold uppercase tracking-widest text-signal shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all hover:bg-void hover:text-human disabled:pointer-events-none disabled:opacity-50 sm:px-6"
+                className="shrink-0"
               >
                 {isGenerating ? (
-                  <>
-                    {activeAgentId === 'versa' ? (
-                      <img src={AGENTS.VERSA.logoUrl} className="h-5 w-5 animate-pulse object-contain" alt="VERSA" />
-                    ) : (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }} className="h-4 w-4 rounded-full border-2 border-neutral-400 border-t-transparent" />
-                    )}
-                    <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Generating...'}</span>
-                  </>
+                  <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Generating...'}</span>
                 ) : (
                   <>
                     <span className="hidden sm:inline">Forge World Blueprint</span>
                     <span className="sm:hidden">Forge</span>
                   </>
                 )}
-              </button>
+              </LibraryButton>
             </div>
           </div>
         </div>
@@ -576,14 +573,13 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 <p className="font-sc text-xs font-bold uppercase tracking-widest text-neutral-400">
                   Story Seed Sections
                 </p>
-                <button
-                  type="button"
+                <LibraryButton
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setSelectorOpen(false)}
                   aria-label="Close sections"
-                  className="rounded-full border border-neutral-800 p-1.5 text-neutral-400 transition-colors hover:border-neutral-600 hover:text-signal"
-                >
-                  <X size={14} />
-                </button>
+                  icon={X}
+                />
               </div>
               <StorySeedSelector
                 seed={seed}
