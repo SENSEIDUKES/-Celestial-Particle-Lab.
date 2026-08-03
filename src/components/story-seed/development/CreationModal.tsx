@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Bookmark, Check, Copy, Database, Download, Ellipsis, List, X } from 'lucide-react';
+import { Bookmark, Check, Copy, Database, Download, List, X } from 'lucide-react';
 import { IntakeData, WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -16,12 +16,13 @@ import {
   updateStorySeed,
 } from '../shared/storySeedRepository';
 import {
+  applyInferredStoryTags,
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
   createStorySeedInput,
-  DEFAULT_STORY_STYLE,
   storySeedToBlueprint,
   storySeedToIntake,
+  validateStorySeedDraft,
   validateStorySeedInput,
   type BlueprintGenerationPayload,
   type InitialStoryGenerationPayload,
@@ -33,25 +34,22 @@ import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
 
 // Phase 2 creation workspace
 import {
-  getSeedSection,
   missingRequiredSections,
   REQUIRED_STORY_SECTIONS,
   type SeedSectionId,
 } from './seedSections';
 import { StorySeedSelector } from './StorySeedSelector';
-import { StorySeedSummary } from './StorySeedSummary';
 import { StoryTagsWorkspace } from './workspaces/StoryTagsWorkspace';
 import { PremiseWorkspace } from './workspaces/PremiseWorkspace';
 import { GenreWorkspace } from './workspaces/GenreWorkspace';
 import { StyleWorkspace } from './workspaces/StyleWorkspace';
-import { StorySettingsWorkspace } from './workspaces/StorySettingsWorkspace';
+import { PlotTropesWorkspace } from './workspaces/PlotTropesWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
 import { CharactersWorkspace } from './workspaces/CharactersWorkspace';
 import { FactionsWorkspace } from './workspaces/FactionsWorkspace';
 import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
-import { OtherWorldSettingsWorkspace } from './workspaces/OtherWorldSettingsWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { BlueprintReview } from './BlueprintReview';
@@ -77,12 +75,14 @@ const CELESTIAL_LIBRARY_EMBLEM_URL =
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
 
 const createDefaultIntake = (): IntakeData => ({
-  creatorPenName: '',
   novelTitle: '',
   mcName: '',
   genrePath: '',
   corePremise: '',
-  proseStyle: DEFAULT_STORY_STYLE,
+  // Style holds the chosen novel tradition ('chinese' | 'korean' |
+  // 'japanese'). It starts empty on purpose: a prefill would mark a required
+  // input complete without the creator ever choosing it.
+  proseStyle: '',
   desiredPlotDirection: '',
   storyTags: [],
   worldType: '',
@@ -90,8 +90,6 @@ const createDefaultIntake = (): IntakeData => ({
   societyStructure: '',
   dangerLevel: '',
   generalAtmosphere: '',
-  universeOverview: '',
-  majorMysteries: '',
   startingIdentity: '',
   personality: '',
   mainFlaw: '',
@@ -117,8 +115,9 @@ const createDefaultIntake = (): IntakeData => ({
   betrayalLevel: '',
   thingsToAvoid: '',
   mustIncludeElements: '',
-  fatePressure: 'Balanced',
   makeItWorkInstruction: '',
+  // No `fatePressure` default: Fate Survival is an experience layer owned by
+  // the separate Story Settings feature, so Story Seed must not write it.
 });
 
 export default function CreationModal({ onStartStory, onGenerateBlueprint, isGenerating: isGeneratingProp, error }: CreationModalProps) {
@@ -140,12 +139,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [authDissolving, setAuthDissolving] = useState(false);
   const wasAuthRef = useRef(false);
 
-  // Phase 2 workspace state
-  const [activeSection, setActiveSection] = useState<SeedSectionId>('story-tags');
+  // Creation workspace state
+  const [activeSection, setActiveSection] = useState<SeedSectionId>('style');
   const [selectorOpen, setSelectorOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
   const savedFeedbackTimer = useRef<number | null>(null);
 
@@ -217,9 +214,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     return saved;
   };
 
+  /**
+   * Draft saving deliberately uses draft validation only: an incomplete seed
+   * is exactly what a draft is for. Premise, Genre, Style, and Story Tags may
+   * all be empty and the current progress is still preserved.
+   */
   const handleSaveDraft = async () => {
     const seedInput = createStorySeedInput(intake);
-    const validation = validateStorySeedInput(seedInput);
+    const validation = validateStorySeedDraft(seedInput);
     if (!validation.valid) {
       setSeedError(validation.errors.join(' '));
       return;
@@ -271,20 +273,29 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     setSeedError(null);
   };
 
+  /**
+   * Generation requires Premise, Genre, and Style. Story Tags never block it:
+   * an empty set is inferred from those three inputs, written back into the
+   * workspace so the creator sees it, and saved with the seed.
+   */
   const handleGenerateBlueprintClick = async () => {
     if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
-    const seedInput = createStorySeedInput(intake);
-    const validation = validateStorySeedInput(seedInput);
+    const validation = validateStorySeedInput(createStorySeedInput(intake));
     if (!validation.valid) {
       setSeedError(validation.errors.join(' '));
       return;
+    }
+    const seedInput = applyInferredStoryTags(createStorySeedInput(intake));
+    const finalTags = seedInput.story.storyTags;
+    if ((intake.storyTags || []).length === 0 && finalTags.length > 0) {
+      updateIntake('storyTags', finalTags);
     }
     try {
       const bp = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
       setBlueprint(bp);
       setStage('blueprint');
       try {
-        await persistSeed(createStorySeedInput(intake, bp));
+        await persistSeed(applyInferredStoryTags(createStorySeedInput({ ...intake, storyTags: finalTags }, bp)));
         setSeedError(null);
       } catch (seedSaveError) {
         console.error('Failed to save generated story seed:', seedSaveError);
@@ -306,7 +317,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       unresolvedPlotThreads: (blueprint.unresolvedPlotThreads || []).map(f => f.trim()).filter(Boolean),
     };
     try {
-      const seedInput = createStorySeedInput(intake, cleanBlueprint);
+      const seedInput = applyInferredStoryTags(createStorySeedInput(intake, cleanBlueprint));
       const savedSeed = await persistSeed(seedInput);
       if (!LOCAL_ONLY_MODE && !savedSeed) return;
       const sourceSeedId = savedSeed?.id || currentSeed?.id || `local-seed-${generateUUID()}`;
@@ -390,22 +401,20 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const renderWorkspace = () => {
     switch (activeSection) {
-      case 'story-tags': return <StoryTagsWorkspace {...workspaceProps} />;
       case 'premise': return <PremiseWorkspace {...workspaceProps} />;
       case 'genre': return <GenreWorkspace {...workspaceProps} />;
       case 'style': return <StyleWorkspace {...workspaceProps} />;
-      case 'story-settings': return <StorySettingsWorkspace {...workspaceProps} />;
+      case 'story-tags': return <StoryTagsWorkspace {...workspaceProps} />;
+      case 'plot-tropes': return <PlotTropesWorkspace {...workspaceProps} />;
       case 'world-identity': return <WorldIdentityWorkspace {...workspaceProps} />;
       case 'characters': return <CharactersWorkspace {...workspaceProps} />;
       case 'factions': return <FactionsWorkspace {...workspaceProps} />;
       case 'abilities': return <AbilitiesWorkspace {...workspaceProps} />;
       case 'power-system': return <PowerSystemWorkspace {...workspaceProps} />;
       case 'destined-ending': return <DestinedEndingWorkspace {...workspaceProps} />;
-      case 'other-world-settings': return <OtherWorldSettingsWorkspace {...workspaceProps} />;
     }
   };
 
-  const activeSeedSection = getSeedSection(activeSection);
   const accountSignedIn = !LOCAL_ONLY_MODE && Boolean(currentUser);
 
   return (
@@ -429,12 +438,15 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 pt-1">
+        {/* Save Draft is never gated on creative completeness — a draft exists
+            to preserve progress. Seed import/library/export stay plain,
+            always-visible actions rather than a hidden overflow menu. */}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
           <button
             type="button"
             onClick={handleSaveDraft}
-            disabled={missing.length > 0 || isGenerating}
-            title={missing.length > 0 ? `Missing required: ${missing.map(section => section.label).join(', ')}` : 'Save this Story Seed draft'}
+            disabled={isGenerating}
+            title="Save this Story Seed draft"
             className="inline-flex min-h-[2.5rem] items-center gap-2 rounded border border-neutral-800 bg-neutral-950 px-3.5 py-2 font-sc text-[11px] font-bold uppercase tracking-widest text-neutral-200 transition-all hover:border-portal/60 hover:text-portal disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
           >
             {savedFeedback ? <Check size={13} className="text-portal" /> : <Bookmark size={13} />}
@@ -442,84 +454,38 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             <span className="sm:hidden">{savedFeedback ? 'Saved' : 'Save'}</span>
           </button>
 
-          <div className="relative">
+          <div className="flex items-center gap-4">
             <button
               type="button"
-              aria-label="Story Seed actions"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(open => !open)}
-              className="inline-flex min-h-[2.5rem] items-center justify-center rounded border border-neutral-800 bg-neutral-950 px-2.5 py-2 text-neutral-400 transition-all hover:border-neutral-600 hover:text-signal"
+              onClick={() => setShowImportPanel(open => !open)}
+              className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
             >
-              <Ellipsis size={16} />
+              <Copy size={12} />
+              Import
             </button>
-            {menuOpen && (
-              <>
-                <button
-                  type="button"
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  onClick={() => setMenuOpen(false)}
-                  className="fixed inset-0 z-40 cursor-default bg-transparent"
-                />
-                <div className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 shadow-2xl">
-                  <button
-                    type="button"
-                    onClick={() => { setShowImportPanel(open => !open); setMenuOpen(false); }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left font-sans text-xs text-neutral-300 transition-colors hover:bg-white/5 hover:text-signal"
-                  >
-                    <Copy size={13} className="text-portal" />
-                    Import Story Seed
-                  </button>
-                  {accountSignedIn && (
-                    <button
-                      type="button"
-                      onClick={() => { setShowLibrary(open => !open); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left font-sans text-xs text-neutral-300 transition-colors hover:bg-white/5 hover:text-signal"
-                    >
-                      <Database size={13} className="text-portal" />
-                      My Story Seeds
-                    </button>
-                  )}
-                  {accountSignedIn && (
-                    <button
-                      type="button"
-                      onClick={() => { handleExportAllSeeds(); setMenuOpen(false); }}
-                      disabled={savedSeeds.length === 0}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left font-sans text-xs text-neutral-300 transition-colors hover:bg-white/5 hover:text-signal disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Download size={13} className="text-portal" />
-                      Export All Seeds
-                    </button>
-                  )}
-                </div>
-              </>
+            {accountSignedIn && (
+              <button
+                type="button"
+                onClick={() => setShowLibrary(open => !open)}
+                className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
+              >
+                <Database size={12} />
+                My Seeds
+              </button>
+            )}
+            {accountSignedIn && savedSeeds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportAllSeeds}
+                className="inline-flex items-center gap-1.5 font-sans text-xs text-neutral-500 transition-colors hover:text-portal"
+              >
+                <Download size={12} />
+                Export All
+              </button>
             )}
           </div>
         </div>
       </header>
-
-      {/* Creator — near the top, deliberately quieter than the required Story inputs */}
-      <div className="mt-8 flex items-center gap-3 rounded-xl border border-neutral-900/70 bg-neutral-950/40 px-4 py-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900/60 text-neutral-400">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-        <div className="min-w-0 flex-1">
-          <label htmlFor="creator-pen-name-input" className="block font-sc text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-            Creator
-          </label>
-          <input
-            id="creator-pen-name-input"
-            type="text"
-            value={intake.creatorPenName || ''}
-            onChange={(e) => updateIntake('creatorPenName', e.target.value)}
-            placeholder="Your name or pen name..."
-            className="w-full bg-transparent pt-0.5 font-sans text-sm text-signal placeholder-neutral-600 focus:outline-none"
-          />
-        </div>
-      </div>
 
       {accountSignedIn && showLibrary && (
         <div className="mt-6">
@@ -546,12 +512,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             intake={intake}
             activeSection={activeSection}
             onSelect={setActiveSection}
-            onPreview={() => setShowSummary(true)}
           />
         </aside>
 
-        <div className="min-w-0">
-          <main className="p-4 sm:p-8">
+        <div className="relative min-w-0">
+          {/* Restrained celestial ambience the glass fields float over —
+              gradients only, no blur, so mobile scrolling stays cheap. */}
+          <div aria-hidden="true" className="seed-workspace-ambience" />
+          <main className="relative p-4 sm:p-8">
             <motion.div
               key={activeSection}
               initial={{ opacity: 0, y: 8 }}
@@ -630,12 +598,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         onImport={handleImport}
       />
 
-      <StorySeedSummary
-        open={showSummary}
-        intake={intake}
-        onClose={() => setShowSummary(false)}
-      />
-
       {/* Mobile section drawer */}
       <AnimatePresence>
         {selectorOpen && (
@@ -677,10 +639,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 onSelect={(id) => {
                   setActiveSection(id);
                   setSelectorOpen(false);
-                }}
-                onPreview={() => {
-                  setSelectorOpen(false);
-                  setShowSummary(true);
                 }}
               />
             </motion.div>

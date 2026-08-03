@@ -1,6 +1,7 @@
 import React from 'react';
+import { Check, Flower2, Gem, Scroll, type LucideIcon } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
-import { STYLE_SUGGESTIONS } from '../constants';
+import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
 import { getSeedSection } from '../seedSections';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
@@ -10,63 +11,70 @@ interface StyleWorkspaceProps {
 }
 
 /**
- * Required Story workspace: prose style. Pre-filled with the Library default
- * so a fresh seed is valid; any preset chip or free edit replaces it.
+ * Per-tradition presentation for the glass choice cards: a custom icon and
+ * the tradition's accent color (Chinese blue, Korean red, Japanese green).
+ * Purely visual — the stored values stay the stable `StoryStyle` keys.
+ */
+const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; accent: string }> = {
+  chinese: { icon: Scroll, accent: '#04ACFF' },
+  korean: { icon: Gem, accent: '#FF4545' },
+  japanese: { icon: Flower2, accent: '#34D399' },
+};
+
+/**
+ * The first required Story workspace: the novel's storytelling tradition.
+ *
+ * Three foundational choices, nothing more. This is the structural skeleton —
+ * the tradition is stored and carried through save, export, and generation,
+ * but no tradition-specific generation behavior exists yet (see
+ * `shared/storyStyle.ts` for where that will attach).
  */
 export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) => {
   const section = getSeedSection('style');
-  const style = intake.proseStyle || '';
+  const selected = normalizeStoryStyle(intake.proseStyle);
 
   return (
-    <WorkspaceShell section={section} complete={Boolean(style.trim())}>
-      <div>
-        <div className="mb-2 flex items-end justify-between">
-          <label htmlFor="story-style-input" className="block font-sc text-xs uppercase tracking-widest text-neutral-400">
-            Prose Style
-          </label>
-          <span className="font-mono text-[10px] text-neutral-500">{style.length} / 600</span>
-        </div>
-        <textarea
-          id="story-style-input"
-          maxLength={600}
-          value={style}
-          onChange={(e) => updateIntake('proseStyle', e.target.value)}
-          rows={3}
-          placeholder="e.g., Immersive character-focused light-novel prose"
-          className="w-full resize-none rounded border border-neutral-800 bg-neutral-950/80 p-3 font-sans text-sm text-signal placeholder-neutral-600 focus:border-portal focus:outline-none"
-        />
-      </div>
-
-      <div>
-        <p className="mb-2 block font-sc text-xs uppercase tracking-widest text-neutral-400">
-          Style presets
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {STYLE_SUGGESTIONS.map((suggestion) => {
-            const isSelected = style.trim() === suggestion;
-            return (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => updateIntake('proseStyle', suggestion)}
-                aria-pressed={isSelected}
-                className={`rounded border px-2.5 py-1 font-sans text-xs transition-all duration-200 ${
-                  isSelected
-                    ? 'border-portal bg-portal/10 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                    : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
+    <WorkspaceShell section={section} complete={Boolean(selected)}>
+      <div
+        role="radiogroup"
+        aria-label="Novel tradition"
+        id="story-style-options"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+      >
+        {STORY_STYLE_OPTIONS.map(option => {
+          const isSelected = selected === option.value;
+          const { icon: Icon, accent } = STYLE_PRESENTATION[option.value];
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              id={`story-style-${option.value}`}
+              onClick={() => updateIntake('proseStyle', option.value)}
+              data-selected={isSelected}
+              style={{ '--choice-accent': accent } as React.CSSProperties}
+              className="glass-choice flex min-h-[5.5rem] flex-col items-center justify-center gap-2.5 px-4 py-4"
+            >
+              <Icon size={19} aria-hidden="true" className="glass-choice-icon" />
+              <span
+                className={`flex items-center gap-2 font-display text-lg font-bold uppercase tracking-[0.12em] transition-colors ${
+                  isSelected ? 'text-signal' : 'text-neutral-300'
                 }`}
               >
-                {suggestion}
-              </button>
-            );
-          })}
-        </div>
+                {isSelected && (
+                  <Check size={14} aria-hidden="true" style={{ color: accent }} />
+                )}
+                {option.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <GuidanceNote title="How style helps">
-        Style is the voice every chapter is written in — pacing of sentences, density of description,
-        how humor and violence land. The Library default is already filled in; refine it only if the
-        novel should sound different.
+        Style is the storytelling tradition your novel belongs to. It is the first decision because
+        everything after it — genre, premise, tags, the world — is read through that tradition.
       </GuidanceNote>
     </WorkspaceShell>
   );

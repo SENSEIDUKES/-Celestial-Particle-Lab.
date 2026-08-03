@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { RefreshCw, Search, Wand2, X } from 'lucide-react';
+import { RefreshCw, Search, Tag, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { IntakeData } from '../../shared/types';
 import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
-import { GuidanceNote, WorkspaceShell, workspaceInputClass } from './WorkspaceShell';
+import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass, workspaceInputClass } from './WorkspaceShell';
 
 interface StoryTagsWorkspaceProps {
   intake: IntakeData;
@@ -16,9 +16,10 @@ const TAG_LIMIT = 20;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 
 /**
- * Required Story workspace: the tag editor. Add custom tags, take AI-style
- * suggestions (Workshop stub), or browse the full preset grimoire. Ported from
- * the Phase 1 CoreSeedForm tag block; DOM ids are kept so Workshop preview
+ * Optional Story workspace: the tag editor. Tags remain critical system data,
+ * but they are never required by hand — an empty set is inferred from Premise,
+ * Genre, and Style at generation time (`shared/storyTagInference.ts`). Manual
+ * tags are always preserved as-is. DOM ids are kept so Workshop preview
  * scripting keeps working.
  */
 export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceProps) => {
@@ -102,25 +103,32 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
   );
 
   return (
-    <WorkspaceShell section={section} complete={activeTags.length > 0}>
+    <WorkspaceShell
+      section={section}
+      complete={activeTags.length > 0}
+      optionalNote="Automatically generated if left empty"
+    >
       {/* Add a tag */}
       <div>
         <label htmlFor="custom-tag-input" className="sr-only">Add a custom tag</label>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            id="custom-tag-input"
-            type="text"
-            value={customTagInput}
-            onChange={(e) => setCustomTagInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddCustomTag();
-              }
-            }}
-            placeholder="Type a tag and press Enter..."
-            className={`${workspaceInputClass} flex-1`}
-          />
+          <div className="glass-field-wrap flex-1">
+            <Tag size={15} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
+            <input
+              id="custom-tag-input"
+              type="text"
+              value={customTagInput}
+              onChange={(e) => setCustomTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustomTag();
+                }
+              }}
+              placeholder="Type a tag and press Enter..."
+              className={`${workspaceInputClass} pl-10`}
+            />
+          </div>
           <button
             type="button"
             onClick={handleAddCustomTag}
@@ -167,7 +175,7 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
             {activeTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex animate-fadeIn items-center gap-1.5 rounded border border-portal/30 bg-portal/10 px-2.5 py-1 font-sans text-xs text-portal shadow-[0_0_8px_rgba(4,172,255,0.05)]"
+                className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs"
               >
                 <span className="font-semibold">{tag}</span>
                 <button
@@ -182,14 +190,15 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
             ))}
           </div>
         ) : (
-          <p className="rounded border border-dashed border-neutral-800 px-3 py-4 text-center font-sans text-xs italic text-neutral-600">
-            No tags yet — Story Tags are required before generation. Add your own, take a suggestion, or browse the library below.
+          <p className="font-sans text-xs italic leading-relaxed text-neutral-600">
+            No tags yet. The Library will read your Premise, Genre, and Style and generate a tag set
+            when you forge the blueprint — or add your own here to steer it.
           </p>
         )}
       </div>
 
       {/* Suggested tags */}
-      <div className="rounded-lg border border-neutral-900 bg-neutral-950/50 p-4">
+      <div className="border-t border-neutral-900/70 pt-6">
         <div className="flex items-center justify-between gap-3 pb-3">
           <span className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal">
             <Wand2 size={13} className="text-portal" />
@@ -226,10 +235,10 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
                       key={tag}
                       type="button"
                       onClick={() => handleTogglePresetTag(tag)}
-                      className={`flex items-center gap-1 rounded border px-2.5 py-1 font-sans text-xs transition-all duration-300 ${
+                      className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 font-sans text-xs transition-all duration-300 ${
                         isSelected
                           ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                          : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
+                          : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'
                       }`}
                     >
                       {isSelected ? '✓' : '+'} {tag}
@@ -253,45 +262,54 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       </div>
 
       {/* Browse the tag library */}
-      <div className="space-y-4 rounded-lg border border-neutral-900 bg-neutral-950/50 p-4">
-        <div className="flex flex-col justify-between gap-3 border-b border-neutral-900 pb-3 sm:flex-row sm:items-center">
+      <div className="space-y-4 border-t border-neutral-900/70 pt-6">
+        <div className="flex flex-col justify-between gap-3 pb-1 sm:flex-row sm:items-center">
           <div className="flex items-center space-x-2">
             <span className="font-sc text-[11px] font-bold uppercase tracking-widest text-signal">Tag Library</span>
             <span className="rounded border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] text-neutral-400">
               {filteredPresets.length} / {TAG_PRESETS.length}
             </span>
           </div>
-          <div className="relative w-full sm:max-w-xs">
-            <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
+          <div className="glass-field-wrap w-full sm:max-w-xs">
+            <Search size={14} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
               placeholder="Filter celestial tags..."
-              className={`${workspaceInputClass} pl-8`}
+              className={`${workspaceInputClass} pl-10`}
               id="celestial-tag-search-input"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1" id="tag-categories">
-          {['All', ...Object.keys(CATEGORIZED_TAGS)].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`rounded border px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-wider transition-all ${
-                activeCategory === cat
-                  ? 'border-portal bg-portal/10 font-bold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                  : 'border-neutral-900 bg-void text-neutral-500 hover:border-neutral-850 hover:text-neutral-350'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Parent families read as filter tabs — pill-shaped, small-caps
+            serif, brighter edge — so they can never be mistaken for the
+            child tag chips listed below them. */}
+        <div className="space-y-2">
+          <p className={workspaceCompactLabelClass}>Families</p>
+          <div className="flex flex-wrap gap-1.5" id="tag-categories">
+            {['All', ...Object.keys(CATEGORIZED_TAGS)].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`rounded-full border px-3 py-1.5 font-sc text-[10px] font-bold uppercase tracking-[0.18em] transition-all ${
+                  activeCategory === cat
+                    ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]'
+                    : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="scrollbar-thin flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-1" id="filtered-tags-list">
+        {/* Child tags live inside their own glass panel under the tabs. */}
+        <div className="space-y-2">
+          <p className={workspaceCompactLabelClass}>Tags</p>
+          <div className="glass-panel scrollbar-thin flex max-h-56 flex-wrap content-start gap-1.5 overflow-y-auto p-3" id="filtered-tags-list">
           {filteredPresets.length === 0 ? (
             <div className="w-full py-4 text-center font-sans text-xs italic text-neutral-600">
               No celestial tag matches your search within this category.
@@ -304,10 +322,10 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
                   key={preset}
                   type="button"
                   onClick={() => handleTogglePresetTag(preset)}
-                  className={`rounded border px-2.5 py-1 text-xs transition-all duration-300 ${
+                  className={`rounded-lg border px-2.5 py-1 text-xs transition-all duration-300 ${
                     isSelected
                       ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
-                      : 'border-neutral-900 bg-void text-neutral-400 hover:border-neutral-800 hover:text-signal'
+                      : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'
                   }`}
                 >
                   {isSelected ? '✓' : '+'} {preset}
@@ -315,11 +333,14 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
               );
             })
           )}
+          </div>
         </div>
       </div>
 
       <GuidanceNote title="How tags help">
-        Tags guide the Library to tailor the world, characters, conflicts, and events to match the themes and tones you care about most.
+        Tags guide the Library to tailor the world, characters, conflicts, and events to match the
+        themes and tones you care about most. Leave them empty and a set is generated from your
+        Premise, Genre, and Style — then saved into the seed so the novel can always be recreated.
       </GuidanceNote>
     </WorkspaceShell>
   );

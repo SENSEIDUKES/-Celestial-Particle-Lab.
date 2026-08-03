@@ -1,4 +1,5 @@
 import React from 'react';
+import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { getSeedSection } from '../seedSections';
 import { FormInput, FormTextarea } from '../form-fields';
@@ -24,6 +25,7 @@ export const WorldIdentityWorkspace = ({ intake, updateIntake }: WorldIdentityWo
         <FormInput
           id="a11y-control-v2xlbs8"
           label="Novel Title"
+          icon={BookOpen}
           value={intake.novelTitle || ''}
           onChange={(val) => updateIntake('novelTitle', val)}
           placeholder="Will be generated if empty"
@@ -31,6 +33,7 @@ export const WorldIdentityWorkspace = ({ intake, updateIntake }: WorldIdentityWo
         <FormInput
           id="world-type-input"
           label="World Type"
+          icon={Globe}
           value={intake.worldType || ''}
           onChange={(val) => updateIntake('worldType', val)}
           placeholder="e.g., Ancient sect world, tower system..."
@@ -38,6 +41,7 @@ export const WorldIdentityWorkspace = ({ intake, updateIntake }: WorldIdentityWo
         <FormInput
           id="society-structure-input"
           label="Society Structure"
+          icon={Landmark}
           value={intake.societyStructure || ''}
           onChange={(val) => updateIntake('societyStructure', val)}
           placeholder="e.g., Sect-led, feudal, corporate..."
@@ -47,6 +51,7 @@ export const WorldIdentityWorkspace = ({ intake, updateIntake }: WorldIdentityWo
       <FormTextarea
         id="starting-location-input"
         label="Starting Location (Detailed regional atmosphere)"
+        icon={MapPin}
         maxLength={1200}
         helpText="Describe the geography, climate, and immediate atmosphere of the starting zone (e.g. outer sect labor quarry, freezing mortal mountain village)."
         value={intake.startingLocation || ''}

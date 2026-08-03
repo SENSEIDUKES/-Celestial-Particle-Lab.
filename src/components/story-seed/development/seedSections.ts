@@ -1,14 +1,13 @@
 import {
   BookOpen,
   Drama,
-  Ellipsis,
   Feather,
   Globe,
   Hourglass,
   Landmark,
   PenLine,
+  Route,
   Shield,
-  SlidersHorizontal,
   Sparkles,
   Tag,
   Users,
@@ -16,41 +15,48 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { IntakeData } from '../shared/types';
+import { normalizeStoryStyle } from '../shared/storyStyle';
 
 /**
- * Phase 2 section model — the navigation hierarchy of the creation workspace.
- * Story is the novel's direction (four required inputs first); World is the
- * novel's history (fully optional — the Library can generate it automatically).
- * The flat IntakeData view model is still what the workspaces edit; the Phase 1
- * schema boundary in `shared/storySeedSchema.ts` classifies it on save/export/
+ * The navigation hierarchy of the creation workspace.
+ *
+ * Story is the novel's direction — three required inputs in the order the
+ * flow asks for them (Style, Genre, Premise) followed by seed-level optional
+ * direction. World is the novel's
+ * history, fully optional: the Library can generate all of it.
+ *
+ * A section earns its place here only if it helps *define or recreate the
+ * novel*. Anything that changes how the finished novel is experienced —
+ * pacing, tone dials, romance/harem levels, Fate Survival — belongs to the
+ * separate Story Settings feature, not to the seed.
+ *
+ * The flat IntakeData view model is what the workspaces edit; the schema
+ * boundary in `shared/storySeedSchema.ts` classifies it on save / export /
  * generation.
  */
 
 export type SeedFamily = 'story' | 'world';
 
 export type SeedSectionId =
-  | 'story-tags'
-  | 'premise'
-  | 'genre'
   | 'style'
-  | 'story-settings'
+  | 'genre'
+  | 'premise'
+  | 'story-tags'
+  | 'plot-tropes'
   | 'world-identity'
   | 'characters'
   | 'factions'
   | 'abilities'
   | 'power-system'
-  | 'destined-ending'
-  | 'other-world-settings';
+  | 'destined-ending';
 
 export interface SeedSection {
   id: SeedSectionId;
   family: SeedFamily;
   label: string;
   icon: LucideIcon;
-  /** One of the four required Story inputs, always shown first. */
+  /** One of the three required Story inputs (Premise, Genre, Style). */
   required?: boolean;
-  /** Optional catch-all kept visually secondary (Story Settings). */
-  secondary?: boolean;
   /** One-line guidance shown under the workspace title. */
   tagline: string;
   /** Whether the section currently holds user-entered content. */
@@ -64,46 +70,24 @@ export const SEED_FAMILIES: Record<SeedFamily, { label: string; tagline: string 
 
 const hasText = (value?: string): boolean => Boolean(value?.trim());
 
-const hasStorySettings = (intake: IntakeData): boolean =>
-  Boolean(intake.estimatedArcs)
-  || (Boolean(intake.fatePressure) && intake.fatePressure !== 'Balanced')
-  || [
-    intake.desiredPlotDirection,
-    intake.generalAtmosphere,
-    intake.dangerLevel,
-    intake.powerPace,
-    intake.longTermGoal,
-    intake.firstMajorConflict,
-    intake.mainAntagonistPressure,
-    intake.romanceLevel,
-    intake.faceSlappingLevel,
-    intake.comedyLevel,
-    intake.tournamentArcPreference,
-    intake.haremPreference,
-    intake.betrayalLevel,
-    intake.thingsToAvoid,
-    intake.mustIncludeElements,
-    intake.makeItWorkInstruction,
-  ].some(hasText);
+/** The curated seed-level plot direction — narrative shape, not experience dials. */
+export const PLOT_TROPE_FIELDS = [
+  'desiredPlotDirection',
+  'longTermGoal',
+  'firstMajorConflict',
+  'mainAntagonistPressure',
+] as const;
 
 export const SEED_SECTIONS: SeedSection[] = [
+  // Style first: the tradition frames how every later section is read.
   {
-    id: 'story-tags',
+    id: 'style',
     family: 'story',
-    label: 'Story Tags',
-    icon: Tag,
+    label: 'Style',
+    icon: PenLine,
     required: true,
-    tagline: 'Add themes, tones, and elements that shape your story.',
-    isFilled: intake => (intake.storyTags || []).length > 0,
-  },
-  {
-    id: 'premise',
-    family: 'story',
-    label: 'Premise',
-    icon: Feather,
-    required: true,
-    tagline: 'The hook or secret catalyst the whole novel bends around.',
-    isFilled: intake => hasText(intake.corePremise),
+    tagline: 'The storytelling tradition your novel belongs to.',
+    isFilled: intake => Boolean(normalizeStoryStyle(intake.proseStyle)),
   },
   {
     id: 'genre',
@@ -115,22 +99,29 @@ export const SEED_SECTIONS: SeedSection[] = [
     isFilled: intake => hasText(intake.genrePath),
   },
   {
-    id: 'style',
+    id: 'premise',
     family: 'story',
-    label: 'Style',
-    icon: PenLine,
+    label: 'Premise',
+    icon: Feather,
     required: true,
-    tagline: 'The prose voice the Library writes in.',
-    isFilled: intake => hasText(intake.proseStyle),
+    tagline: 'The hook or secret catalyst the whole novel bends around.',
+    isFilled: intake => hasText(intake.corePremise),
   },
   {
-    id: 'story-settings',
+    id: 'story-tags',
     family: 'story',
-    label: 'Story Settings',
-    icon: SlidersHorizontal,
-    secondary: true,
-    tagline: 'Optional plot, trope, tone, pacing, and experience controls.',
-    isFilled: hasStorySettings,
+    label: 'Story Tags',
+    icon: Tag,
+    tagline: 'Themes, tones, and elements that shape your story. Generated automatically if left empty.',
+    isFilled: intake => (intake.storyTags || []).length > 0,
+  },
+  {
+    id: 'plot-tropes',
+    family: 'story',
+    label: 'Plot & Tropes',
+    icon: Route,
+    tagline: 'The narrative shape of the novel — where it is headed and what pushes back.',
+    isFilled: intake => PLOT_TROPE_FIELDS.some(field => hasText(intake[field])),
   },
   {
     id: 'world-identity',
@@ -194,14 +185,6 @@ export const SEED_SECTIONS: SeedSection[] = [
     icon: Hourglass,
     tagline: 'The final destination this story is fated to reach.',
     isFilled: intake => hasText(intake.destinedEnding),
-  },
-  {
-    id: 'other-world-settings',
-    family: 'world',
-    label: 'Other World Settings',
-    icon: Ellipsis,
-    tagline: 'The wider universe and the major mysteries buried in it.',
-    isFilled: intake => hasText(intake.universeOverview) || hasText(intake.majorMysteries),
   },
 ];
 

@@ -2,11 +2,21 @@ import React from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { SEED_FAMILIES, type SeedSection } from '../seedSections';
 
-/** Shared field styling for the Phase 2 workspaces (matches form-fields). */
+/**
+ * Shared field styling for the Phase 2 workspaces — the glass field system
+ * from `form-fields/glass-field.css` (imported via `form-fields`), combined
+ * with layout utilities. `workspaceInputClass` is the standard text field;
+ * `workspaceCompactInputClass` is the small variant used inside the
+ * character/faction grid cards.
+ */
 export const workspaceInputClass =
-  'w-full bg-neutral-950/80 border border-neutral-800 text-signal font-sans placeholder-neutral-600 focus:outline-none focus:border-portal rounded px-4 py-2 text-sm transition-colors';
+  'glass-field min-h-[2.75rem] px-4 py-2.5 text-sm';
+export const workspaceCompactInputClass =
+  'glass-field px-2.5 py-1.5 text-xs';
 export const workspaceLabelClass =
   'block font-sc text-xs text-neutral-400 uppercase tracking-widest mb-2';
+export const workspaceCompactLabelClass =
+  'block font-sc text-[10px] text-neutral-400 uppercase tracking-widest mb-1';
 export const workspaceHelpClass =
   'text-neutral-500 font-sans text-xs mb-3 leading-relaxed';
 
@@ -17,10 +27,13 @@ const accentText = (section: SeedSection) =>
 export const WorkspaceShell = ({
   section,
   complete,
+  optionalNote,
   children,
 }: {
   section: SeedSection;
   complete: boolean;
+  /** Replaces the plain "Optional" chip on optional sections (e.g. Story Tags). */
+  optionalNote?: string;
   children: React.ReactNode;
 }) => {
   const family = SEED_FAMILIES[section.family];
@@ -56,8 +69,13 @@ export const WorkspaceShell = ({
           )
         )}
         {!section.required && (
-          <span className="inline-flex items-center rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-0.5 font-sc text-[10px] uppercase tracking-widest text-neutral-500">
+          <span className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-0.5 font-sc text-[10px] uppercase tracking-widest text-neutral-500">
             Optional
+            {optionalNote && (
+              <span className="border-l border-neutral-800 pl-2 normal-case tracking-normal text-neutral-500">
+                {optionalNote}
+              </span>
+            )}
           </span>
         )}
       </div>

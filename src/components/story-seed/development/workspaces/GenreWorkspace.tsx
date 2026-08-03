@@ -1,9 +1,10 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Drama } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { GENRE_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
-import { GuidanceNote, WorkspaceShell, workspaceInputClass, workspaceLabelClass } from './WorkspaceShell';
+import { FormInput } from '../form-fields';
+import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface GenreWorkspaceProps {
   intake: IntakeData;
@@ -46,19 +47,14 @@ export const GenreWorkspace = ({ intake, updateIntake }: GenreWorkspaceProps) =>
         })}
       </div>
 
-      <div>
-        <label htmlFor="genre-custom-input" className={workspaceLabelClass}>
-          Or define your own genre
-        </label>
-        <input
-          id="genre-custom-input"
-          type="text"
-          value={intake.genrePath || ''}
-          onChange={(e) => updateIntake('genrePath', e.target.value)}
-          placeholder="e.g., Demonic cultivation court drama"
-          className={workspaceInputClass}
-        />
-      </div>
+      <FormInput
+        id="genre-custom-input"
+        label="Or define your own genre"
+        icon={Drama}
+        value={intake.genrePath || ''}
+        onChange={(val) => updateIntake('genrePath', val)}
+        placeholder="e.g., Demonic cultivation court drama"
+      />
 
       <GuidanceNote title="How genre helps">
         Genre sets the world&rsquo;s logic — how power works, how people speak, which tropes are promises

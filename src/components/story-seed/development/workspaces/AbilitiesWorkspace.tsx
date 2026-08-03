@@ -1,4 +1,5 @@
 import React from 'react';
+import { Route, Zap } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { getSeedSection } from '../seedSections';
 import { FormInput, FormTextarea } from '../form-fields';
@@ -19,6 +20,7 @@ export const AbilitiesWorkspace = ({ intake, updateIntake }: AbilitiesWorkspaceP
         <FormInput
           id="a11y-control-itgsjgw"
           label="Starting Power Concept"
+          icon={Zap}
           value={intake.startingPowerConcept || ''}
           onChange={(val) => updateIntake('startingPowerConcept', val)}
           placeholder="e.g., Qi Condensation Tier 1, Feng Shui Level 1..."
@@ -26,6 +28,7 @@ export const AbilitiesWorkspace = ({ intake, updateIntake }: AbilitiesWorkspaceP
         <FormTextarea
           id="unique-path-input"
           label="Unique Path"
+          icon={Route}
           maxLength={1200}
           helpText="What makes the main character's way of growing power unlike anyone else's — a forbidden method, a twisted bloodline, a borrowed system."
           value={intake.uniquePath || ''}

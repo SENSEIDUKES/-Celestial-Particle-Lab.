@@ -171,7 +171,6 @@ export async function getApiHeaders(): Promise<Record<string, string>> {
 // ─── Tag suggestion stub (stands in for fetch('/api/suggest-tags', …)) ──────
 
 const GENRE_TAG_HINTS: Record<string, string[]> = {
-  'Fate Survival': ['death flags', 'foreknowledge', 'destined death', 'fate bonds'],
   Xianxia: ['cultivation realms', 'sect politics', 'dao comprehension'],
   Xuanhuan: ['bloodline awakening', 'martial techniques', 'tribulation events'],
   'LitRPG / System': ['game systems', 'level progression', 'system rewards'],
@@ -187,7 +186,7 @@ export async function suggestTagsStub(
   const genreHints = GENRE_TAG_HINTS[intake.genrePath || ''] || ['fate bonds', 'sect politics', 'cultivation realms'];
   return {
     suggestedTags: genreHints,
-    reasoning: `Workshop mock recommendation based on the "${intake.genrePath || 'Fate Survival'}" genre path. No live model call was made.`,
+    reasoning: `Workshop mock recommendation based on the "${intake.genrePath || 'Xianxia'}" genre path. No live model call was made.`,
   };
 }
 
