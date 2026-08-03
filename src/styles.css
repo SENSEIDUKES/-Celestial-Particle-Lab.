@@ -378,9 +378,29 @@ body {
 .seed-rainbow-glow {
   background: linear-gradient(115deg, #4285f4, #ea4335, #fbbc05, #34a853, #4285f4);
   background-size: 300% 300%;
-  animation: seedRainbow 9s ease-in-out infinite;
+  animation: seedRainbow 18s ease-in-out infinite;
+}
+
+/* Slow gold shimmer sweeping across the subtitle. */
+@keyframes seedShimmer {
+  0%, 100% { background-position: 110% 0; }
+  50% { background-position: -10% 0; }
+}
+
+.seed-subtitle-shimmer {
+  background: linear-gradient(100deg, rgba(212, 175, 55, 0.6) 25%, #ffedbb 50%, rgba(212, 175, 55, 0.6) 75%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: seedShimmer 7s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .seed-rainbow-glow { animation: none; }
+  .seed-rainbow-glow,
+  .seed-subtitle-shimmer { animation: none; }
+  .seed-subtitle-shimmer {
+    color: rgba(212, 175, 55, 0.8);
+    background: none;
+  }
 }
