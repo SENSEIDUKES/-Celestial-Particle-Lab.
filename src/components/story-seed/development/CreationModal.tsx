@@ -397,7 +397,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
               className="seed-rainbow-glow absolute -inset-1 rounded-2xl opacity-45 blur-xl"
             />
             <div className="relative rounded-xl border border-white/15 bg-white/[0.05] px-5 py-3 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05)]">
-              <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em] text-signal">
+              <h1 className="seed-title-presence font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em]">
                 Story Seed
               </h1>
               <p className="seed-subtitle-shimmer mt-1 font-sc text-[11px] font-bold uppercase tracking-[0.3em]">

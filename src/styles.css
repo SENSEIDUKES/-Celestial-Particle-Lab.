@@ -404,3 +404,13 @@ body {
     background: none;
   }
 }
+
+/* Luminous ivory-to-gold title — static so it anchors the moving
+   shimmer of the subtitle beneath it. */
+.seed-title-presence {
+  background: linear-gradient(180deg, #fffdf5 22%, #f6e9c4 58%, #d9b45b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.3));
+}
