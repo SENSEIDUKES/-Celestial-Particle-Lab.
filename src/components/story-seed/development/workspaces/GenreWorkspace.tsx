@@ -4,7 +4,7 @@ import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { GENRE_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { patchStoryRequired, storyRequired, type UpdateSeed } from '../seedState';
-import { FormInput } from '../form-fields';
+import { LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface GenreWorkspaceProps {
@@ -48,7 +48,7 @@ export const GenreWorkspace = ({ seed, updateSeed }: GenreWorkspaceProps) => {
         })}
       </div>
 
-      <FormInput
+      <LibraryTextBox
         id="genre-custom-input"
         label="Or define your own genre"
         icon={Drama}

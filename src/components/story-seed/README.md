@@ -10,6 +10,26 @@
 
 ## Workshop history
 
+- **2026-08-03:** `LibraryTextBox` — the first official Celestial Library text
+  input, and the first proof of the SEIHouse-behavior / Library-skin
+  component rule. Behavior was ported (not packaged) from the SEIHouse UI
+  repo's `SEIInput` / `SEIField` (`packages/seihouse-ui/src/forms/sei-input.tsx`
+  and `sei-field.tsx`, inspected 2026-08-03) — only the text-input behavior,
+  so the Workshop gains no new dependency: `forwardRef` to the real `<input>`,
+  a `useId` fallback id, `aria-describedby` wiring where the error message
+  wins over the helper text, `aria-invalid` from `invalid` or a present
+  `error`, a required marker (`*` plus sr-only "(required)"), and
+  `comfortable` / `compact` sizes matching the existing workspace field
+  classes. The skin stays entirely on the glass field system (dark glass
+  surface, cool-blue focus glow, quiet completed accent, warning edge,
+  small-caps serif label, helper text above the field). Architecture rule:
+  workspaces import `LibraryTextBox`, never a raw `<input>` or a page-specific
+  input; a different visual mood becomes a new `variant` value on
+  `LibraryTextBox`, not a new component. First proof: the custom genre input
+  in `GenreWorkspace` now uses it (id `genre-custom-input` unchanged, so
+  preview scripts are unaffected). `FormInput` / `FormTextarea` remain for the
+  other workspaces; they migrate to `LibraryTextBox` (and a future textarea
+  counterpart) one at a time.
 - **2026-08-03:** Story Seed backend cleanup, phase 1 — the creator-controlled
   data contract now matches the approved product hierarchy exactly, and the
   old flat intake contract is out of the active system. No interface redesign,
@@ -259,6 +279,7 @@ development/                  — active Workshop version (Phase 2 creation work
                                   classes, GuidanceNote, WorkspaceSubheading
     PremiseWorkspace.tsx        — required; premise + suggestions + ghost-tag Tab
     GenreWorkspace.tsx          — required; preset grid + custom genre input
+                                  (first `LibraryTextBox` proof)
     StyleWorkspace.tsx          — required, first; the three novel traditions
                                   (Chinese / Korean / Japanese)
     StoryTagsWorkspace.tsx      — optional (inferred if empty); tag
@@ -287,7 +308,10 @@ development/                  — active Workshop version (Phase 2 creation work
                                   variants and all interactive states
     FormInput.tsx
     FormTextarea.tsx
-    index.ts                    — imports glass-field.css, re-exports both
+    LibraryTextBox.tsx          — official Celestial Library text input;
+                                  SEIInput/SEIField behavior ported from the
+                                  SEIHouse UI repo on the glass skin
+    index.ts                    — imports glass-field.css, re-exports all three
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -711,6 +735,12 @@ under `src/workshop/previews/story-seed/`, the manifest entry, and the
 registry line.
 
 ## Transfer notes and cautions
+
+- `LibraryTextBox.tsx` is self-contained: its SEIInput/SEIField behavior was
+  ported into the file, so transferring `development/form-fields/*` carries it
+  with **no `@seihouse/ui` dependency to install**. If Light-Novels later
+  adopts the SEIHouse UI package directly, re-base `LibraryTextBox`'s behavior
+  on the real `SEIInput`/`SEIField` instead of the port.
 
 - On transfer, `StoryTagsWorkspace.tsx` must have its `handleSuggestTags`
   restored to call the real `fetch('/api/suggest-tags', …)` with
