@@ -368,3 +368,19 @@ body {
   0%, 100% { transform: scale(0.95); opacity: 0.07; }
   50% { transform: scale(1.05); opacity: 0.13; }
 }
+
+/* Google-style fluid rainbow glow behind the Story Seed title plaque. */
+@keyframes seedRainbow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.seed-rainbow-glow {
+  background: linear-gradient(115deg, #4285f4, #ea4335, #fbbc05, #34a853, #4285f4);
+  background-size: 300% 300%;
+  animation: seedRainbow 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seed-rainbow-glow { animation: none; }
+}
