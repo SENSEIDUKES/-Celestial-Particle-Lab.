@@ -3,7 +3,7 @@ import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../library';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface WorldIdentityWorkspaceProps {

@@ -6,7 +6,7 @@ import { PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { patchStoryRequired, storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
-import { LibraryTextArea } from '../form-fields';
+import { LibraryTextArea } from '../library';
 
 interface PremiseWorkspaceProps {
   seed: StorySeedInput;

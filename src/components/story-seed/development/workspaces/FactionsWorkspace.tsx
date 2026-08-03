@@ -3,7 +3,7 @@ import type { StorySeedFaction, StorySeedInput } from '../../shared/storySeedSch
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';
 import { setFactions, worldFoundations, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../library';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface FactionsWorkspaceProps {

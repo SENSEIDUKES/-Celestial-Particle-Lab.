@@ -3,7 +3,7 @@ import { Flame, Layers } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchPowerSystem, worldFoundations, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../library';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface PowerSystemWorkspaceProps {

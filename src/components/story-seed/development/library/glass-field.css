@@ -155,6 +155,7 @@
    the accent edge and a restrained glow. */
 .glass-choice {
   --choice-accent: #04acff;
+
   appearance: none;
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--choice-accent) 20%, transparent);

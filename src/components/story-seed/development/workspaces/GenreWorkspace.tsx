@@ -4,7 +4,7 @@ import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { GENRE_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { patchStoryRequired, storyRequired, type UpdateSeed } from '../seedState';
-import { LibraryTextBox } from '../form-fields';
+import { LibraryTextBox } from '../library';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface GenreWorkspaceProps {

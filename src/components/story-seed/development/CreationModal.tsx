@@ -53,6 +53,7 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
+import { LibraryHeaderBadge } from './library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
@@ -373,29 +374,23 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   return (
     <div className="mx-auto max-w-7xl pb-24" id="creation-portal-root">
-      {/* Header */}
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <img
-            src={CELESTIAL_LIBRARY_EMBLEM_URL}
-            alt="Celestial Library"
-            referrerPolicy="no-referrer"
-            className="h-12 w-12 rounded-full object-cover ring-1 ring-gold-accent/40 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
-          />
-          <div>
-            <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em] text-signal">
-              Story Seed
-            </h1>
-            <p className="mt-1 font-sans font-light text-sm text-neutral-400">
-              Plant the vision. We&rsquo;ll grow the universe.
-            </p>
-          </div>
-        </div>
+      {/* Header — wraps on narrow screens so the action buttons drop to a
+          second row instead of overflowing the viewport. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        {/* S emblem doubles as the home button — back to the main page. */}
+        <LibraryHeaderBadge
+          title="Story Seed"
+          subtitle="Grow Your Universe"
+          emblemSrc={CELESTIAL_LIBRARY_EMBLEM_URL}
+          emblemAlt="Celestial Library"
+          emblemHref="/"
+          emblemLinkLabel="Return to Workshop home"
+        />
 
         {/* Save Draft is never gated on creative completeness — a draft exists
             to preserve progress. Seed import/library/export stay plain,
             always-visible actions rather than a hidden overflow menu. */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
           <button
             type="button"
             onClick={handleSaveDraft}

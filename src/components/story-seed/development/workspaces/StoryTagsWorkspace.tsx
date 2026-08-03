@@ -6,7 +6,7 @@ import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
 import { storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
-import { LibraryTextBox } from '../form-fields';
+import { LibraryTextBox } from '../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface StoryTagsWorkspaceProps {

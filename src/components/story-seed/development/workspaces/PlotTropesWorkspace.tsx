@@ -8,7 +8,7 @@ import {
   setAdditionalStoryDirection,
   type UpdateSeed,
 } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../library';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface PlotTropesWorkspaceProps {
