@@ -384,6 +384,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           emblemSrc={CELESTIAL_LIBRARY_EMBLEM_URL}
           emblemAlt="Celestial Library"
           emblemHref="/"
+          emblemLinkLabel="Return to Workshop home"
         />
 
         {/* Save Draft is never gated on creative completeness — a draft exists

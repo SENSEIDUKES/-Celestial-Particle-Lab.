@@ -372,7 +372,7 @@ body {
 /* Fluid glow behind the Story Seed title plaque — cool portal/violet
    tones with a whisper of gold so it sits with the page palette
    instead of fighting it. Gold stays as sharp ink on text + emblem. */
-@keyframes seedRainbow {
+@keyframes seed-rainbow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
@@ -380,11 +380,11 @@ body {
 .seed-rainbow-glow {
   background: linear-gradient(115deg, #04acff, #7c5cff, rgba(212, 175, 55, 0.7), #04acff);
   background-size: 300% 300%;
-  animation: seedRainbow 18s ease-in-out infinite;
+  animation: seed-rainbow 18s ease-in-out infinite;
 }
 
 /* Slow gold shimmer sweeping across the subtitle. */
-@keyframes seedShimmer {
+@keyframes seed-shimmer {
   0%, 100% { background-position: 110% 0; }
   50% { background-position: -10% 0; }
 }
@@ -395,7 +395,7 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: seedShimmer 7s ease-in-out infinite;
+  animation: seed-shimmer 7s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -19,6 +19,7 @@ import React from 'react';
  *     emblemSrc={EMBLEM_URL}
  *     emblemAlt="Celestial Library"
  *     emblemHref="/"
+ *     emblemLinkLabel="Return to Workshop home"
  *   />
  */
 export interface LibraryHeaderBadgeProps {
@@ -28,6 +29,8 @@ export interface LibraryHeaderBadgeProps {
   emblemAlt?: string;
   /** When set, the emblem becomes a link (e.g. "/" for home). */
   emblemHref?: string;
+  /** Accessible destination name for the emblem link. */
+  emblemLinkLabel?: string;
 }
 
 export function LibraryHeaderBadge({
@@ -36,24 +39,25 @@ export function LibraryHeaderBadge({
   emblemSrc,
   emblemAlt = '',
   emblemHref,
+  emblemLinkLabel,
 }: LibraryHeaderBadgeProps) {
   const emblem = emblemSrc ? (
-    <span className="relative isolate inline-flex h-10 w-10 shrink-0 items-center justify-center sm:h-12 sm:w-12">
+    <span className="group/emblem relative isolate inline-flex h-10 w-10 shrink-0 items-center justify-center sm:h-12 sm:w-12">
       {/* Reuse the plaque spectrum as both a soft portal aura and a crisp
           chromatic rim. The emblem remains gold at its core for contrast. */}
       <span
         aria-hidden="true"
-        className="seed-rainbow-glow absolute -inset-2 rounded-full opacity-60 blur-[10px] transition-all duration-500 group-hover:scale-110 group-hover:opacity-90 group-hover:blur-[13px]"
+        className="seed-rainbow-glow absolute -inset-2 rounded-full opacity-60 blur-[10px] transition-all duration-500 group-hover/emblem:scale-110 group-hover/emblem:opacity-90 group-hover/emblem:blur-[13px]"
       />
       <span
         aria-hidden="true"
-        className="seed-rainbow-glow absolute -inset-[2px] rounded-full opacity-90 shadow-[0_0_14px_rgba(124,92,255,0.35)] transition-opacity duration-300 group-hover:opacity-100"
+        className="seed-rainbow-glow absolute -inset-[2px] rounded-full opacity-90 shadow-[0_0_14px_rgba(124,92,255,0.35)] transition-opacity duration-300 group-hover/emblem:opacity-100"
       />
       <img
         src={emblemSrc}
         alt={emblemAlt}
         referrerPolicy="no-referrer"
-        className="relative z-10 h-full w-full rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_14px_rgba(212,175,55,0.45),0_0_34px_rgba(4,172,255,0.18)] transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(212,175,55,0.65),0_0_52px_rgba(124,92,255,0.34)]"
+        className="relative z-10 h-full w-full rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_14px_rgba(212,175,55,0.45),0_0_34px_rgba(4,172,255,0.18)] transition-shadow duration-300 group-hover/emblem:shadow-[0_0_20px_rgba(212,175,55,0.65),0_0_52px_rgba(124,92,255,0.34)]"
       />
     </span>
   ) : null;
@@ -63,9 +67,9 @@ export function LibraryHeaderBadge({
       {emblem && (emblemHref ? (
         <a
           href={emblemHref}
-          title={`${title} home`}
-          aria-label={`${title} home`}
-          className="group shrink-0 rounded-full"
+          title={emblemLinkLabel ?? `${title} home`}
+          aria-label={emblemLinkLabel ?? `${title} home`}
+          className="shrink-0 rounded-full"
         >
           {emblem}
         </a>
