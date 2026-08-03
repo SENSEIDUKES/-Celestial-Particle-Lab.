@@ -376,12 +376,20 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       {/* Header */}
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <img
-            src={CELESTIAL_LIBRARY_EMBLEM_URL}
-            alt="Celestial Library"
-            referrerPolicy="no-referrer"
-            className="h-12 w-12 rounded-full object-cover ring-1 ring-gold-accent/40 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
-          />
+          {/* S emblem doubles as the home button — back to the main page. */}
+          <a
+            href="/"
+            title="Story Seed home"
+            aria-label="Story Seed home"
+            className="group shrink-0 rounded-full"
+          >
+            <img
+              src={CELESTIAL_LIBRARY_EMBLEM_URL}
+              alt="Celestial Library"
+              referrerPolicy="no-referrer"
+              className="h-12 w-12 rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_18px_rgba(212,175,55,0.5),0_0_48px_rgba(212,175,55,0.28)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(212,175,55,0.75),0_0_72px_rgba(212,175,55,0.4)]"
+            />
+          </a>
           <div>
             <h1 className="font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em] text-signal">
               Story Seed
