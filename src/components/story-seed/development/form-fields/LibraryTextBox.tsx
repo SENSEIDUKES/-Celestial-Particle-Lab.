@@ -1,6 +1,9 @@
 import React, { forwardRef, ReactNode, useId } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
+/** Text-like input types only — the glass surface is not built for checkboxes, files, etc. */
+export type LibraryTextBoxType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+
 /**
  * LibraryTextBox — the official Celestial Library text input.
  *
@@ -10,11 +13,21 @@ import type { LucideIcon } from 'lucide-react';
  *
  * - `forwardRef` to the underlying `<input>`
  * - `useId`-generated fallback id, so `label htmlFor` and message ids always wire up
- * - `aria-describedby` wiring — the error message wins over the helper text
+ * - `aria-describedby` wiring — the error message wins over the helper text,
+ *   and any caller-supplied `aria-describedby` is merged in, never clobbered
  * - `aria-invalid` driven by `invalid` or a present `error`
+ * - the error message carries `role="alert"` so screen readers announce it
+ *   when it appears
  * - required marker (visual `*` plus an sr-only "(required)")
- * - `size` variants: `comfortable` (default, 44px touch target) and `compact`
+ * - `size` variants: `comfortable` (default, 44px touch target, 16px text so
+ *   iOS Safari does not auto-zoom on focus) and `compact`
  * - icon-bearing surface wrapper (`glass-field-wrap` + `glass-field-icon`)
+ *   plus a `trailingElement` slot (clear button, password visibility toggle)
+ *
+ * Controlled or uncontrolled: pass `value` + `onChange` to drive it from
+ * state, or omit `value` and let the browser manage the text (`defaultValue`,
+ * `onChange`, and `ref` all work natively). The quiet completed accent only
+ * applies in controlled mode, where the current text is known.
  *
  * The skin stays entirely on the Library glass field system (`glass-field.css`):
  * dark glass surface, cool-blue focus glow, quiet completed accent, warning
@@ -25,30 +38,37 @@ import type { LucideIcon } from 'lucide-react';
  * visual mood, add a `variant` value here instead of creating a new component.
  */
 export interface LibraryTextBoxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'size'> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'size' | 'type'> {
   /** DOM id. Optional — a stable id is generated when omitted. Preview scripts rely on explicit ids, so keep passing them where they exist. */
   id?: string;
   label?: ReactNode;
+  /** Controlled value. Omit for uncontrolled usage (`defaultValue` then applies). */
   value?: string | number;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   /** Guidance rendered between the label and the field. */
   helpText?: ReactNode;
-  /** Error message rendered under the field; also marks the field invalid. */
+  /** Error message rendered under the field; also marks the field invalid and is announced to screen readers. */
   error?: string;
   /** Small node rendered at the right end of the label row (e.g. a character count). */
   rightElement?: ReactNode;
   /** Small contextual icon resting inside the field's left edge. */
   icon?: LucideIcon;
+  /** Interactive node inside the field's right edge (e.g. a clear button or password visibility toggle). */
+  trailingElement?: ReactNode;
   /** Marks the field invalid without a message (keeps the glass surface, warning-colored edge). */
   invalid?: boolean;
   /** `comfortable` is the default touch-friendly size; `compact` matches the workspace compact fields. */
   size?: 'comfortable' | 'compact';
   /** Visual mood. Only the Celestial glass skin exists today — add new moods here, never as a new component. */
   variant?: 'glass';
+  /** Text-like types only. */
+  type?: LibraryTextBoxType;
 }
 
 const sizeClasses: Record<NonNullable<LibraryTextBoxProps['size']>, string> = {
-  comfortable: 'min-h-[2.75rem] px-4 py-2.5 text-sm',
+  // 16px text at the comfortable size: anything smaller makes iOS Safari
+  // auto-zoom the page on focus.
+  comfortable: 'min-h-[2.75rem] px-4 py-2.5 text-base',
   compact: 'px-2.5 py-1.5 text-xs',
 };
 
@@ -63,6 +83,7 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
       error,
       rightElement,
       icon: Icon,
+      trailingElement,
       invalid = false,
       size = 'comfortable',
       variant = 'glass',
@@ -70,6 +91,7 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
       disabled = false,
       className = '',
       type = 'text',
+      'aria-describedby': ariaDescribedBy,
       ...rest
     },
     ref,
@@ -81,8 +103,14 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
 
     const hasError = Boolean(error);
     const isInvalid = invalid || hasError;
-    const describedBy = hasError ? errorId : helpText ? helperId : undefined;
-    const complete = !isInvalid && value !== undefined && value !== null && String(value).trim().length > 0;
+    const describedBy =
+      [hasError ? errorId : helpText ? helperId : undefined, ariaDescribedBy]
+        .filter(Boolean)
+        .join(' ') || undefined;
+
+    const controlled = value !== undefined;
+    const complete =
+      controlled && !isInvalid && value !== null && String(value).trim().length > 0;
 
     const compact = size === 'compact';
 
@@ -127,21 +155,26 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
             ref={ref}
             id={inputId}
             type={type}
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value)}
+            {...(controlled ? { value: value ?? '' } : {})}
+            onChange={(e) => onChange?.(e.target.value)}
             disabled={disabled}
             required={required}
             aria-invalid={isInvalid || undefined}
             aria-describedby={describedBy}
             data-complete={complete || undefined}
             data-invalid={isInvalid || undefined}
-            className={`glass-field ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${className}`}
+            className={`glass-field ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${trailingElement ? (compact ? 'pr-8' : 'pr-10') : ''} ${className}`}
             {...rest}
           />
+          {trailingElement && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-neutral-400">
+              {trailingElement}
+            </span>
+          )}
         </div>
 
         {hasError && (
-          <p id={errorId} className="mt-2 font-sans text-xs text-human">
+          <p id={errorId} role="alert" className="mt-2 font-sans text-xs text-human">
             {error}
           </p>
         )}

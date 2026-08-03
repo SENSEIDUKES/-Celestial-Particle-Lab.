@@ -29,7 +29,16 @@
   in `GenreWorkspace` now uses it (id `genre-custom-input` unchanged, so
   preview scripts are unaffected). `FormInput` / `FormTextarea` remain for the
   other workspaces; they migrate to `LibraryTextBox` (and a future textarea
-  counterpart) one at a time.
+  counterpart) one at a time. Hardening pass later the same day, ahead of
+  any wider rollout: controlled **or** uncontrolled usage (omitting `value`
+  no longer freezes the field), 16px text at the comfortable size so iOS
+  Safari stops auto-zooming on focus, `role="alert"` on the error message so
+  screen readers announce it when it appears, the `type` prop restricted to
+  text-like values, a `trailingElement` slot (clear button / password
+  visibility toggle), caller-supplied `aria-describedby` merged instead of
+  clobbered, and browser-autofill styling in `glass-field.css` so autofilled
+  fields keep the dark glass instead of the browser's pale fill (that CSS fix
+  benefits every glass field, not just LibraryTextBox).
 - **2026-08-03:** Story Seed backend cleanup, phase 1 — the creator-controlled
   data contract now matches the approved product hierarchy exactly, and the
   old flat intake contract is out of the active system. No interface redesign,

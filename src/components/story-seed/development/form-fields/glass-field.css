@@ -88,6 +88,19 @@
     0 10px 24px -16px rgba(1, 3, 10, 0.9);
 }
 
+/* Browser autofill — keep the dark glass instead of the browser's pale
+   yellow/white fill. The inset shadow paints an opaque dark layer over the
+   autofill background (the only reliable override); text and caret stay in
+   the field's reading color. */
+.glass-field:-webkit-autofill,
+.glass-field:-webkit-autofill:hover,
+.glass-field:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f2f4fc;
+  caret-color: #f2f4fc;
+  -webkit-box-shadow: 0 0 0 1000px #0d1020 inset;
+  transition: background-color 9999s ease-out;
+}
+
 /* Wrapper + leading icon: the icon rests inside the field's left edge and
    warms to the focus color while the field is active. */
 .glass-field-wrap {
