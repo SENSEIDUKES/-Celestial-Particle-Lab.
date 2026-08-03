@@ -9,9 +9,15 @@ import {
   Star,
   User,
 } from 'lucide-react';
-import { IntakeCharacter, IntakeData } from '../../shared/types';
+import type { StorySeedCharacter, StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';
+import {
+  patchMainCharacter,
+  setAdditionalCharacters,
+  worldFoundations,
+  type UpdateSeed,
+} from '../seedState';
 import { FormInput, FormTextarea } from '../form-fields';
 import {
   WorkspaceShell,
@@ -21,27 +27,27 @@ import {
 } from './WorkspaceShell';
 
 interface CharactersWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Optional World workspace: the main character plus any pre-defined cast.
- * Merges Phase 1's Main Character Setup and Character Intake sections into one
- * focused surface.
+ * Optional World workspace (`world.optional.worldFoundations.mainCharacter`
+ * and `.additionalCharacters`): the main character plus any pre-defined cast.
  */
-export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspaceProps) => {
+export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspaceProps) => {
   const section = getSeedSection('characters');
-  const characters = intake.customCharacters || [];
+  const mainCharacter = worldFoundations(seed).mainCharacter || {};
+  const characters = worldFoundations(seed).additionalCharacters || [];
 
-  const updateCharacter = (index: number, patch: Partial<IntakeCharacter>) => {
+  const updateCharacter = (index: number, patch: Partial<StorySeedCharacter>) => {
     const next = [...characters];
     next[index] = { ...next[index], ...patch };
-    updateIntake('customCharacters', next);
+    updateSeed(setAdditionalCharacters(next));
   };
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <div className="space-y-4">
         <WorkspaceSubheading>Main Character</WorkspaceSubheading>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -49,56 +55,56 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
             id="a11y-control-7b2mqtu"
             label="Main Character Name"
             icon={User}
-            value={intake.mcName || ''}
-            onChange={(val) => updateIntake('mcName', val)}
+            value={mainCharacter.name || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ name: val }))}
             placeholder="e.g., Lin Fan"
           />
           <FormInput
             id="mc-starting-identity-input"
             label="Starting Identity"
             icon={Shield}
-            value={intake.startingIdentity || ''}
-            onChange={(val) => updateIntake('startingIdentity', val)}
+            value={mainCharacter.startingIdentity || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ startingIdentity: val }))}
             placeholder="e.g., Crippled young master, modern transmigrator..."
           />
           <FormInput
             id="mc-personality-input"
             label="Personality & Alignment"
             icon={Star}
-            value={intake.personality || ''}
-            onChange={(val) => updateIntake('personality', val)}
+            value={mainCharacter.personality || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ personality: val }))}
             placeholder="e.g., Ruthless but protective, chaotic neutral..."
           />
           <FormInput
             id="mc-secret-advantage-input"
             label="Secret Advantage / Cheat"
             icon={Sparkles}
-            value={intake.secretAdvantage || ''}
-            onChange={(val) => updateIntake('secretAdvantage', val)}
+            value={mainCharacter.secretAdvantage || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ secretAdvantage: val }))}
             placeholder="e.g., System interface, primeval bloodline..."
           />
           <FormInput
             id="mc-starting-weakness-input"
             label="Starting Weakness"
             icon={ShieldAlert}
-            value={intake.startingWeakness || ''}
-            onChange={(val) => updateIntake('startingWeakness', val)}
+            value={mainCharacter.startingWeakness || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ startingWeakness: val }))}
             placeholder="e.g., Destroyed meridians, demonic curse..."
           />
           <FormInput
             id="mc-main-flaw-input"
             label="Main Flaw"
             icon={HeartCrack}
-            value={intake.mainFlaw || ''}
-            onChange={(val) => updateIntake('mainFlaw', val)}
+            value={mainCharacter.mainFlaw || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ mainFlaw: val }))}
             placeholder="e.g., Cannot trust allies, crippling pride..."
           />
           <FormInput
             id="mc-moral-alignment-input"
             label="Moral Alignment"
             icon={Scale}
-            value={intake.moralAlignment || ''}
-            onChange={(val) => updateIntake('moralAlignment', val)}
+            value={mainCharacter.moralAlignment || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ moralAlignment: val }))}
             placeholder="e.g., Chaotic neutral, lawful evil..."
           />
         </div>
@@ -108,8 +114,8 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
           icon={BookOpen}
           maxLength={2000}
           helpText="Describe their backstory, personality quirks, hidden talents, major flaws, or specific fated ties. High-density characterization forces a highly customized narrative."
-          value={intake.mcBio || ''}
-          onChange={(val) => updateIntake('mcBio', val)}
+          value={mainCharacter.bio || ''}
+          onChange={(val) => updateSeed(patchMainCharacter({ bio: val }))}
           rows={3}
           placeholder="e.g., Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective..."
         />
@@ -127,7 +133,7 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
               <h4 className="font-sc text-xs font-bold uppercase tracking-widest text-signal">Character {index + 1}</h4>
               <button
                 type="button"
-                onClick={() => updateIntake('customCharacters', characters.filter((_, i) => i !== index))}
+                onClick={() => updateSeed(setAdditionalCharacters(characters.filter((_, i) => i !== index)))}
                 className="font-sc text-xs uppercase tracking-widest text-neutral-500 transition-colors hover:text-human"
               >
                 Remove
@@ -205,10 +211,10 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
           <button
             type="button"
             onClick={() => {
-              updateIntake('customCharacters', [
+              updateSeed(setAdditionalCharacters([
                 ...characters,
                 { id: crypto.randomUUID(), name: '', aliases: [], age: '', skinTone: '', eyeColor: '', powerType: '', rankLevel: '', role: '', connectionToMC: '', bio: '' },
-              ]);
+              ]));
             }}
             className="w-full rounded-xl border border-dashed border-neutral-700/70 py-2.5 font-sc text-xs uppercase tracking-widest text-neutral-400 transition-all hover:border-portal/50 hover:bg-portal/5 hover:text-portal"
           >

@@ -1,13 +1,14 @@
 import React from 'react';
 import { Check, Flower2, Gem, Scroll, type LucideIcon } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
 import { getSeedSection } from '../seedSections';
+import { patchStoryRequired, storyRequired, type UpdateSeed } from '../seedState';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface StyleWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
@@ -22,16 +23,17 @@ const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; accent: string 
 };
 
 /**
- * The first required Story workspace: the novel's storytelling tradition.
+ * The first required Story workspace (`story.required.style`): the novel's
+ * storytelling tradition.
  *
  * Three foundational choices, nothing more. This is the structural skeleton —
  * the tradition is stored and carried through save, export, and generation,
  * but no tradition-specific generation behavior exists yet (see
  * `shared/storyStyle.ts` for where that will attach).
  */
-export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) => {
+export const StyleWorkspace = ({ seed, updateSeed }: StyleWorkspaceProps) => {
   const section = getSeedSection('style');
-  const selected = normalizeStoryStyle(intake.proseStyle);
+  const selected = normalizeStoryStyle(storyRequired(seed).style);
 
   return (
     <WorkspaceShell section={section} complete={Boolean(selected)}>
@@ -51,7 +53,7 @@ export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) =>
               role="radio"
               aria-checked={isSelected}
               id={`story-style-${option.value}`}
-              onClick={() => updateIntake('proseStyle', option.value)}
+              onClick={() => updateSeed(patchStoryRequired({ style: option.value }))}
               data-selected={isSelected}
               style={{ '--choice-accent': accent } as React.CSSProperties}
               className="glass-choice flex min-h-[5.5rem] flex-col items-center justify-center gap-2.5 px-4 py-4"

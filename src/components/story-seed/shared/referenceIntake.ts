@@ -1,16 +1,119 @@
-// Verbatim copy of Light-Novels `src/lib/storySeedFormat.ts`. Pure and
-// browser-only (JSON normalization, file download/parse) — no production
-// dependencies, portable as-is. Only the import paths were rewritten:
-// `./id` (was `./id`, unchanged) and `./types` (was `../types`).
+/**
+ * The frozen Phase-1 Story Seed contract: the flat `IntakeData` intake plus
+ * the portable seed format built on it (a verbatim copy of Light-Novels
+ * `src/lib/storySeedFormat.ts`).
+ *
+ * **This is not an active Story Seed contract.** It is consumed only by the
+ * locked `reference/` replica — the untouched production snapshot the Workshop
+ * compares against — and by the reference-only mocks in `stubs.ts`. The
+ * canonical creator-controlled Story Seed is the Creator / Story / World
+ * hierarchy in `storySeedSchema.ts`; nothing in `development/` may import from
+ * this file. Reading old exported files is handled separately by the narrow
+ * `legacySeedImport.ts` adapter.
+ */
 
 import { generateId } from './id';
-import type {
-  IntakeCharacter,
-  IntakeData,
-  IntakeFaction,
-  StorySeedPayload,
-  WorldBlueprint,
-} from './types';
+import type { WorldBlueprint } from './types';
+
+export interface IntakeCharacter {
+  id: string;
+  name: string;
+  aliases?: string[];
+  age?: string;
+  skinTone?: string;
+  eyeColor?: string;
+  powerType?: string;
+  rankLevel?: string;
+  role?: string;
+  connectionToMC?: string;
+  bio?: string;
+}
+
+export interface IntakeFaction {
+  id: string;
+  name: string;
+  aliases?: string[];
+  role?: string;
+  powerLevel?: string;
+  alignment?: string;
+  connectionToMC?: string;
+  description?: string;
+}
+
+/** The Phase-1 flat intake. Superseded by `StorySeedInput`. */
+export interface IntakeData {
+  // 1. Core Seed
+  novelTitle?: string;
+  mcName?: string;
+  genrePath?: string;
+  corePremise?: string;
+  proseStyle?: string;
+  desiredPlotDirection?: string;
+  storyTags?: string[];
+  destinedEnding?: string;
+  estimatedArcs?: number;
+
+  // 2. World Setting
+  worldType?: string;
+  startingLocation?: string;
+  societyStructure?: string;
+  dangerLevel?: string;
+  generalAtmosphere?: string;
+
+  // 3. Main Character Setup
+  startingIdentity?: string;
+  personality?: string;
+  mainFlaw?: string;
+  secretAdvantage?: string;
+  startingWeakness?: string;
+  moralAlignment?: string;
+  mcBio?: string;
+
+  // 3.5 / 3.8. Character and faction intake
+  customCharacters?: IntakeCharacter[];
+  customFactions?: IntakeFaction[];
+
+  // 4. Power System Seed
+  startingPowerConcept?: string;
+  powerFlavor?: string;
+  powerPace?: string;
+  knownRanks?: string;
+  uniquePath?: string;
+
+  // 5. Plot & Trope Control
+  longTermGoal?: string;
+  firstMajorConflict?: string;
+  mainAntagonistPressure?: string;
+  romanceLevel?: string;
+  faceSlappingLevel?: string;
+  comedyLevel?: string;
+  tournamentArcPreference?: string;
+  haremPreference?: string;
+  betrayalLevel?: string;
+  thingsToAvoid?: string;
+  mustIncludeElements?: string;
+  hardcoreFateMode?: boolean;
+  fatePressure?: 'Relaxed' | 'Balanced' | 'Hardcore' | 'Dao Master';
+
+  // 6. Make it Work (Absolute Custom Rule)
+  makeItWorkInstruction?: string;
+}
+
+export interface StorySeedPayload {
+  intake: IntakeData;
+  blueprint: WorldBlueprint;
+}
+
+export interface StorySeed extends StorySeedPayload {
+  schemaVersion: 1;
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type { WorldBlueprint };
 
 export const STORY_SEED_FORMAT = 'seihouse-story-seed' as const;
 export const STORY_SEED_COLLECTION_FORMAT = 'seihouse-story-seed-collection' as const;

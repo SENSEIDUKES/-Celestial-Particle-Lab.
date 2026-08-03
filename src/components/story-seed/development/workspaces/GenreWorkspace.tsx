@@ -1,24 +1,25 @@
 import React from 'react';
 import { Check, Drama } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { GENRE_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
+import { patchStoryRequired, storyRequired, type UpdateSeed } from '../seedState';
 import { FormInput } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface GenreWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Required Story workspace: genre. A single-choice preset grid plus a
- * free-form custom genre input — both bind the same `genrePath` value that
- * feeds the schema's required `story.genre`.
+ * Required Story workspace (`story.required.genre`). A single-choice preset
+ * grid plus a free-form custom genre input — both bind the same value.
  */
-export const GenreWorkspace = ({ intake, updateIntake }: GenreWorkspaceProps) => {
+export const GenreWorkspace = ({ seed, updateSeed }: GenreWorkspaceProps) => {
   const section = getSeedSection('genre');
-  const selectedGenre = (intake.genrePath || '').trim();
+  const genre = storyRequired(seed).genre;
+  const selectedGenre = genre.trim();
 
   return (
     <WorkspaceShell section={section} complete={Boolean(selectedGenre)}>
@@ -29,7 +30,7 @@ export const GenreWorkspace = ({ intake, updateIntake }: GenreWorkspaceProps) =>
             <button
               key={preset.id}
               type="button"
-              onClick={() => updateIntake('genrePath', preset.id)}
+              onClick={() => updateSeed(patchStoryRequired({ genre: preset.id }))}
               aria-pressed={isSelected}
               className={`flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-xl border px-3 py-3 text-center transition-all duration-200 ${
                 isSelected
@@ -51,8 +52,8 @@ export const GenreWorkspace = ({ intake, updateIntake }: GenreWorkspaceProps) =>
         id="genre-custom-input"
         label="Or define your own genre"
         icon={Drama}
-        value={intake.genrePath || ''}
-        onChange={(val) => updateIntake('genrePath', val)}
+        value={genre}
+        onChange={(val) => updateSeed(patchStoryRequired({ genre: val }))}
         placeholder="e.g., Demonic cultivation court drama"
       />
 

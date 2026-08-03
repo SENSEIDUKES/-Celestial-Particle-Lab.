@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, ChevronRight } from 'lucide-react';
-import type { IntakeData } from '../shared/types';
+import type { StorySeedInput } from '../shared/storySeedSchema';
 import {
   FAMILY_ICONS,
   FAMILY_SECTIONS,
@@ -11,7 +11,7 @@ import {
 } from './seedSections';
 
 interface StorySeedSelectorProps {
-  intake: IntakeData;
+  seed: StorySeedInput;
   activeSection: SeedSectionId;
   onSelect: (id: SeedSectionId) => void;
 }
@@ -73,12 +73,12 @@ const SelectorItem = ({
 
 const FamilyBlock = ({
   family,
-  intake,
+  seed,
   activeSection,
   onSelect,
 }: {
   family: SeedFamily;
-  intake: IntakeData;
+  seed: StorySeedInput;
   activeSection: SeedSectionId;
   onSelect: (id: SeedSectionId) => void;
 }) => {
@@ -99,7 +99,7 @@ const FamilyBlock = ({
           <SelectorItem
             key={section.id}
             section={section}
-            filled={section.isFilled(intake)}
+            filled={section.isFilled(seed)}
             active={activeSection === section.id}
             onSelect={() => onSelect(section.id)}
           />
@@ -118,13 +118,13 @@ const FamilyBlock = ({
  * The left-panel navigation hierarchy (Story → World) for the creation
  * workspace. Rendered in the desktop sidebar and inside the mobile drawer.
  */
-export const StorySeedSelector = ({ intake, activeSection, onSelect }: StorySeedSelectorProps) => (
+export const StorySeedSelector = ({ seed, activeSection, onSelect }: StorySeedSelectorProps) => (
   <div className="flex h-full flex-col gap-7">
     <p className="px-1 font-sc text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500">
       Build Your Novel
     </p>
 
-    <FamilyBlock family="story" intake={intake} activeSection={activeSection} onSelect={onSelect} />
-    <FamilyBlock family="world" intake={intake} activeSection={activeSection} onSelect={onSelect} />
+    <FamilyBlock family="story" seed={seed} activeSection={activeSection} onSelect={onSelect} />
+    <FamilyBlock family="world" seed={seed} activeSection={activeSection} onSelect={onSelect} />
   </div>
 );

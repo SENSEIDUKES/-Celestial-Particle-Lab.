@@ -1,6 +1,6 @@
 import React from 'react';
 import { Target, ShieldAlert } from 'lucide-react';
-import { IntakeData } from '../shared/types';
+import type { IntakeData } from '../shared/referenceIntake';
 import { FormSection, FormSectionId } from './FormSection';
 import { getDialectLabel } from '../shared/dialect';
 

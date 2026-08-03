@@ -4,12 +4,49 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-02
+- **Last Workshop update:** 2026-08-03
 - **Last source comparison:** 2026-08-01
 - **Replica status:** under refinement
 
 ## Workshop history
 
+- **2026-08-03:** Story Seed backend cleanup, phase 1 — the creator-controlled
+  data contract now matches the approved product hierarchy exactly, and the
+  old flat intake contract is out of the active system. No interface redesign,
+  no Postgres, no new administrative metadata.
+  - **One canonical shape** (`shared/storySeedSchema.ts`):
+    `creator` · `story.required` (Story Tags, Premise, Genre, Style) ·
+    `story.optional` (`plotAndTropeSettings`, `additionalStoryDirection`) ·
+    `world.required` (intentionally empty) ·
+    `world.optional` (`worldIdentity`, `worldFoundations`). It is what the
+    workspace edits, what is saved, what is exported, and what enters every
+    generation payload.
+  - **The flat `IntakeData` view model is gone from `development/`** — the
+    creation workspace, selector, section metadata, and all eleven workspaces
+    bind straight to the canonical seed through `development/seedState.ts`.
+    The frozen Phase-1 contract (`IntakeData`, the old portable seed format)
+    moved to `shared/referenceIntake.ts` and is read only by the locked
+    `reference/` replica and its mocks.
+  - **Removed from the seed:** Fate Survival controls (`hardcoreFateMode`,
+    `fatePressure`), experience dials (`romanceLevel`, `faceSlappingLevel`,
+    `comedyLevel`, `tournamentArcPreference`, `haremPreference`,
+    `betrayalLevel`, `dangerLevel`, `generalAtmosphere`, `powerPace`), and
+    generated Blueprint output that had been stored back into the seed
+    (`logline`, `firstArcPromise`, `tropeRules`, `unresolvedPlotThreads`,
+    `estimatedArcs`, `universe`, `majorMysteries`, `mainCharacter.profile`,
+    `powerSystem.outline`).
+  - **Consolidated:** `desiredPlotDirection`, `makeItWorkInstruction`,
+    `mustIncludeElements`, and `thingsToAvoid` became the single
+    `story.optional.additionalStoryDirection`. World Identity and World
+    Foundations are the only two World optional groups.
+  - **Story Tags stay required** in the contract and are still never a manual
+    requirement: an empty set is inferred from Premise, Genre, and Style
+    before the generation payload builders validate.
+  - **Storage isolated** — `shared/storySeedRepository.ts` is now a port with a
+    record envelope that holds the seed instead of merging with it, backed by
+    the swappable `shared/workshopStorySeedStorage.ts` (localStorage, Workshop
+    only). Reading pre-hierarchy JSON is the one narrow legacy adapter left,
+    in `shared/legacySeedImport.ts`, used by file import and nothing else.
 - **2026-08-02:** Glass touch-ups from review — the Style tradition buttons
   and the Story Tag library join the glass system.
   - **Style choices are now glass choice cards** (`.glass-choice` in

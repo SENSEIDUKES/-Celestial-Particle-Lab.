@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
-import { IntakeData } from '../shared/types';
+import type { IntakeData } from '../shared/referenceIntake';
 import { normalizeCodexAliases, parseCodexAliases } from '../shared/codexContext';
 import { FormSection, FormSectionId } from './FormSection';
 

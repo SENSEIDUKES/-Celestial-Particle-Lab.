@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Sparkles, Wand2, Cloud, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { IntakeData } from '../shared/types';
+import type { IntakeData } from '../shared/referenceIntake';
 import { FormSection, FormSectionId } from './FormSection';
 import { GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS, CATEGORIZED_TAGS } from './constants';
 import { suggestTagsStub, useAppStore } from '../shared/stubs';

@@ -1,37 +1,50 @@
 import React from 'react';
 import { Compass, ShieldAlert, Swords, Target } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
+import {
+  patchPlotAndTropeSettings,
+  plotAndTropeSettings,
+  setAdditionalStoryDirection,
+  type UpdateSeed,
+} from '../seedState';
 import { FormInput, FormTextarea } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface PlotTropesWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Optional Story workspace: the only seed-level plot direction kept in Story
- * Seed. Each field here answers "what novel is this?" — where the story is
- * headed, what it opens against, and who pushes back.
+ * The whole optional Story family, and the only seed-level plot direction
+ * kept in Story Seed. Each field answers "what novel is this?" — where the
+ * story is headed, what it opens against, and who pushes back.
+ *
+ * Mapping: the three structured answers are `story.optional.plotAndTropeSettings`;
+ * the freeform textarea is `story.optional.additionalStoryDirection`, the single
+ * consolidated channel that replaced Phase 1's overlapping `desiredPlotDirection`,
+ * `makeItWorkInstruction`, `mustIncludeElements`, and `thingsToAvoid`.
  *
  * Everything that answers "how do I want to experience this novel?" — pacing,
  * tone, romance/harem, comedy, betrayal, Fate Survival — deliberately does not
  * live here. Those are experience settings that can change after creation, and
  * they belong to the separate Story Settings feature.
  */
-export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspaceProps) => {
+export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspaceProps) => {
   const section = getSeedSection('plot-tropes');
+  const settings = plotAndTropeSettings(seed);
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <FormTextarea
         id="desired-plot-direction-input"
         label="Desired Plot Direction"
         icon={Compass}
         maxLength={1500}
-        value={intake.desiredPlotDirection || ''}
-        onChange={(val) => updateIntake('desiredPlotDirection', val)}
+        helpText="Anything else the Library should follow — must-have elements, things to avoid, or a rule the story has to honor."
+        value={seed.story.optional.additionalStoryDirection || ''}
+        onChange={(val) => updateSeed(setAdditionalStoryDirection(val))}
         rows={3}
         placeholder="e.g. Revenge focused, slow sect building, kingdom conquering..."
       />
@@ -41,16 +54,16 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
           id="a11y-control-jolpc3b"
           label="Long-term Goal"
           icon={Target}
-          value={intake.longTermGoal || ''}
-          onChange={(val) => updateIntake('longTermGoal', val)}
+          value={settings.longTermGoal || ''}
+          onChange={(val) => updateSeed(patchPlotAndTropeSettings({ longTermGoal: val }))}
           placeholder="e.g., Shatter the heavens..."
         />
         <FormInput
           id="a11y-control-6a6tmbf"
           label="First Major Conflict"
           icon={Swords}
-          value={intake.firstMajorConflict || ''}
-          onChange={(val) => updateIntake('firstMajorConflict', val)}
+          value={settings.firstMajorConflict || ''}
+          onChange={(val) => updateSeed(patchPlotAndTropeSettings({ firstMajorConflict: val }))}
           placeholder="e.g., Sect tournament, survival trial..."
         />
         <FormInput
@@ -58,8 +71,8 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
           label="Main Antagonist Pressure"
           icon={ShieldAlert}
           helpText="Who or what pushes back against the main character the hardest."
-          value={intake.mainAntagonistPressure || ''}
-          onChange={(val) => updateIntake('mainAntagonistPressure', val)}
+          value={settings.mainAntagonistPressure || ''}
+          onChange={(val) => updateSeed(patchPlotAndTropeSettings({ mainAntagonistPressure: val }))}
           placeholder="e.g., The celestial court's fate auditors..."
         />
       </div>

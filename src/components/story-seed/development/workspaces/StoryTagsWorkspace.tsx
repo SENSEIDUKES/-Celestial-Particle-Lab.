@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import { RefreshCw, Search, Tag, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
+import { storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass, workspaceInputClass } from './WorkspaceShell';
 
 interface StoryTagsWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 const TAG_LIMIT = 20;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 
 /**
- * Optional Story workspace: the tag editor. Tags remain critical system data,
- * but they are never required by hand — an empty set is inferred from Premise,
- * Genre, and Style at generation time (`shared/storyTagInference.ts`). Manual
- * tags are always preserved as-is. DOM ids are kept so Workshop preview
+ * The tag editor for `story.required.storyTags`. Story Tags are one of the
+ * four required Story inputs of the Story Seed contract, but they are never
+ * required *by hand* — an empty set is inferred from Premise, Genre, and Style
+ * at generation time (`shared/storyTagInference.ts`) and saved with the seed.
+ * Manual tags are always preserved as-is. DOM ids are kept so Workshop preview
  * scripting keeps working.
  */
-export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceProps) => {
+export const StoryTagsWorkspace = ({ seed, updateSeed }: StoryTagsWorkspaceProps) => {
   const section = getSeedSection('story-tags');
   // Production reads `routingConfig.storyMaker` and forwards it in the
   // `/api/suggest-tags` request body. The Workshop never makes that network
@@ -37,7 +39,7 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
   const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
 
-  const activeTags = intake.storyTags || [];
+  const activeTags = storyRequired(seed).storyTags;
 
   const handleSuggestTags = async () => {
     setIsSuggestingTags(true);
@@ -48,8 +50,8 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       // canned, genre-aware response instead. See shared/stubs.ts and the
       // feature README's "What was mocked" section.
       const resData = await suggestTagsStub({
-        premise: intake.corePremise,
-        genrePath: intake.genrePath,
+        premise: storyRequired(seed).premise,
+        genrePath: storyRequired(seed).genre,
       } as any);
       void routingConfig;
       setTagSuggestions(resData);
@@ -64,15 +66,14 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
   const handleTogglePresetTag = (tag: string) => {
     if (activeTags.includes(tag)) {
       setTagLimitError(null);
-      updateIntake('storyTags', (previous: string[] = []) => previous.filter(t => t !== tag));
+      updateSeed(updateStoryTags(previous => previous.filter(t => t !== tag)));
     } else {
       if (activeTags.length >= TAG_LIMIT) {
         setTagLimitError(TAG_LIMIT_MESSAGE);
         return;
       }
       setTagLimitError(null);
-      updateIntake('storyTags', (previous: string[] = []) =>
-        previous.includes(tag) ? previous : [...previous, tag]);
+      updateSeed(updateStoryTags(previous => previous.includes(tag) ? previous : [...previous, tag]));
     }
   };
 
@@ -84,14 +85,14 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
       return;
     }
     setTagLimitError(null);
-    updateIntake('storyTags', (previous: string[] = []) =>
-      previous.some(t => t.toLowerCase() === trimmed.toLowerCase()) ? previous : [...previous, trimmed]);
+    updateSeed(updateStoryTags(previous =>
+      previous.some(t => t.toLowerCase() === trimmed.toLowerCase()) ? previous : [...previous, trimmed]));
     setCustomTagInput('');
   };
 
   const handleRemoveTag = (tag: string) => {
     setTagLimitError(null);
-    updateIntake('storyTags', (previous: string[] = []) => previous.filter(t => t !== tag));
+    updateSeed(updateStoryTags(previous => previous.filter(t => t !== tag)));
   };
 
   const filteredPresets = Array.from(new Set(
@@ -163,7 +164,7 @@ export const StoryTagsWorkspace = ({ intake, updateIntake }: StoryTagsWorkspaceP
           {activeTags.length > 0 && (
             <button
               type="button"
-              onClick={() => updateIntake('storyTags', [])}
+              onClick={() => updateSeed(updateStoryTags(() => []))}
               className="font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400"
             >
               Clear All

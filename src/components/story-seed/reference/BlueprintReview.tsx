@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Layers, Zap, Users, Target, Wand2, FileText, HelpCircle, GitBranch, ArrowRight, Check, Copy, Download } from 'lucide-react';
-import { WorldBlueprint } from '../shared/types';
+import type { WorldBlueprint } from '../shared/referenceIntake';
 import { useAppStore, AGENTS } from '../shared/stubs';
 
 interface BlueprintReviewProps {

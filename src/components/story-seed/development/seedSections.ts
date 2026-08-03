@@ -14,25 +14,27 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import type { IntakeData } from '../shared/types';
+import type { StorySeedInput } from '../shared/storySeedSchema';
 import { normalizeStoryStyle } from '../shared/storyStyle';
+import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } from './seedState';
 
 /**
- * The navigation hierarchy of the creation workspace.
+ * The navigation hierarchy of the creation workspace, and how each section
+ * maps onto the canonical Story Seed contract:
  *
- * Story is the novel's direction — three required inputs in the order the
- * flow asks for them (Style, Genre, Premise) followed by seed-level optional
- * direction. World is the novel's
- * history, fully optional: the Library can generate all of it.
+ * ```text
+ * story.required   Story Tags · Premise · Genre · Style
+ * story.optional   Plot & Tropes → plotAndTropeSettings + additionalStoryDirection
+ * world.required   (none)
+ * world.optional   World Identity → worldIdentity
+ *                  Characters / Factions / Abilities / Power System /
+ *                  Destined Ending → worldFoundations
+ * ```
  *
  * A section earns its place here only if it helps *define or recreate the
  * novel*. Anything that changes how the finished novel is experienced —
  * pacing, tone dials, romance/harem levels, Fate Survival — belongs to the
- * separate Story Settings feature, not to the seed.
- *
- * The flat IntakeData view model is what the workspaces edit; the schema
- * boundary in `shared/storySeedSchema.ts` classifies it on save / export /
- * generation.
+ * separate Story Settings feature and is not part of the Story Seed.
  */
 
 export type SeedFamily = 'story' | 'world';
@@ -55,12 +57,17 @@ export interface SeedSection {
   family: SeedFamily;
   label: string;
   icon: LucideIcon;
-  /** One of the three required Story inputs (Premise, Genre, Style). */
+  /**
+   * Whether the creator must fill this section by hand before generation.
+   * Story Tags are a required *contract* field (`story.required.storyTags`)
+   * but are not flagged here: an empty set is inferred from Premise, Genre,
+   * and Style, so it can never block the flow.
+   */
   required?: boolean;
   /** One-line guidance shown under the workspace title. */
   tagline: string;
-  /** Whether the section currently holds user-entered content. */
-  isFilled: (intake: IntakeData) => boolean;
+  /** Whether the section currently holds creator-entered content. */
+  isFilled: (seed: StorySeedInput) => boolean;
 }
 
 export const SEED_FAMILIES: Record<SeedFamily, { label: string; tagline: string }> = {
@@ -69,14 +76,6 @@ export const SEED_FAMILIES: Record<SeedFamily, { label: string; tagline: string 
 };
 
 const hasText = (value?: string): boolean => Boolean(value?.trim());
-
-/** The curated seed-level plot direction — narrative shape, not experience dials. */
-export const PLOT_TROPE_FIELDS = [
-  'desiredPlotDirection',
-  'longTermGoal',
-  'firstMajorConflict',
-  'mainAntagonistPressure',
-] as const;
 
 export const SEED_SECTIONS: SeedSection[] = [
   // Style first: the tradition frames how every later section is read.
@@ -87,7 +86,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     icon: PenLine,
     required: true,
     tagline: 'The storytelling tradition your novel belongs to.',
-    isFilled: intake => Boolean(normalizeStoryStyle(intake.proseStyle)),
+    isFilled: seed => Boolean(normalizeStoryStyle(storyRequired(seed).style)),
   },
   {
     id: 'genre',
@@ -96,7 +95,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     icon: Drama,
     required: true,
     tagline: 'The shelf your novel lives on — its logic, dialect, and promises.',
-    isFilled: intake => hasText(intake.genrePath),
+    isFilled: seed => hasText(storyRequired(seed).genre),
   },
   {
     id: 'premise',
@@ -105,7 +104,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     icon: Feather,
     required: true,
     tagline: 'The hook or secret catalyst the whole novel bends around.',
-    isFilled: intake => hasText(intake.corePremise),
+    isFilled: seed => hasText(storyRequired(seed).premise),
   },
   {
     id: 'story-tags',
@@ -113,7 +112,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Story Tags',
     icon: Tag,
     tagline: 'Themes, tones, and elements that shape your story. Generated automatically if left empty.',
-    isFilled: intake => (intake.storyTags || []).length > 0,
+    isFilled: seed => storyRequired(seed).storyTags.length > 0,
   },
   {
     id: 'plot-tropes',
@@ -121,7 +120,13 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Plot & Tropes',
     icon: Route,
     tagline: 'The narrative shape of the novel — where it is headed and what pushes back.',
-    isFilled: intake => PLOT_TROPE_FIELDS.some(field => hasText(intake[field])),
+    isFilled: seed => {
+      const settings = plotAndTropeSettings(seed);
+      return hasText(seed.story.optional.additionalStoryDirection)
+        || hasText(settings.longTermGoal)
+        || hasText(settings.firstMajorConflict)
+        || hasText(settings.mainAntagonistPressure);
+    },
   },
   {
     id: 'world-identity',
@@ -129,11 +134,13 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'World Identity',
     icon: Landmark,
     tagline: 'Name, world type, society, and the place the story opens in.',
-    isFilled: intake =>
-      hasText(intake.novelTitle)
-      || hasText(intake.worldType)
-      || hasText(intake.startingLocation)
-      || hasText(intake.societyStructure),
+    isFilled: seed => {
+      const identity = worldIdentity(seed);
+      return hasText(identity.title)
+        || hasText(identity.worldType)
+        || hasText(identity.startingLocation)
+        || hasText(identity.societyStructure);
+    },
   },
   {
     id: 'characters',
@@ -141,18 +148,11 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Characters',
     icon: Users,
     tagline: 'The main character and any cast you want defined before generation.',
-    isFilled: intake =>
-      (intake.customCharacters || []).some(character => hasText(character.name))
-      || [
-        intake.mcName,
-        intake.startingIdentity,
-        intake.personality,
-        intake.mainFlaw,
-        intake.secretAdvantage,
-        intake.startingWeakness,
-        intake.moralAlignment,
-        intake.mcBio,
-      ].some(hasText),
+    isFilled: seed => {
+      const foundations = worldFoundations(seed);
+      return (foundations.additionalCharacters || []).some(character => hasText(character.name))
+        || Object.values(foundations.mainCharacter || {}).some(hasText);
+    },
   },
   {
     id: 'factions',
@@ -160,7 +160,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Factions',
     icon: Shield,
     tagline: 'Sects, guilds, and powers that already shape the world.',
-    isFilled: intake => (intake.customFactions || []).some(faction => hasText(faction.name)),
+    isFilled: seed => (worldFoundations(seed).factions || []).some(faction => hasText(faction.name)),
   },
   {
     id: 'abilities',
@@ -168,7 +168,10 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Abilities',
     icon: Sparkles,
     tagline: "The main character's starting power and the path only they can walk.",
-    isFilled: intake => hasText(intake.startingPowerConcept) || hasText(intake.uniquePath),
+    isFilled: seed => {
+      const abilities = worldFoundations(seed).abilities || {};
+      return hasText(abilities.startingPowerConcept) || hasText(abilities.uniquePath);
+    },
   },
   {
     id: 'power-system',
@@ -176,7 +179,10 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Power System',
     icon: Zap,
     tagline: "The flavor and known ranks of the world's power ladder.",
-    isFilled: intake => hasText(intake.powerFlavor) || hasText(intake.knownRanks),
+    isFilled: seed => {
+      const powerSystem = worldFoundations(seed).powerSystem || {};
+      return hasText(powerSystem.flavor) || hasText(powerSystem.knownRanks);
+    },
   },
   {
     id: 'destined-ending',
@@ -184,7 +190,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Destined Ending',
     icon: Hourglass,
     tagline: 'The final destination this story is fated to reach.',
-    isFilled: intake => hasText(intake.destinedEnding),
+    isFilled: seed => hasText(worldFoundations(seed).destinedEnding),
   },
 ];
 
@@ -198,8 +204,8 @@ export const REQUIRED_STORY_SECTIONS = SEED_SECTIONS.filter(section => section.r
 export const getSeedSection = (id: SeedSectionId): SeedSection =>
   SEED_SECTIONS.find(section => section.id === id)!;
 
-export const missingRequiredSections = (intake: IntakeData): SeedSection[] =>
-  REQUIRED_STORY_SECTIONS.filter(section => !section.isFilled(intake));
+export const missingRequiredSections = (seed: StorySeedInput): SeedSection[] =>
+  REQUIRED_STORY_SECTIONS.filter(section => !section.isFilled(seed));
 
 export const FAMILY_ICONS: Record<SeedFamily, LucideIcon> = {
   story: BookOpen,

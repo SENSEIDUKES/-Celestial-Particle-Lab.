@@ -1,29 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Feather, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
+import { patchStoryRequired, storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface PremiseWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Required Story workspace: the core premise. Keeps the Phase 1 ghost-tag
- * autocomplete (press Tab or click to weave a suggested tag into Story Tags)
- * and the numbered premise suggestions.
+ * Required Story workspace (`story.required.premise`). Keeps the Phase 1
+ * ghost-tag autocomplete (press Tab or click to weave a suggested tag into
+ * Story Tags) and the numbered premise suggestions.
  */
-export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps) => {
+export const PremiseWorkspace = ({ seed, updateSeed }: PremiseWorkspaceProps) => {
   const section = getSeedSection('premise');
+  const { premise, storyTags } = storyRequired(seed);
   const [ghostSuggestion, setGhostSuggestion] = useState<string | null>(null);
 
   // Smart ghost-tag autocomplete suggestions
   useEffect(() => {
-    const text = intake.corePremise || '';
-    const activeTags = intake.storyTags || [];
+    const text = premise;
+    const activeTags = storyTags;
 
     if (!text.trim() || activeTags.length >= 20) {
       setGhostSuggestion(null);
@@ -95,24 +97,23 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
     }
 
     setGhostSuggestion(null);
-  }, [intake.corePremise, intake.storyTags]);
+  }, [premise, storyTags]);
 
   const handleAddGhostTag = (tag: string) => {
-    if ((intake.storyTags || []).length >= 20) return;
-    updateIntake('storyTags', (previous: string[] = []) =>
-      previous.includes(tag) ? previous : [...previous, tag]);
+    if (storyTags.length >= 20) return;
+    updateSeed(updateStoryTags(previous => previous.includes(tag) ? previous : [...previous, tag]));
     setGhostSuggestion(null);
   };
 
   return (
-    <WorkspaceShell section={section} complete={Boolean(intake.corePremise?.trim())}>
+    <WorkspaceShell section={section} complete={Boolean(premise.trim())}>
       <div>
         <div className="mb-2 flex items-end justify-between">
           <label htmlFor="core-premise-input" className="block font-sc text-xs uppercase tracking-widest text-neutral-400">
             Core Premise / Secret Catalyst
           </label>
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] text-neutral-500">{(intake.corePremise || '').length} / 3000</span>
+            <span className="font-mono text-[10px] text-neutral-500">{premise.length} / 3000</span>
           </div>
         </div>
         <div className="glass-field-wrap">
@@ -121,8 +122,8 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             id="core-premise-input"
             required
             maxLength={3000}
-            value={intake.corePremise || ''}
-            onChange={(e) => updateIntake('corePremise', e.target.value)}
+            value={premise}
+            onChange={(e) => updateSeed(patchStoryRequired({ premise: e.target.value }))}
             onKeyDown={(e) => {
               if (e.key === 'Tab' && ghostSuggestion) {
                 e.preventDefault();
@@ -131,7 +132,7 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             }}
             rows={5}
             placeholder="The main hook or cheat..."
-            data-complete={Boolean(intake.corePremise?.trim()) || undefined}
+            data-complete={Boolean(premise.trim()) || undefined}
             className="glass-field resize-none p-3 pb-10 pl-10 pr-10 text-sm"
           />
           <AnimatePresence>
@@ -163,7 +164,7 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             <button
               key={idx}
               type="button"
-              onClick={() => updateIntake('corePremise', suggestion)}
+              onClick={() => updateSeed(patchStoryRequired({ premise: suggestion }))}
               title={suggestion}
               className="rounded border border-neutral-900 bg-neutral-950 px-2 py-1 font-mono text-[10px] text-neutral-400 transition-colors hover:border-portal/50 hover:text-portal"
             >

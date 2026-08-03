@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Copy, Cloud, ArrowRight } from 'lucide-react';
-import { IntakeData, StorySeed, StorySeedPayload, WorldBlueprint } from '../shared/types';
+import type { IntakeData, StorySeed, StorySeedPayload, WorldBlueprint } from '../shared/referenceIntake';
 import {
   AGENTS,
   LOCAL_ONLY_MODE,
@@ -27,7 +27,7 @@ import { MakeItWorkForm } from './MakeItWorkForm';
 import { ImportPanel } from './ImportPanel';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
-import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedFormat';
+import { downloadStorySeed, downloadStorySeedCollection } from '../shared/referenceIntake';
 
 import { PREMISE_SUGGESTIONS } from './constants';
 
