@@ -53,7 +53,7 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
-import { LibraryHeaderBadge } from './form-fields';
+import { LibraryHeaderBadge } from './library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';

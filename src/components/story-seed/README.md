@@ -144,7 +144,7 @@
   inner highlight, restrained focus glow), matching the approved design
   reference. Layout, Story/World hierarchy, section order, data wiring, and
   navigation are unchanged. Details:
-  - **`form-fields/glass-field.css` (new)** — the shared system, applied as
+  - **`library/glass-field.css` (new)** — the shared system, applied as
     one `glass-field` class plus Tailwind layout utilities. Pure gradients
     and box-shadows, no `backdrop-filter`, so mobile scrolling stays cheap.
     Covers text inputs, textareas, selects (`.glass-select` wrapper with a
@@ -358,7 +358,8 @@ development/                  — active Workshop version (Phase 2 creation work
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
                                    CATEGORIZED_TAGS (no Fate Survival genre;
                                    fate tags live in the Fate & Destiny category)
-  form-fields/                 — shared glass field system used by workspaces
+  library/                     — shared Library components (glass fields,
+                                  header badge) used by workspaces + header
     glass-field.css             — glass surface + select/chip/panel/ambience
                                   variants and all interactive states
     LibraryTextBox.tsx          — official Celestial Library text input;
@@ -369,7 +370,11 @@ development/                  — active Workshop version (Phase 2 creation work
                                   same ported behavior + skin, character
                                   counter, overlay children; used by every
                                   workspace textarea
-    index.ts                    — imports glass-field.css, re-exports both
+    LibraryHeaderBadge.tsx      — official Celestial Library header identity
+                                  block: glass title plaque, fluid glow,
+                                  gradient title, shimmer subtitle, optional
+                                  emblem home link
+    index.ts                    — imports glass-field.css, re-exports all three
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -773,7 +778,7 @@ tree below and should be removed in the same transfer, with one caution
   (still exports `GENRE_PRESETS`, used by
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
   is removed in this transfer)
-- `development/form-fields/*` → `src/features/creation/components/form-fields/*`
+- `development/library/*` → `src/features/creation/components/library/*`
 - `shared/storySeedSchema.ts` draft/generation validation split, the Style
   correction, and `applyInferredStoryTags` → production's Phase 1 schema
   module (the `IntakeData` view-model field `proseStyle` belongs to
@@ -795,7 +800,7 @@ registry line.
 ## Transfer notes and cautions
 
 - `LibraryTextBox.tsx` is self-contained: its SEIInput/SEIField behavior was
-  ported into the file, so transferring `development/form-fields/*` carries it
+  ported into the file, so transferring `development/library/*` carries it
   with **no `@seihouse/ui` dependency to install**. If Light-Novels later
   adopts the SEIHouse UI package directly, re-base `LibraryTextBox`'s behavior
   on the real `SEIInput`/`SEIField` instead of the port.
