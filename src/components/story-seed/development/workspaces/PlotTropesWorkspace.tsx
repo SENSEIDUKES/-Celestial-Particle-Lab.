@@ -8,7 +8,7 @@ import {
   setAdditionalStoryDirection,
   type UpdateSeed,
 } from '../seedState';
-import { FormTextarea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface PlotTropesWorkspaceProps {
@@ -37,7 +37,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
 
   return (
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
-      <FormTextarea
+      <LibraryTextArea
         id="desired-plot-direction-input"
         label="Desired Plot Direction"
         icon={Compass}

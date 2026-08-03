@@ -3,7 +3,7 @@ import { Route, Zap } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchAbilities, worldFoundations, type UpdateSeed } from '../seedState';
-import { FormTextarea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface AbilitiesWorkspaceProps {
@@ -27,7 +27,7 @@ export const AbilitiesWorkspace = ({ seed, updateSeed }: AbilitiesWorkspaceProps
           onChange={(val) => updateSeed(patchAbilities({ startingPowerConcept: val }))}
           placeholder="e.g., Qi Condensation Tier 1, Feng Shui Level 1..."
         />
-        <FormTextarea
+        <LibraryTextArea
           id="unique-path-input"
           label="Unique Path"
           icon={Route}

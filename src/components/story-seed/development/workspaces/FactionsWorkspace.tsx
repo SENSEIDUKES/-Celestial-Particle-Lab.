@@ -3,12 +3,8 @@ import type { StorySeedFaction, StorySeedInput } from '../../shared/storySeedSch
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';
 import { setFactions, worldFoundations, type UpdateSeed } from '../seedState';
-import { LibraryTextBox } from '../form-fields';
-import {
-  WorkspaceShell,
-  workspaceCompactInputClass,
-  workspaceCompactLabelClass,
-} from './WorkspaceShell';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { WorkspaceShell } from './WorkspaceShell';
 
 interface FactionsWorkspaceProps {
   seed: StorySeedInput;
@@ -88,8 +84,9 @@ export const FactionsWorkspace = ({ seed, updateSeed }: FactionsWorkspaceProps) 
               />
             </div>
             <div className="col-span-1 sm:col-span-2 md:col-span-3">
-              <label className={workspaceCompactLabelClass} htmlFor={`faction-aliases-${faction.id}`}>Aliases / Known Titles</label>
-              <textarea
+              <LibraryTextArea
+                size="compact"
+                label="Aliases / Known Titles"
                 key={`${faction.id}-${normalizeCodexAliases(faction.aliases, faction.name).join('|')}`}
                 id={`faction-aliases-${faction.id}`}
                 rows={2}
@@ -100,23 +97,19 @@ export const FactionsWorkspace = ({ seed, updateSeed }: FactionsWorkspaceProps) 
                   updateFaction(index, { aliases });
                 }}
                 placeholder="e.g. Azure Hall; Eastern Pavilion"
-                className={`${workspaceCompactInputClass} resize-none`}
               />
               <p className="mt-1 font-sans text-[9px] text-neutral-600">User-authored only. Separate names or titles with commas, semicolons, or new lines.</p>
             </div>
             <div className="col-span-1 sm:col-span-2 md:col-span-3">
-              <div className="mb-1 flex items-end justify-between">
-                <label className={workspaceCompactLabelClass} htmlFor={`faction-description-${faction.id}`}>Detailed Description &amp; Hierarchy</label>
-                <span className="font-mono text-[9px] text-neutral-500">{(faction.description || '').length} / 1200</span>
-              </div>
-              <textarea
+              <LibraryTextArea
+                size="compact"
+                label="Detailed Description & Hierarchy"
                 id={`faction-description-${faction.id}`}
                 value={faction.description || ''}
-                onChange={(e) => updateFaction(index, { description: e.target.value })}
+                onChange={(val) => updateFaction(index, { description: val })}
                 maxLength={1200}
                 rows={2}
                 placeholder="Organizational hierarchy, core beliefs, regional influence, elders, hidden rules..."
-                className={`${workspaceCompactInputClass} resize-none px-3 py-2`}
               />
             </div>
           </div>

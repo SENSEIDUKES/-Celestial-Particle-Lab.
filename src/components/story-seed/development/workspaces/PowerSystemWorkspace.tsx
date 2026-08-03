@@ -3,7 +3,7 @@ import { Flame, Layers } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchPowerSystem, worldFoundations, type UpdateSeed } from '../seedState';
-import { FormTextarea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface PowerSystemWorkspaceProps {
@@ -27,7 +27,7 @@ export const PowerSystemWorkspace = ({ seed, updateSeed }: PowerSystemWorkspaceP
           onChange={(val) => updateSeed(patchPowerSystem({ flavor: val }))}
           placeholder="e.g., Martial arts, Daoist, Demonic, Sword..."
         />
-        <FormTextarea
+        <LibraryTextArea
           id="a11y-control-6rmg4xp"
           label="Known Ranks"
           icon={Layers}

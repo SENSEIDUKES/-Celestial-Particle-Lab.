@@ -3,7 +3,7 @@ import { Hourglass } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldFoundations, worldFoundations, type UpdateSeed } from '../seedState';
-import { FormTextarea } from '../form-fields';
+import { LibraryTextArea } from '../form-fields';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface DestinedEndingWorkspaceProps {
@@ -17,7 +17,7 @@ export const DestinedEndingWorkspace = ({ seed, updateSeed }: DestinedEndingWork
 
   return (
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
-      <FormTextarea
+      <LibraryTextArea
         id="destined-ending-input"
         label="Destined Ending"
         icon={Hourglass}

@@ -10,6 +10,23 @@
 
 ## Workshop history
 
+- **2026-08-03:** LibraryTextArea — the textarea counterpart joins the family,
+  and the old form-field generation is gone from the active fork. Same rules
+  as `LibraryTextBox`: SEIHouse-ported behavior (forwardRef, useId fallback,
+  described-by wiring with error precedence, `role="alert"` errors, required
+  marker, controlled **or** uncontrolled), the glass skin, 16px text on
+  phones at both sizes, a live `n / max` counter in the label row when
+  `maxLength` is set, and `children` for in-field overlays. Migrated: all six
+  `FormTextarea` call sites (World Identity, Plot & Tropes, Characters,
+  Abilities, Power System, Destined Ending), the four raw compact card
+  textareas (character/faction aliases — uncontrolled `defaultValue` +
+  `onBlur` preserved — and biography/description), and the Premise field with
+  its ghost-tag Tab overlay (now passed as `children`; its label gains the
+  standard required `*`). `FormTextarea.tsx` is deleted, and the now-unused
+  `workspaceCompactInputClass` / `workspaceLabelClass` / `workspaceHelpClass`
+  constants went with it (`workspaceCompactLabelClass` stays — Story Tags
+  still uses it). Out of scope and unchanged: `BlueprintReview`,
+  `ImportPanel`, `StoryAuthGate`, and the locked `reference/` fork.
 - **2026-08-03:** Mobile/tablet pass on the LibraryTextBox rollout — verified
   Genre, Characters, Factions, and Story Tags in the real preview (headless
   Chromium) at 375, 430, 768, and 1280px widths, including a focused-field
@@ -344,12 +361,14 @@ development/                  — active Workshop version (Phase 2 creation work
   form-fields/                 — shared glass field system used by workspaces
     glass-field.css             — glass surface + select/chip/panel/ambience
                                   variants and all interactive states
-    FormTextarea.tsx            — textareas only; superseded for text inputs
-                                  by LibraryTextBox
     LibraryTextBox.tsx          — official Celestial Library text input;
                                   SEIInput/SEIField behavior ported from the
                                   SEIHouse UI repo on the glass skin; used by
                                   every workspace text field
+    LibraryTextArea.tsx         — official Celestial Library multi-line field;
+                                  same ported behavior + skin, character
+                                  counter, overlay children; used by every
+                                  workspace textarea
     index.ts                    — imports glass-field.css, re-exports both
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,

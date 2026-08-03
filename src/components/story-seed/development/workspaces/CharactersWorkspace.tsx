@@ -18,13 +18,8 @@ import {
   worldFoundations,
   type UpdateSeed,
 } from '../seedState';
-import { FormTextarea, LibraryTextBox } from '../form-fields';
-import {
-  WorkspaceShell,
-  WorkspaceSubheading,
-  workspaceCompactInputClass,
-  workspaceCompactLabelClass,
-} from './WorkspaceShell';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { WorkspaceShell, WorkspaceSubheading } from './WorkspaceShell';
 
 interface CharactersWorkspaceProps {
   seed: StorySeedInput;
@@ -108,7 +103,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             placeholder="e.g., Chaotic neutral, lawful evil..."
           />
         </div>
-        <FormTextarea
+        <LibraryTextArea
           id="mc-bio-input"
           label="Main Character Biography & Backstory"
           icon={BookOpen}
@@ -205,8 +200,9 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
                 placeholder="e.g. Rival, Foe, Ally..."
               />
               <div className="col-span-1 sm:col-span-2 md:col-span-4">
-                <label className={workspaceCompactLabelClass} htmlFor={`char-aliases-${char.id}`}>Aliases / Known Titles</label>
-                <textarea
+                <LibraryTextArea
+                  size="compact"
+                  label="Aliases / Known Titles"
                   key={`${char.id}-${normalizeCodexAliases(char.aliases, char.name).join('|')}`}
                   id={`char-aliases-${char.id}`}
                   rows={2}
@@ -217,23 +213,19 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
                     updateCharacter(index, { aliases });
                   }}
                   placeholder="e.g. Sister Mei; Pavilion Mistress"
-                  className={`${workspaceCompactInputClass} resize-none`}
                 />
                 <p className="mt-1 font-sans text-[9px] text-neutral-600">User-authored only. Separate names or titles with commas, semicolons, or new lines.</p>
               </div>
               <div className="col-span-1 sm:col-span-2 md:col-span-4">
-                <div className="mb-1 flex items-end justify-between">
-                  <label className={workspaceCompactLabelClass} htmlFor={`char-bio-${char.id}`}>Biography &amp; Traits</label>
-                  <span className="font-mono text-[9px] text-neutral-500">{(char.bio || '').length} / 2000</span>
-                </div>
-                <textarea
+                <LibraryTextArea
+                  size="compact"
+                  label="Biography & Traits"
                   id={`char-bio-${char.id}`}
                   value={char.bio || ''}
-                  onChange={(e) => updateCharacter(index, { bio: e.target.value })}
+                  onChange={(val) => updateCharacter(index, { bio: val })}
                   maxLength={2000}
                   rows={2}
                   placeholder="Vivid biography, personality quirks, hidden talents, major flaws, or specific fated actions..."
-                  className={`${workspaceCompactInputClass} resize-none px-3 py-2`}
                 />
               </div>
             </div>

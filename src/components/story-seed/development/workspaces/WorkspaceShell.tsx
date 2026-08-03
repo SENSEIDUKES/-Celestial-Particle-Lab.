@@ -5,18 +5,12 @@ import { SEED_FAMILIES, type SeedSection } from '../seedSections';
 /**
  * Shared field styling for the Phase 2 workspaces — the glass field system
  * from `form-fields/glass-field.css` (imported via `form-fields`), combined
- * with layout utilities. Text inputs use `LibraryTextBox` (which owns these
- * classes internally); `workspaceCompactInputClass` remains only for the
- * compact textareas inside the character/faction grid cards.
+ * with layout utilities. Text inputs and textareas use `LibraryTextBox` /
+ * `LibraryTextArea` (which own these classes internally); only
+ * `workspaceCompactLabelClass` remains, for the Story Tags picker headings.
  */
-export const workspaceCompactInputClass =
-  'glass-field px-2.5 py-1.5 text-xs';
-export const workspaceLabelClass =
-  'block font-sc text-xs text-neutral-400 uppercase tracking-widest mb-2';
 export const workspaceCompactLabelClass =
   'block font-sc text-[10px] text-neutral-400 uppercase tracking-widest mb-1';
-export const workspaceHelpClass =
-  'text-neutral-500 font-sans text-xs mb-3 leading-relaxed';
 
 const accentText = (section: SeedSection) =>
   section.family === 'story' ? 'text-portal' : 'text-gold-accent';

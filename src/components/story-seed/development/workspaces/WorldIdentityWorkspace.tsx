@@ -3,7 +3,7 @@ import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
-import { FormTextarea, LibraryTextBox } from '../form-fields';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface WorldIdentityWorkspaceProps {
@@ -50,7 +50,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
         />
       </div>
 
-      <FormTextarea
+      <LibraryTextArea
         id="starting-location-input"
         label="Starting Location (Detailed regional atmosphere)"
         icon={MapPin}
