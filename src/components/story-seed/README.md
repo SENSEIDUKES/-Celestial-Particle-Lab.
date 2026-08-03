@@ -10,6 +10,20 @@
 
 ## Workshop history
 
+- **2026-08-03:** LibraryTextBox rollout — every single-line text input in the
+  active workspaces now uses `LibraryTextBox`. The 15 remaining `FormInput`
+  call sites (World Identity, Plot & Tropes, Characters, Abilities, Power
+  System) were drop-in swaps; the 13 raw `<input>`s (Characters and Factions
+  compact grid fields, the custom-tag input, the celestial tag search) moved
+  onto `size="compact"` / the `icon` prop, keeping every DOM id verbatim and
+  gaining `aria-label`s where placeholder text was the only label.
+  `FormInput.tsx` is deleted — `FormTextarea` stays until a LibraryTextArea
+  counterpart exists, and the compact raw **textareas** still use
+  `workspaceCompactInputClass` (`workspaceInputClass`, now unused, was
+  removed). One intended visual delta: comfortable fields render 16px text
+  (was 14px) as part of the iOS anti-zoom fix. Out of scope and unchanged:
+  all textareas, `BlueprintReview`, `ImportPanel`, `StoryAuthGate`, and the
+  locked `reference/` fork.
 - **2026-08-03:** `LibraryTextBox` — the first official Celestial Library text
   input, and the first proof of the SEIHouse-behavior / Library-skin
   component rule. Behavior was ported (not packaged) from the SEIHouse UI
@@ -315,12 +329,13 @@ development/                  — active Workshop version (Phase 2 creation work
   form-fields/                 — shared glass field system used by workspaces
     glass-field.css             — glass surface + select/chip/panel/ambience
                                   variants and all interactive states
-    FormInput.tsx
-    FormTextarea.tsx
+    FormTextarea.tsx            — textareas only; superseded for text inputs
+                                  by LibraryTextBox
     LibraryTextBox.tsx          — official Celestial Library text input;
                                   SEIInput/SEIField behavior ported from the
-                                  SEIHouse UI repo on the glass skin
-    index.ts                    — imports glass-field.css, re-exports all three
+                                  SEIHouse UI repo on the glass skin; used by
+                                  every workspace text field
+    index.ts                    — imports glass-field.css, re-exports both
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,

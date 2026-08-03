@@ -6,7 +6,8 @@ import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
 import { storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
-import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass, workspaceInputClass } from './WorkspaceShell';
+import { LibraryTextBox } from '../form-fields';
+import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface StoryTagsWorkspaceProps {
   seed: StorySeedInput;
@@ -113,13 +114,12 @@ export const StoryTagsWorkspace = ({ seed, updateSeed }: StoryTagsWorkspaceProps
       <div>
         <label htmlFor="custom-tag-input" className="sr-only">Add a custom tag</label>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="glass-field-wrap flex-1">
-            <Tag size={15} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
-            <input
+          <div className="flex-1">
+            <LibraryTextBox
               id="custom-tag-input"
-              type="text"
+              icon={Tag}
               value={customTagInput}
-              onChange={(e) => setCustomTagInput(e.target.value)}
+              onChange={(val) => setCustomTagInput(val)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -127,7 +127,6 @@ export const StoryTagsWorkspace = ({ seed, updateSeed }: StoryTagsWorkspaceProps
                 }
               }}
               placeholder="Type a tag and press Enter..."
-              className={`${workspaceInputClass} pl-10`}
             />
           </div>
           <button
@@ -271,15 +270,14 @@ export const StoryTagsWorkspace = ({ seed, updateSeed }: StoryTagsWorkspaceProps
               {filteredPresets.length} / {TAG_PRESETS.length}
             </span>
           </div>
-          <div className="glass-field-wrap w-full sm:max-w-xs">
-            <Search size={14} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={tagSearch}
-              onChange={(e) => setTagSearch(e.target.value)}
-              placeholder="Filter celestial tags..."
-              className={`${workspaceInputClass} pl-10`}
+          <div className="w-full sm:max-w-xs">
+            <LibraryTextBox
               id="celestial-tag-search-input"
+              icon={Search}
+              value={tagSearch}
+              onChange={(val) => setTagSearch(val)}
+              placeholder="Filter celestial tags..."
+              aria-label="Filter celestial tags"
             />
           </div>
         </div>

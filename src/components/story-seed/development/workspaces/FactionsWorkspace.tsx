@@ -3,6 +3,7 @@ import type { StorySeedFaction, StorySeedInput } from '../../shared/storySeedSch
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';
 import { setFactions, worldFoundations, type UpdateSeed } from '../seedState';
+import { LibraryTextBox } from '../form-fields';
 import {
   WorkspaceShell,
   workspaceCompactInputClass,
@@ -44,25 +45,47 @@ export const FactionsWorkspace = ({ seed, updateSeed }: FactionsWorkspaceProps) 
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-            <div>
-              <label className={workspaceCompactLabelClass} htmlFor={index === 0 ? 'a11y-control-xhc59yh' : `faction-name-${faction.id}`}>Name</label>
-              <input type="text" value={faction.name || ''} onChange={(e) => updateFaction(index, { name: e.target.value })} placeholder="e.g. Heavenly Sword Sect" className={workspaceCompactInputClass} id={index === 0 ? 'a11y-control-xhc59yh' : `faction-name-${faction.id}`} />
-            </div>
-            <div>
-              <label className={workspaceCompactLabelClass} htmlFor={`faction-role-${faction.id}`}>Role</label>
-              <input type="text" value={faction.role || ''} onChange={(e) => updateFaction(index, { role: e.target.value })} placeholder="e.g. Ruling Power, Assassin Guild..." className={workspaceCompactInputClass} id={`faction-role-${faction.id}`} />
-            </div>
-            <div>
-              <label className={workspaceCompactLabelClass} htmlFor={`faction-power-${faction.id}`}>Power Level</label>
-              <input type="text" value={faction.powerLevel || ''} onChange={(e) => updateFaction(index, { powerLevel: e.target.value })} placeholder="e.g. Mid Tier, Universal Force..." className={workspaceCompactInputClass} id={`faction-power-${faction.id}`} />
-            </div>
-            <div>
-              <label className={workspaceCompactLabelClass} htmlFor={`faction-alignment-${faction.id}`}>Alignment (Good/Bad)</label>
-              <input type="text" value={faction.alignment || ''} onChange={(e) => updateFaction(index, { alignment: e.target.value })} placeholder="e.g. Righteous, Demonic, Neutral..." className={workspaceCompactInputClass} id={`faction-alignment-${faction.id}`} />
-            </div>
+            <LibraryTextBox
+              size="compact"
+              label="Name"
+              id={index === 0 ? 'a11y-control-xhc59yh' : `faction-name-${faction.id}`}
+              value={faction.name || ''}
+              onChange={(val) => updateFaction(index, { name: val })}
+              placeholder="e.g. Heavenly Sword Sect"
+            />
+            <LibraryTextBox
+              size="compact"
+              label="Role"
+              id={`faction-role-${faction.id}`}
+              value={faction.role || ''}
+              onChange={(val) => updateFaction(index, { role: val })}
+              placeholder="e.g. Ruling Power, Assassin Guild..."
+            />
+            <LibraryTextBox
+              size="compact"
+              label="Power Level"
+              id={`faction-power-${faction.id}`}
+              value={faction.powerLevel || ''}
+              onChange={(val) => updateFaction(index, { powerLevel: val })}
+              placeholder="e.g. Mid Tier, Universal Force..."
+            />
+            <LibraryTextBox
+              size="compact"
+              label="Alignment (Good/Bad)"
+              id={`faction-alignment-${faction.id}`}
+              value={faction.alignment || ''}
+              onChange={(val) => updateFaction(index, { alignment: val })}
+              placeholder="e.g. Righteous, Demonic, Neutral..."
+            />
             <div className="md:col-span-2">
-              <label className={workspaceCompactLabelClass} htmlFor={`mc-faction-connection-${faction.id}`}>Connection to MC</label>
-              <input type="text" id={`mc-faction-connection-${faction.id}`} value={faction.connectionToMC || ''} onChange={(e) => updateFaction(index, { connectionToMC: e.target.value })} placeholder="e.g. MC's starting sect, Sworn enemies..." className={workspaceCompactInputClass} />
+              <LibraryTextBox
+                size="compact"
+                label="Connection to MC"
+                id={`mc-faction-connection-${faction.id}`}
+                value={faction.connectionToMC || ''}
+                onChange={(val) => updateFaction(index, { connectionToMC: val })}
+                placeholder="e.g. MC's starting sect, Sworn enemies..."
+              />
             </div>
             <div className="col-span-1 sm:col-span-2 md:col-span-3">
               <label className={workspaceCompactLabelClass} htmlFor={`faction-aliases-${faction.id}`}>Aliases / Known Titles</label>

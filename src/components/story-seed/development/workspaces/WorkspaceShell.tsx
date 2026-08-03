@@ -5,12 +5,10 @@ import { SEED_FAMILIES, type SeedSection } from '../seedSections';
 /**
  * Shared field styling for the Phase 2 workspaces — the glass field system
  * from `form-fields/glass-field.css` (imported via `form-fields`), combined
- * with layout utilities. `workspaceInputClass` is the standard text field;
- * `workspaceCompactInputClass` is the small variant used inside the
- * character/faction grid cards.
+ * with layout utilities. Text inputs use `LibraryTextBox` (which owns these
+ * classes internally); `workspaceCompactInputClass` remains only for the
+ * compact textareas inside the character/faction grid cards.
  */
-export const workspaceInputClass =
-  'glass-field min-h-[2.75rem] px-4 py-2.5 text-sm';
 export const workspaceCompactInputClass =
   'glass-field px-2.5 py-1.5 text-xs';
 export const workspaceLabelClass =

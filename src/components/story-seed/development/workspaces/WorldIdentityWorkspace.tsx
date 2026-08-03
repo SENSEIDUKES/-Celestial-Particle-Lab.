@@ -3,7 +3,7 @@ import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
-import { FormInput, FormTextarea } from '../form-fields';
+import { FormTextarea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface WorldIdentityWorkspaceProps {
@@ -24,7 +24,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
       </GuidanceNote>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-v2xlbs8"
           label="Novel Title"
           icon={BookOpen}
@@ -32,7 +32,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
           onChange={(val) => updateSeed(patchWorldIdentity({ title: val }))}
           placeholder="Will be generated if empty"
         />
-        <FormInput
+        <LibraryTextBox
           id="world-type-input"
           label="World Type"
           icon={Globe}
@@ -40,7 +40,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
           onChange={(val) => updateSeed(patchWorldIdentity({ worldType: val }))}
           placeholder="e.g., Ancient sect world, tower system..."
         />
-        <FormInput
+        <LibraryTextBox
           id="society-structure-input"
           label="Society Structure"
           icon={Landmark}

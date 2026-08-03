@@ -8,7 +8,7 @@ import {
   setAdditionalStoryDirection,
   type UpdateSeed,
 } from '../seedState';
-import { FormInput, FormTextarea } from '../form-fields';
+import { FormTextarea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface PlotTropesWorkspaceProps {
@@ -50,7 +50,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
       />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-jolpc3b"
           label="Long-term Goal"
           icon={Target}
@@ -58,7 +58,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
           onChange={(val) => updateSeed(patchPlotAndTropeSettings({ longTermGoal: val }))}
           placeholder="e.g., Shatter the heavens..."
         />
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-6a6tmbf"
           label="First Major Conflict"
           icon={Swords}
@@ -66,7 +66,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
           onChange={(val) => updateSeed(patchPlotAndTropeSettings({ firstMajorConflict: val }))}
           placeholder="e.g., Sect tournament, survival trial..."
         />
-        <FormInput
+        <LibraryTextBox
           id="main-antagonist-pressure-input"
           label="Main Antagonist Pressure"
           icon={ShieldAlert}

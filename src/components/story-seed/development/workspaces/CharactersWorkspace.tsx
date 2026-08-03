@@ -18,7 +18,7 @@ import {
   worldFoundations,
   type UpdateSeed,
 } from '../seedState';
-import { FormInput, FormTextarea } from '../form-fields';
+import { FormTextarea, LibraryTextBox } from '../form-fields';
 import {
   WorkspaceShell,
   WorkspaceSubheading,
@@ -51,7 +51,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
       <div className="space-y-4">
         <WorkspaceSubheading>Main Character</WorkspaceSubheading>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormInput
+          <LibraryTextBox
             id="a11y-control-7b2mqtu"
             label="Main Character Name"
             icon={User}
@@ -59,7 +59,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ name: val }))}
             placeholder="e.g., Lin Fan"
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-starting-identity-input"
             label="Starting Identity"
             icon={Shield}
@@ -67,7 +67,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ startingIdentity: val }))}
             placeholder="e.g., Crippled young master, modern transmigrator..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-personality-input"
             label="Personality & Alignment"
             icon={Star}
@@ -75,7 +75,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ personality: val }))}
             placeholder="e.g., Ruthless but protective, chaotic neutral..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-secret-advantage-input"
             label="Secret Advantage / Cheat"
             icon={Sparkles}
@@ -83,7 +83,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ secretAdvantage: val }))}
             placeholder="e.g., System interface, primeval bloodline..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-starting-weakness-input"
             label="Starting Weakness"
             icon={ShieldAlert}
@@ -91,7 +91,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ startingWeakness: val }))}
             placeholder="e.g., Destroyed meridians, demonic curse..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-main-flaw-input"
             label="Main Flaw"
             icon={HeartCrack}
@@ -99,7 +99,7 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
             onChange={(val) => updateSeed(patchMainCharacter({ mainFlaw: val }))}
             placeholder="e.g., Cannot trust allies, crippling pride..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-moral-alignment-input"
             label="Moral Alignment"
             icon={Scale}
@@ -140,38 +140,70 @@ export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspacePro
               </button>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`}>Name</label>
-                <input type="text" value={char.name || ''} onChange={(e) => updateCharacter(index, { name: e.target.value })} placeholder="e.g. Lin Yue" className={workspaceCompactInputClass} id={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-age-${char.id}`}>Age</label>
-                <input type="text" value={char.age || ''} onChange={(e) => updateCharacter(index, { age: e.target.value })} placeholder="e.g. 18, Ancient..." className={workspaceCompactInputClass} id={`char-age-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-skin-${char.id}`}>Skin Tone</label>
-                <input type="text" value={char.skinTone || ''} onChange={(e) => updateCharacter(index, { skinTone: e.target.value })} placeholder="e.g. Pale, Olive..." className={workspaceCompactInputClass} id={`char-skin-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-eyes-${char.id}`}>Eye Color</label>
-                <input type="text" value={char.eyeColor || ''} onChange={(e) => updateCharacter(index, { eyeColor: e.target.value })} placeholder="e.g. Crimson, Blue..." className={workspaceCompactInputClass} id={`char-eyes-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-power-${char.id}`}>Power Type</label>
-                <input type="text" value={char.powerType || ''} onChange={(e) => updateCharacter(index, { powerType: e.target.value })} placeholder="e.g. Frost Dao, Sword..." className={workspaceCompactInputClass} id={`char-power-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-rank-${char.id}`}>Rank / Level</label>
-                <input type="text" value={char.rankLevel || ''} onChange={(e) => updateCharacter(index, { rankLevel: e.target.value })} placeholder="e.g. Foundation Est." className={workspaceCompactInputClass} id={`char-rank-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-role-${char.id}`}>Role</label>
-                <input type="text" value={char.role || ''} onChange={(e) => updateCharacter(index, { role: e.target.value })} placeholder="e.g. Sect Elder, Rogue..." className={workspaceCompactInputClass} id={`char-role-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`mc-char-connection-${char.id}`}>Connection to MC</label>
-                <input type="text" value={char.connectionToMC || ''} onChange={(e) => updateCharacter(index, { connectionToMC: e.target.value })} placeholder="e.g. Rival, Foe, Ally..." className={workspaceCompactInputClass} id={`mc-char-connection-${char.id}`} />
-              </div>
+              <LibraryTextBox
+                size="compact"
+                label="Name"
+                id={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`}
+                value={char.name || ''}
+                onChange={(val) => updateCharacter(index, { name: val })}
+                placeholder="e.g. Lin Yue"
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Age"
+                id={`char-age-${char.id}`}
+                value={char.age || ''}
+                onChange={(val) => updateCharacter(index, { age: val })}
+                placeholder="e.g. 18, Ancient..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Skin Tone"
+                id={`char-skin-${char.id}`}
+                value={char.skinTone || ''}
+                onChange={(val) => updateCharacter(index, { skinTone: val })}
+                placeholder="e.g. Pale, Olive..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Eye Color"
+                id={`char-eyes-${char.id}`}
+                value={char.eyeColor || ''}
+                onChange={(val) => updateCharacter(index, { eyeColor: val })}
+                placeholder="e.g. Crimson, Blue..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Power Type"
+                id={`char-power-${char.id}`}
+                value={char.powerType || ''}
+                onChange={(val) => updateCharacter(index, { powerType: val })}
+                placeholder="e.g. Frost Dao, Sword..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Rank / Level"
+                id={`char-rank-${char.id}`}
+                value={char.rankLevel || ''}
+                onChange={(val) => updateCharacter(index, { rankLevel: val })}
+                placeholder="e.g. Foundation Est."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Role"
+                id={`char-role-${char.id}`}
+                value={char.role || ''}
+                onChange={(val) => updateCharacter(index, { role: val })}
+                placeholder="e.g. Sect Elder, Rogue..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Connection to MC"
+                id={`mc-char-connection-${char.id}`}
+                value={char.connectionToMC || ''}
+                onChange={(val) => updateCharacter(index, { connectionToMC: val })}
+                placeholder="e.g. Rival, Foe, Ally..."
+              />
               <div className="col-span-1 sm:col-span-2 md:col-span-4">
                 <label className={workspaceCompactLabelClass} htmlFor={`char-aliases-${char.id}`}>Aliases / Known Titles</label>
                 <textarea

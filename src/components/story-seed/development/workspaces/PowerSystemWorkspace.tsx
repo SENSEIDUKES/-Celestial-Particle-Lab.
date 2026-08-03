@@ -3,7 +3,7 @@ import { Flame, Layers } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchPowerSystem, worldFoundations, type UpdateSeed } from '../seedState';
-import { FormInput, FormTextarea } from '../form-fields';
+import { FormTextarea, LibraryTextBox } from '../form-fields';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface PowerSystemWorkspaceProps {
@@ -19,7 +19,7 @@ export const PowerSystemWorkspace = ({ seed, updateSeed }: PowerSystemWorkspaceP
   return (
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <div className="grid grid-cols-1 gap-4">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-kytc0oh"
           label="Power Flavor"
           icon={Flame}

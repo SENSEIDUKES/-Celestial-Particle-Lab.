@@ -3,7 +3,7 @@ import { Route, Zap } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchAbilities, worldFoundations, type UpdateSeed } from '../seedState';
-import { FormInput, FormTextarea } from '../form-fields';
+import { FormTextarea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface AbilitiesWorkspaceProps {
@@ -19,7 +19,7 @@ export const AbilitiesWorkspace = ({ seed, updateSeed }: AbilitiesWorkspaceProps
   return (
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <div className="grid grid-cols-1 gap-4">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-itgsjgw"
           label="Starting Power Concept"
           icon={Zap}
