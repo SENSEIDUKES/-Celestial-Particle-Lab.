@@ -1,11 +1,20 @@
-import type { IntakeData, StorySeed, WorldBlueprint } from '../../../components/story-seed/shared/types';
+import type {
+  IntakeData,
+  StorySeed,
+  WorldBlueprint,
+} from '../../../components/story-seed/shared/referenceIntake';
 import {
   STORY_SEED_SCHEMA_VERSION,
-  createStorySeedInput,
-  type StorySeedRecord,
+  createEmptyStorySeedInput,
+  type StorySeedInput,
 } from '../../../components/story-seed/shared/storySeedSchema';
+import type { StorySeedRecord } from '../../../components/story-seed/shared/storySeedRepository';
 
 export const MOCK_USER_ID = 'mock-user-workshop';
+
+// ─── Locked reference fork fixtures (Phase-1 flat intake) ────────────────────
+// Only the `reference/` replica reads these. The development fork's fixtures
+// are the canonical Story Seed shapes further below.
 
 export const createEmptyIntake = (): IntakeData => ({
   novelTitle: '',
@@ -156,32 +165,111 @@ export const createMockSeedLibrary = (): StorySeed[] => [
   }),
 ];
 
+// ─── Development fork fixtures (canonical Creator / Story / World) ───────────
+
+export const createFilledStorySeedInput = (): StorySeedInput => ({
+  ...createEmptyStorySeedInput(),
+  creator: {},
+  story: {
+    required: {
+      storyTags: ['death flags', 'foreknowledge', 'sect politics', 'fate bonds'],
+      premise: 'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
+      genre: 'Xianxia',
+      style: 'chinese',
+    },
+    optional: {
+      plotAndTropeSettings: {
+        longTermGoal: 'Shatter the fated assassination timeline',
+        firstMajorConflict: 'Sect tournament that reveals the first assassination attempt',
+        mainAntagonistPressure: "The celestial court's fate auditors",
+      },
+      additionalStoryDirection: 'Slow sect building with escalating court intrigue.',
+    },
+  },
+  world: {
+    required: {},
+    optional: {
+      worldIdentity: {
+        title: 'Ashes of the Ninth Meridian',
+        worldType: 'Ancient sect world with a collapsing celestial court',
+        societyStructure: 'Sect-led feudal hierarchy',
+        startingLocation: 'A sprawling outer sect labor quarry built inside a cavernous volcanic rift.',
+      },
+      worldFoundations: {
+        mainCharacter: {
+          name: 'Ye Chen',
+          startingIdentity: 'Crippled young master, secretly the reincarnated Ninth Prince',
+          personality: 'Ruthless but protective, chaotic neutral',
+          secretAdvantage: 'Foreknowledge of seven doomed timelines',
+          startingWeakness: 'Destroyed meridians',
+          bio: 'Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective of the few he trusts.',
+        },
+        additionalCharacters: [
+          {
+            id: 'preview-character-1',
+            name: 'Elder Qin',
+            aliases: ['The Iron Brush'],
+            age: 'Ancient',
+            powerType: 'Frost Dao',
+            rankLevel: 'Nascent Soul',
+            role: 'Sect Elder',
+            connectionToMC: 'Secret protector',
+            bio: "A retired enforcer who owes the MC's father a life debt.",
+          },
+        ],
+        factions: [
+          {
+            id: 'preview-faction-1',
+            name: 'Heavenly Sword Sect',
+            aliases: ['Azure Hall'],
+            role: 'Ruling Power',
+            powerLevel: 'Mid Tier',
+            alignment: 'Righteous (in name only)',
+            connectionToMC: "MC's starting sect",
+            description: 'A once-glorious sect now riddled with internal corruption.',
+          },
+        ],
+        abilities: { startingPowerConcept: 'Qi Condensation Tier 1' },
+        powerSystem: { flavor: 'Martial arts, Daoist' },
+        destinedEnding: "The prince survives and shatters the celestial court's grip on fate.",
+      },
+    },
+  },
+});
+
 export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = {}): StorySeedRecord => {
   const now = new Date().toISOString();
-  const input = createStorySeedInput(createFilledIntake(), createMockBlueprint());
+  const seed = createFilledStorySeedInput();
   return {
-    ...input,
     schemaVersion: STORY_SEED_SCHEMA_VERSION,
     id: 'preview-seed-v2-1',
     userId: MOCK_USER_ID,
-    title: input.world.optional.title || 'Ashes of the Ninth Meridian',
+    title: seed.world.optional.worldIdentity.title || 'Ashes of the Ninth Meridian',
     createdAt: now,
     updatedAt: now,
+    seed,
     ...overrides,
   };
 };
 
-export const createMockStorySeedLibrary = (): StorySeedRecord[] => [
-  createMockStorySeedRecord(),
-  createMockStorySeedRecord({
-    id: 'preview-seed-v2-2',
-    title: 'The Grimoire That Talks Back',
-    world: {
-      optional: {
-        ...createMockStorySeedRecord().world.optional,
-        title: 'The Grimoire That Talks Back',
+export const createMockStorySeedLibrary = (): StorySeedRecord[] => {
+  const second = createFilledStorySeedInput();
+  return [
+    createMockStorySeedRecord(),
+    createMockStorySeedRecord({
+      id: 'preview-seed-v2-2',
+      title: 'The Grimoire That Talks Back',
+      seed: {
+        ...second,
+        world: {
+          ...second.world,
+          optional: {
+            ...second.world.optional,
+            worldIdentity: { ...second.world.optional.worldIdentity, title: 'The Grimoire That Talks Back' },
+          },
+        },
       },
-    },
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-  }),
-];
+      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    }),
+  ];
+};

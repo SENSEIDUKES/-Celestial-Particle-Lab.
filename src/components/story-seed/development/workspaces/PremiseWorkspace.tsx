@@ -1,29 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Feather, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
+import { patchStoryRequired, storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
+import { LibraryTextArea } from '../form-fields';
 
 interface PremiseWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Required Story workspace: the core premise. Keeps the Phase 1 ghost-tag
- * autocomplete (press Tab or click to weave a suggested tag into Story Tags)
- * and the numbered premise suggestions.
+ * Required Story workspace (`story.required.premise`). Keeps the Phase 1
+ * ghost-tag autocomplete (press Tab or click to weave a suggested tag into
+ * Story Tags) and the numbered premise suggestions.
  */
-export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps) => {
+export const PremiseWorkspace = ({ seed, updateSeed }: PremiseWorkspaceProps) => {
   const section = getSeedSection('premise');
+  const { premise, storyTags } = storyRequired(seed);
   const [ghostSuggestion, setGhostSuggestion] = useState<string | null>(null);
 
   // Smart ghost-tag autocomplete suggestions
   useEffect(() => {
-    const text = intake.corePremise || '';
-    const activeTags = intake.storyTags || [];
+    const text = premise;
+    const activeTags = storyTags;
 
     if (!text.trim() || activeTags.length >= 20) {
       setGhostSuggestion(null);
@@ -95,64 +98,52 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
     }
 
     setGhostSuggestion(null);
-  }, [intake.corePremise, intake.storyTags]);
+  }, [premise, storyTags]);
 
   const handleAddGhostTag = (tag: string) => {
-    if ((intake.storyTags || []).length >= 20) return;
-    updateIntake('storyTags', (previous: string[] = []) =>
-      previous.includes(tag) ? previous : [...previous, tag]);
+    if (storyTags.length >= 20) return;
+    updateSeed(updateStoryTags(previous => previous.includes(tag) ? previous : [...previous, tag]));
     setGhostSuggestion(null);
   };
 
   return (
-    <WorkspaceShell section={section} complete={Boolean(intake.corePremise?.trim())}>
-      <div>
-        <div className="mb-2 flex items-end justify-between">
-          <label htmlFor="core-premise-input" className="block font-sc text-xs uppercase tracking-widest text-neutral-400">
-            Core Premise / Secret Catalyst
-          </label>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] text-neutral-500">{(intake.corePremise || '').length} / 3000</span>
-          </div>
-        </div>
-        <div className="glass-field-wrap">
-          <Feather size={15} aria-hidden="true" className="glass-field-icon top-[1rem]" />
-          <textarea
-            id="core-premise-input"
-            required
-            maxLength={3000}
-            value={intake.corePremise || ''}
-            onChange={(e) => updateIntake('corePremise', e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Tab' && ghostSuggestion) {
-                e.preventDefault();
-                handleAddGhostTag(ghostSuggestion);
-              }
-            }}
-            rows={5}
-            placeholder="The main hook or cheat..."
-            data-complete={Boolean(intake.corePremise?.trim()) || undefined}
-            className="glass-field resize-none p-3 pb-10 pl-10 pr-10 text-sm"
-          />
-          <AnimatePresence>
-            {ghostSuggestion && (
-              <motion.button
-                type="button"
-                initial={{ opacity: 0, scale: 0.95, y: 2 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 2 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => handleAddGhostTag(ghostSuggestion)}
-                className="absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] cursor-pointer items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal hover:shadow-[0_0_18px_rgba(4,172,255,0.3)] sm:max-w-full"
-                title="Click or press Tab to weave this tag into your Story Tags"
-              >
-                <Sparkles size={11} className="animate-pulse text-portal" />
-                <span className="truncate">Tab: {ghostSuggestion}</span>
-              </motion.button>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+    <WorkspaceShell section={section} complete={Boolean(premise.trim())}>
+      <LibraryTextArea
+        id="core-premise-input"
+        label="Core Premise / Secret Catalyst"
+        icon={Feather}
+        required
+        maxLength={3000}
+        value={premise}
+        onChange={(val) => updateSeed(patchStoryRequired({ premise: val }))}
+        onKeyDown={(e) => {
+          if (e.key === 'Tab' && ghostSuggestion) {
+            e.preventDefault();
+            handleAddGhostTag(ghostSuggestion);
+          }
+        }}
+        rows={5}
+        placeholder="The main hook or cheat..."
+        className="pb-10 pr-10"
+      >
+        <AnimatePresence>
+          {ghostSuggestion && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, scale: 0.95, y: 2 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 2 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => handleAddGhostTag(ghostSuggestion)}
+              className="absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] cursor-pointer items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal hover:shadow-[0_0_18px_rgba(4,172,255,0.3)] sm:max-w-full"
+              title="Click or press Tab to weave this tag into your Story Tags"
+            >
+              <Sparkles size={11} className="animate-pulse text-portal" />
+              <span className="truncate">Tab: {ghostSuggestion}</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </LibraryTextArea>
 
       <div>
         <p className="mb-2 block font-sc text-xs uppercase tracking-widest text-neutral-400">
@@ -163,7 +154,7 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             <button
               key={idx}
               type="button"
-              onClick={() => updateIntake('corePremise', suggestion)}
+              onClick={() => updateSeed(patchStoryRequired({ premise: suggestion }))}
               title={suggestion}
               className="rounded border border-neutral-900 bg-neutral-950 px-2 py-1 font-mono text-[10px] text-neutral-400 transition-colors hover:border-portal/50 hover:text-portal"
             >

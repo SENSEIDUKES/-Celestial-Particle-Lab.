@@ -1,38 +1,40 @@
 import React from 'react';
 import { Route, Zap } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
-import { FormInput, FormTextarea } from '../form-fields';
+import { patchAbilities, worldFoundations, type UpdateSeed } from '../seedState';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface AbilitiesWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
-/** Optional World workspace: the MC's starting power concept and unique path. */
-export const AbilitiesWorkspace = ({ intake, updateIntake }: AbilitiesWorkspaceProps) => {
+/** Optional World workspace (`world.optional.worldFoundations.abilities`). */
+export const AbilitiesWorkspace = ({ seed, updateSeed }: AbilitiesWorkspaceProps) => {
   const section = getSeedSection('abilities');
+  const abilities = worldFoundations(seed).abilities || {};
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <div className="grid grid-cols-1 gap-4">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-itgsjgw"
           label="Starting Power Concept"
           icon={Zap}
-          value={intake.startingPowerConcept || ''}
-          onChange={(val) => updateIntake('startingPowerConcept', val)}
+          value={abilities.startingPowerConcept || ''}
+          onChange={(val) => updateSeed(patchAbilities({ startingPowerConcept: val }))}
           placeholder="e.g., Qi Condensation Tier 1, Feng Shui Level 1..."
         />
-        <FormTextarea
+        <LibraryTextArea
           id="unique-path-input"
           label="Unique Path"
           icon={Route}
           maxLength={1200}
           helpText="What makes the main character's way of growing power unlike anyone else's — a forbidden method, a twisted bloodline, a borrowed system."
-          value={intake.uniquePath || ''}
-          onChange={(val) => updateIntake('uniquePath', val)}
+          value={abilities.uniquePath || ''}
+          onChange={(val) => updateSeed(patchAbilities({ uniquePath: val }))}
           rows={2}
           placeholder="e.g., Cultivates by severing other people's fates instead of gathering qi..."
         />

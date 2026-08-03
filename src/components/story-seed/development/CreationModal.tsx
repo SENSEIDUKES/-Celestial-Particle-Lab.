@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Bookmark, Check, Copy, Database, Download, List, X } from 'lucide-react';
-import { IntakeData, WorldBlueprint } from '../shared/types';
+import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
   AGENTS,
@@ -14,30 +14,31 @@ import {
   importStorySeeds,
   listStorySeeds,
   updateStorySeed,
+  type StorySeedRecord,
 } from '../shared/storySeedRepository';
 import {
   applyInferredStoryTags,
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
-  createStorySeedInput,
-  storySeedToBlueprint,
-  storySeedToIntake,
+  createBlueprintDraftFromSeed,
+  createEmptyStorySeedInput,
+  normalizeStorySeedInput,
   validateStorySeedDraft,
   validateStorySeedInput,
   type BlueprintGenerationPayload,
   type InitialStoryGenerationPayload,
   type StorySeedInput,
-  type StorySeedRecord,
 } from '../shared/storySeedSchema';
 import { createStoryAdministrativeMetadata } from '../shared/storyAdministrativeMetadata';
 import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
 
-// Phase 2 creation workspace
+// Creation workspace
 import {
   missingRequiredSections,
   REQUIRED_STORY_SECTIONS,
   type SeedSectionId,
 } from './seedSections';
+import type { SeedUpdate } from './seedState';
 import { StorySeedSelector } from './StorySeedSelector';
 import { StoryTagsWorkspace } from './workspaces/StoryTagsWorkspace';
 import { PremiseWorkspace } from './workspaces/PremiseWorkspace';
@@ -74,52 +75,6 @@ const CELESTIAL_LIBRARY_EMBLEM_URL =
  */
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
 
-const createDefaultIntake = (): IntakeData => ({
-  novelTitle: '',
-  mcName: '',
-  genrePath: '',
-  corePremise: '',
-  // Style holds the chosen novel tradition ('chinese' | 'korean' |
-  // 'japanese'). It starts empty on purpose: a prefill would mark a required
-  // input complete without the creator ever choosing it.
-  proseStyle: '',
-  desiredPlotDirection: '',
-  storyTags: [],
-  worldType: '',
-  startingLocation: '',
-  societyStructure: '',
-  dangerLevel: '',
-  generalAtmosphere: '',
-  startingIdentity: '',
-  personality: '',
-  mainFlaw: '',
-  secretAdvantage: '',
-  startingWeakness: '',
-  moralAlignment: '',
-  mcBio: '',
-  customCharacters: [],
-  customFactions: [],
-  startingPowerConcept: '',
-  powerFlavor: '',
-  powerPace: '',
-  knownRanks: '',
-  uniquePath: '',
-  longTermGoal: '',
-  firstMajorConflict: '',
-  mainAntagonistPressure: '',
-  romanceLevel: '',
-  faceSlappingLevel: '',
-  comedyLevel: '',
-  tournamentArcPreference: '',
-  haremPreference: '',
-  betrayalLevel: '',
-  thingsToAvoid: '',
-  mustIncludeElements: '',
-  makeItWorkInstruction: '',
-  // No `fatePressure` default: Fate Survival is an experience layer owned by
-  // the separate Story Settings feature, so Story Seed must not write it.
-});
-
 export default function CreationModal({ onStartStory, onGenerateBlueprint, isGenerating: isGeneratingProp, error }: CreationModalProps) {
   const storeIsGenerating = useAppStore(selectIsGenerating);
     const activeAgentId = useAppStore(state => state.activeAgentId);
@@ -146,7 +101,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [savedFeedback, setSavedFeedback] = useState(false);
   const savedFeedbackTimer = useRef<number | null>(null);
 
-  const [intake, setIntake] = useState<IntakeData>(createDefaultIntake);
+  // The workspace edits the canonical Story Seed directly — there is no
+  // separate flat view model between the form and the contract any more.
+  const [seed, setSeed] = useState<StorySeedInput>(createEmptyStorySeedInput);
 
   useEffect(() => {
     if (LOCAL_ONLY_MODE || !currentUser) {
@@ -176,12 +133,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     };
   }, [currentUser, seedReferenceSignature]);
 
-  const updateIntake = (field: keyof IntakeData, value: any) => {
-    // Accepts either a plain value or an updater `(previous) => next` so
-    // rapid successive edits (e.g. toggling two tags in one task) can never
-    // lose a write to a stale render closure.
-    setIntake(prev => ({ ...prev, [field]: typeof value === 'function' ? value(prev[field]) : value }));
-  };
+  // Always a functional update, so rapid successive edits (e.g. toggling two
+  // tags in one task) can never lose a write to a stale render closure.
+  const updateSeed = (update: SeedUpdate) => setSeed(update);
 
   // Post-auth visual transition: once a gated guest signs in, keep the gate
   // mounted for STORY_AUTH_DISSOLVE_MS so StoryAuthGate's shell can dissolve
@@ -199,9 +153,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     return () => clearTimeout(timer);
   }, [currentUser]);
 
-  const rememberSeed = (seed: StorySeedRecord) => {
-    setCurrentSeed(seed);
-    setSavedSeeds(previous => [seed, ...previous.filter(item => item.id !== seed.id)]);
+  const rememberSeed = (record: StorySeedRecord) => {
+    setCurrentSeed(record);
+    setSavedSeeds(previous => [record, ...previous.filter(item => item.id !== record.id)]);
   };
 
   const persistSeed = async (payload: StorySeedInput): Promise<StorySeedRecord | null> => {
@@ -220,7 +174,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
    * all be empty and the current progress is still preserved.
    */
   const handleSaveDraft = async () => {
-    const seedInput = createStorySeedInput(intake);
+    const seedInput = seed;
     const validation = validateStorySeedDraft(seedInput);
     if (!validation.valid) {
       setSeedError(validation.errors.join(' '));
@@ -251,51 +205,52 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     if (imported.length > 0) {
       setSavedSeeds(previous => [
         ...imported,
-        ...previous.filter(seed => !imported.some(item => item.id === seed.id)),
+        ...previous.filter(record => !imported.some(item => item.id === record.id)),
       ]);
       setCurrentSeed(imported[0]);
     } else {
       setCurrentSeed(null);
     }
-    const selected = imported[0] || payloads[0];
-    setIntake({ ...createDefaultIntake(), ...storySeedToIntake(selected) });
-    setBlueprint(storySeedToBlueprint(selected));
+    const selected = imported[0]?.seed || payloads[0];
+    setSeed(normalizeStorySeedInput(selected));
+    setBlueprint(createBlueprintDraftFromSeed(selected));
     setStage('blueprint');
     setShowImportPanel(false);
     setSeedError(null);
   };
 
-  const handleUseSeed = (seed: StorySeedRecord) => {
-    setCurrentSeed(seed);
-    setIntake({ ...createDefaultIntake(), ...storySeedToIntake(seed) });
-    setBlueprint(storySeedToBlueprint(seed));
+  const handleUseSeed = (record: StorySeedRecord) => {
+    setCurrentSeed(record);
+    setSeed(normalizeStorySeedInput(record.seed));
+    setBlueprint(createBlueprintDraftFromSeed(record.seed));
     setStage('blueprint');
     setSeedError(null);
   };
 
   /**
-   * Generation requires Premise, Genre, and Style. Story Tags never block it:
-   * an empty set is inferred from those three inputs, written back into the
-   * workspace so the creator sees it, and saved with the seed.
+   * All four required Story inputs must be present to generate. Story Tags
+   * never block a creator, though: an empty set is inferred from Premise,
+   * Genre, and Style, written back into the workspace so the creator sees it,
+   * and saved with the seed.
    */
   const handleGenerateBlueprintClick = async () => {
     if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
-    const validation = validateStorySeedInput(createStorySeedInput(intake));
+    // Story Tags are filled by inference first, so only Style, Genre, and
+    // Premise can ever leave the seed short of generation readiness.
+    const seedInput = applyInferredStoryTags(normalizeStorySeedInput(seed));
+    const validation = validateStorySeedInput(seedInput);
     if (!validation.valid) {
       setSeedError(validation.errors.join(' '));
       return;
     }
-    const seedInput = applyInferredStoryTags(createStorySeedInput(intake));
-    const finalTags = seedInput.story.storyTags;
-    if ((intake.storyTags || []).length === 0 && finalTags.length > 0) {
-      updateIntake('storyTags', finalTags);
-    }
+    // Write the inferred tags back so the creator sees exactly what is saved.
+    if (seed.story.required.storyTags.length === 0) setSeed(seedInput);
     try {
       const bp = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
       setBlueprint(bp);
       setStage('blueprint');
       try {
-        await persistSeed(applyInferredStoryTags(createStorySeedInput({ ...intake, storyTags: finalTags }, bp)));
+        await persistSeed(seedInput);
         setSeedError(null);
       } catch (seedSaveError) {
         console.error('Failed to save generated story seed:', seedSaveError);
@@ -317,7 +272,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       unresolvedPlotThreads: (blueprint.unresolvedPlotThreads || []).map(f => f.trim()).filter(Boolean),
     };
     try {
-      const seedInput = applyInferredStoryTags(createStorySeedInput(intake, cleanBlueprint));
+      const seedInput = applyInferredStoryTags(normalizeStorySeedInput(seed));
       const savedSeed = await persistSeed(seedInput);
       if (!LOCAL_ONLY_MODE && !savedSeed) return;
       const sourceSeedId = savedSeed?.id || currentSeed?.id || `local-seed-${generateUUID()}`;
@@ -341,8 +296,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   };
 
   const handleExportCurrentSeed = () => {
-    if (!blueprint) return;
-    const payload = createStorySeedInput(intake, blueprint);
+    const payload = normalizeStorySeedInput(seed);
     // Start sharing immediately so iOS Safari retains the user gesture needed
     // to present Save to Files. Persistence can finish independently.
     setSeedError(null);
@@ -356,15 +310,15 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     });
   };
 
-  const handleExportSavedSeed = (seed: StorySeedRecord) => {
-    void downloadStorySeed(seed).catch(downloadError => {
+  const handleExportSavedSeed = (record: StorySeedRecord) => {
+    void downloadStorySeed(record.seed).catch(downloadError => {
       console.error('Failed to export saved story seed:', downloadError);
       setSeedError('The seed could not be exported. Please try again.');
     });
   };
 
   const handleExportAllSeeds = () => {
-    void downloadStorySeedCollection(savedSeeds).catch(downloadError => {
+    void downloadStorySeedCollection(savedSeeds.map(record => record.seed)).catch(downloadError => {
       console.error('Failed to export account story seeds:', downloadError);
       setSeedError('Your seeds could not be exported. Please try again.');
     });
@@ -394,10 +348,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     );
   }
 
-  const missing = missingRequiredSections(intake);
+  const missing = missingRequiredSections(seed);
   const requiredComplete = REQUIRED_STORY_SECTIONS.length - missing.length;
   const canGenerate = missing.length === 0 && !isGenerating;
-  const workspaceProps = { intake, updateIntake };
+  const workspaceProps = { seed, updateSeed };
 
   const renderWorkspace = () => {
     switch (activeSection) {
@@ -509,7 +463,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-900/80 bg-neutral-950/30 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-neutral-900/70 p-5 lg:block">
           <StorySeedSelector
-            intake={intake}
+            seed={seed}
             activeSection={activeSection}
             onSelect={setActiveSection}
           />
@@ -547,8 +501,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                   {REQUIRED_STORY_SECTIONS.map(section => (
                     <span
                       key={section.id}
-                      title={`${section.label}: ${section.isFilled(intake) ? 'complete' : 'missing'}`}
-                      className={`h-1.5 w-1.5 rounded-full ${section.isFilled(intake) ? 'bg-portal' : 'bg-human/80'}`}
+                      title={`${section.label}: ${section.isFilled(seed) ? 'complete' : 'missing'}`}
+                      className={`h-1.5 w-1.5 rounded-full ${section.isFilled(seed) ? 'bg-portal' : 'bg-human/80'}`}
                     />
                   ))}
                 </div>
@@ -579,7 +533,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                     <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Generating...'}</span>
                   </>
                 ) : (
-                  <span>Forge World Blueprint</span>
+                  <>
+                    <span className="hidden sm:inline">Forge World Blueprint</span>
+                    <span className="sm:hidden">Forge</span>
+                  </>
                 )}
               </button>
             </div>
@@ -634,7 +591,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 </button>
               </div>
               <StorySeedSelector
-                intake={intake}
+                seed={seed}
                 activeSection={activeSection}
                 onSelect={(id) => {
                   setActiveSection(id);

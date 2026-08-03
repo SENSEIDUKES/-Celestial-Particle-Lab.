@@ -33,8 +33,8 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 import { generateUUID } from './id';
-import { normalizeStorySeedPayload } from './storySeedFormat';
-import type { IntakeData, StorySeed, StorySeedPayload } from './types';
+import { normalizeStorySeedPayload } from './referenceIntake';
+import type { IntakeData, StorySeed, StorySeedPayload } from './referenceIntake';
 
 /**
  * Production reads this from `localStorage` once at module load and never

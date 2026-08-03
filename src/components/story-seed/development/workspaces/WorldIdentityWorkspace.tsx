@@ -1,61 +1,63 @@
 import React from 'react';
 import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
-import { FormInput, FormTextarea } from '../form-fields';
+import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface WorldIdentityWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
-/** Optional World workspace: title, world type, society, starting location. */
-export const WorldIdentityWorkspace = ({ intake, updateIntake }: WorldIdentityWorkspaceProps) => {
+/** Optional World workspace (`world.optional.worldIdentity`). */
+export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorkspaceProps) => {
   const section = getSeedSection('world-identity');
+  const identity = worldIdentity(seed);
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <GuidanceNote title="World is optional" tone="world">
         Every World section can be left empty — the Library generates the complete world automatically
         from your Story direction. Fill in only what you already have strong opinions about.
       </GuidanceNote>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormInput
+        <LibraryTextBox
           id="a11y-control-v2xlbs8"
           label="Novel Title"
           icon={BookOpen}
-          value={intake.novelTitle || ''}
-          onChange={(val) => updateIntake('novelTitle', val)}
+          value={identity.title || ''}
+          onChange={(val) => updateSeed(patchWorldIdentity({ title: val }))}
           placeholder="Will be generated if empty"
         />
-        <FormInput
+        <LibraryTextBox
           id="world-type-input"
           label="World Type"
           icon={Globe}
-          value={intake.worldType || ''}
-          onChange={(val) => updateIntake('worldType', val)}
+          value={identity.worldType || ''}
+          onChange={(val) => updateSeed(patchWorldIdentity({ worldType: val }))}
           placeholder="e.g., Ancient sect world, tower system..."
         />
-        <FormInput
+        <LibraryTextBox
           id="society-structure-input"
           label="Society Structure"
           icon={Landmark}
-          value={intake.societyStructure || ''}
-          onChange={(val) => updateIntake('societyStructure', val)}
+          value={identity.societyStructure || ''}
+          onChange={(val) => updateSeed(patchWorldIdentity({ societyStructure: val }))}
           placeholder="e.g., Sect-led, feudal, corporate..."
         />
       </div>
 
-      <FormTextarea
+      <LibraryTextArea
         id="starting-location-input"
         label="Starting Location (Detailed regional atmosphere)"
         icon={MapPin}
         maxLength={1200}
         helpText="Describe the geography, climate, and immediate atmosphere of the starting zone (e.g. outer sect labor quarry, freezing mortal mountain village)."
-        value={intake.startingLocation || ''}
-        onChange={(val) => updateIntake('startingLocation', val)}
+        value={identity.startingLocation || ''}
+        onChange={(val) => updateSeed(patchWorldIdentity({ startingLocation: val }))}
         rows={3}
         placeholder="e.g., A sprawling outer sect labor quarry built inside a cavernous volcanic rift. The air is heavy with sulfur, and molten ore glows in the deep trenches..."
       />

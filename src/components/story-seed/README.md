@@ -4,12 +4,124 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-02
+- **Last Workshop update:** 2026-08-03
 - **Last source comparison:** 2026-08-01
 - **Replica status:** under refinement
 
 ## Workshop history
 
+- **2026-08-03:** LibraryTextArea — the textarea counterpart joins the family,
+  and the old form-field generation is gone from the active fork. Same rules
+  as `LibraryTextBox`: SEIHouse-ported behavior (forwardRef, useId fallback,
+  described-by wiring with error precedence, `role="alert"` errors, required
+  marker, controlled **or** uncontrolled), the glass skin, 16px text on
+  phones at both sizes, a live `n / max` counter in the label row when
+  `maxLength` is set, and `children` for in-field overlays. Migrated: all six
+  `FormTextarea` call sites (World Identity, Plot & Tropes, Characters,
+  Abilities, Power System, Destined Ending), the four raw compact card
+  textareas (character/faction aliases — uncontrolled `defaultValue` +
+  `onBlur` preserved — and biography/description), and the Premise field with
+  its ghost-tag Tab overlay (now passed as `children`; its label gains the
+  standard required `*`). `FormTextarea.tsx` is deleted, and the now-unused
+  `workspaceCompactInputClass` / `workspaceLabelClass` / `workspaceHelpClass`
+  constants went with it (`workspaceCompactLabelClass` stays — Story Tags
+  still uses it). Out of scope and unchanged: `BlueprintReview`,
+  `ImportPanel`, `StoryAuthGate`, and the locked `reference/` fork.
+- **2026-08-03:** Mobile/tablet pass on the LibraryTextBox rollout — verified
+  Genre, Characters, Factions, and Story Tags in the real preview (headless
+  Chromium) at 375, 430, 768, and 1280px widths, including a focused-field
+  shot at 375px. No horizontal overflow on any page/width. Component-level
+  fixes: compact fields now use 16px text below the `sm` breakpoint (12px
+  above it) so the character/faction grid inputs stop triggering iOS
+  auto-zoom on phones, and compact labels do the same (12px → 10px at `sm`)
+  for phone legibility. Shell-level fix: the sticky action bar's primary
+  button read "Forge World Blueprint" with `shrink-0` and clipped ~65px at
+  375px; it now collapses to "Forge" below `sm` (same responsive-label
+  pattern Save Draft already used). Preview-harness fix (Workshop tooling
+  only): the `filled-intake` scenario's genre click matched `/^Xianxia$/`
+  against text that includes the preset's emoji, so it silently never
+  selected a genre — loosened to `/Xianxia/`. Known follow-up, not in scope:
+  the compact card **textareas** still use 12px text at phone width.
+- **2026-08-03:** LibraryTextBox rollout — every single-line text input in the
+  active workspaces now uses `LibraryTextBox`. The 15 remaining `FormInput`
+  call sites (World Identity, Plot & Tropes, Characters, Abilities, Power
+  System) were drop-in swaps; the 13 raw `<input>`s (Characters and Factions
+  compact grid fields, the custom-tag input, the celestial tag search) moved
+  onto `size="compact"` / the `icon` prop, keeping every DOM id verbatim and
+  gaining `aria-label`s where placeholder text was the only label.
+  `FormInput.tsx` is deleted — `FormTextarea` stays until a LibraryTextArea
+  counterpart exists, and the compact raw **textareas** still use
+  `workspaceCompactInputClass` (`workspaceInputClass`, now unused, was
+  removed). One intended visual delta: comfortable fields render 16px text
+  (was 14px) as part of the iOS anti-zoom fix. Out of scope and unchanged:
+  all textareas, `BlueprintReview`, `ImportPanel`, `StoryAuthGate`, and the
+  locked `reference/` fork.
+- **2026-08-03:** `LibraryTextBox` — the first official Celestial Library text
+  input, and the first proof of the SEIHouse-behavior / Library-skin
+  component rule. Behavior was ported (not packaged) from the SEIHouse UI
+  repo's `SEIInput` / `SEIField` (`packages/seihouse-ui/src/forms/sei-input.tsx`
+  and `sei-field.tsx`, inspected 2026-08-03) — only the text-input behavior,
+  so the Workshop gains no new dependency: `forwardRef` to the real `<input>`,
+  a `useId` fallback id, `aria-describedby` wiring where the error message
+  wins over the helper text, `aria-invalid` from `invalid` or a present
+  `error`, a required marker (`*` plus sr-only "(required)"), and
+  `comfortable` / `compact` sizes matching the existing workspace field
+  classes. The skin stays entirely on the glass field system (dark glass
+  surface, cool-blue focus glow, quiet completed accent, warning edge,
+  small-caps serif label, helper text above the field). Architecture rule:
+  workspaces import `LibraryTextBox`, never a raw `<input>` or a page-specific
+  input; a different visual mood becomes a new `variant` value on
+  `LibraryTextBox`, not a new component. First proof: the custom genre input
+  in `GenreWorkspace` now uses it (id `genre-custom-input` unchanged, so
+  preview scripts are unaffected). `FormInput` / `FormTextarea` remain for the
+  other workspaces; they migrate to `LibraryTextBox` (and a future textarea
+  counterpart) one at a time. Hardening pass later the same day, ahead of
+  any wider rollout: controlled **or** uncontrolled usage (omitting `value`
+  no longer freezes the field), 16px text at the comfortable size so iOS
+  Safari stops auto-zooming on focus, `role="alert"` on the error message so
+  screen readers announce it when it appears, the `type` prop restricted to
+  text-like values, a `trailingElement` slot (clear button / password
+  visibility toggle), caller-supplied `aria-describedby` merged instead of
+  clobbered, and browser-autofill styling in `glass-field.css` so autofilled
+  fields keep the dark glass instead of the browser's pale fill (that CSS fix
+  benefits every glass field, not just LibraryTextBox).
+- **2026-08-03:** Story Seed backend cleanup, phase 1 — the creator-controlled
+  data contract now matches the approved product hierarchy exactly, and the
+  old flat intake contract is out of the active system. No interface redesign,
+  no Postgres, no new administrative metadata.
+  - **One canonical shape** (`shared/storySeedSchema.ts`):
+    `creator` · `story.required` (Story Tags, Premise, Genre, Style) ·
+    `story.optional` (`plotAndTropeSettings`, `additionalStoryDirection`) ·
+    `world.required` (intentionally empty) ·
+    `world.optional` (`worldIdentity`, `worldFoundations`). It is what the
+    workspace edits, what is saved, what is exported, and what enters every
+    generation payload.
+  - **The flat `IntakeData` view model is gone from `development/`** — the
+    creation workspace, selector, section metadata, and all eleven workspaces
+    bind straight to the canonical seed through `development/seedState.ts`.
+    The frozen Phase-1 contract (`IntakeData`, the old portable seed format)
+    moved to `shared/referenceIntake.ts` and is read only by the locked
+    `reference/` replica and its mocks.
+  - **Removed from the seed:** Fate Survival controls (`hardcoreFateMode`,
+    `fatePressure`), experience dials (`romanceLevel`, `faceSlappingLevel`,
+    `comedyLevel`, `tournamentArcPreference`, `haremPreference`,
+    `betrayalLevel`, `dangerLevel`, `generalAtmosphere`, `powerPace`), and
+    generated Blueprint output that had been stored back into the seed
+    (`logline`, `firstArcPromise`, `tropeRules`, `unresolvedPlotThreads`,
+    `estimatedArcs`, `universe`, `majorMysteries`, `mainCharacter.profile`,
+    `powerSystem.outline`).
+  - **Consolidated:** `desiredPlotDirection`, `makeItWorkInstruction`,
+    `mustIncludeElements`, and `thingsToAvoid` became the single
+    `story.optional.additionalStoryDirection`. World Identity and World
+    Foundations are the only two World optional groups.
+  - **Story Tags stay required** in the contract and are still never a manual
+    requirement: an empty set is inferred from Premise, Genre, and Style
+    before the generation payload builders validate.
+  - **Storage isolated** — `shared/storySeedRepository.ts` is now a port with a
+    record envelope that holds the seed instead of merging with it, backed by
+    the swappable `shared/workshopStorySeedStorage.ts` (localStorage, Workshop
+    only). Reading pre-hierarchy JSON is the one narrow legacy adapter left,
+    in `shared/legacySeedImport.ts`, used by file import and nothing else.
 - **2026-08-02:** Glass touch-ups from review — the Style tradition buttons
   and the Story Tag library join the glass system.
   - **Style choices are now glass choice cards** (`.glass-choice` in
@@ -222,6 +334,7 @@ development/                  — active Workshop version (Phase 2 creation work
                                   classes, GuidanceNote, WorkspaceSubheading
     PremiseWorkspace.tsx        — required; premise + suggestions + ghost-tag Tab
     GenreWorkspace.tsx          — required; preset grid + custom genre input
+                                  (first `LibraryTextBox` proof)
     StyleWorkspace.tsx          — required, first; the three novel traditions
                                   (Chinese / Korean / Japanese)
     StoryTagsWorkspace.tsx      — optional (inferred if empty); tag
@@ -248,8 +361,14 @@ development/                  — active Workshop version (Phase 2 creation work
   form-fields/                 — shared glass field system used by workspaces
     glass-field.css             — glass surface + select/chip/panel/ambience
                                   variants and all interactive states
-    FormInput.tsx
-    FormTextarea.tsx
+    LibraryTextBox.tsx          — official Celestial Library text input;
+                                  SEIInput/SEIField behavior ported from the
+                                  SEIHouse UI repo on the glass skin; used by
+                                  every workspace text field
+    LibraryTextArea.tsx         — official Celestial Library multi-line field;
+                                  same ported behavior + skin, character
+                                  counter, overlay children; used by every
+                                  workspace textarea
     index.ts                    — imports glass-field.css, re-exports both
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
@@ -674,6 +793,12 @@ under `src/workshop/previews/story-seed/`, the manifest entry, and the
 registry line.
 
 ## Transfer notes and cautions
+
+- `LibraryTextBox.tsx` is self-contained: its SEIInput/SEIField behavior was
+  ported into the file, so transferring `development/form-fields/*` carries it
+  with **no `@seihouse/ui` dependency to install**. If Light-Novels later
+  adopts the SEIHouse UI package directly, re-base `LibraryTextBox`'s behavior
+  on the real `SEIInput`/`SEIField` instead of the port.
 
 - On transfer, `StoryTagsWorkspace.tsx` must have its `handleSuggestTags`
   restored to call the real `fetch('/api/suggest-tags', …)` with

@@ -1,29 +1,30 @@
 import React from 'react';
 import { Hourglass } from 'lucide-react';
-import { IntakeData } from '../../shared/types';
+import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
-import { FormTextarea } from '../form-fields';
+import { patchWorldFoundations, worldFoundations, type UpdateSeed } from '../seedState';
+import { LibraryTextArea } from '../form-fields';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface DestinedEndingWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
-/** Optional World workspace: the story's fated final destination. */
-export const DestinedEndingWorkspace = ({ intake, updateIntake }: DestinedEndingWorkspaceProps) => {
+/** Optional World workspace (`world.optional.worldFoundations.destinedEnding`). */
+export const DestinedEndingWorkspace = ({ seed, updateSeed }: DestinedEndingWorkspaceProps) => {
   const section = getSeedSection('destined-ending');
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
-      <FormTextarea
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
+      <LibraryTextArea
         id="destined-ending-input"
         label="Destined Ending"
         icon={Hourglass}
         maxLength={1500}
         helpText="The intended final destination of this story or arc. If left blank, the Library recommends a fitting destined ending (e.g., Kingdom Collapse, Final Ascension, or Fated Separation) based on your genre and premise. You can alter this outcome later!"
-        value={intake.destinedEnding || ''}
-        onChange={(val) => updateIntake('destinedEnding', val)}
+        value={worldFoundations(seed).destinedEnding || ''}
+        onChange={(val) => updateSeed(patchWorldFoundations({ destinedEnding: val }))}
         rows={3}
         placeholder="e.g. The kingdom falls, the MC ascends to godhood, or the lovers are separated..."
       />

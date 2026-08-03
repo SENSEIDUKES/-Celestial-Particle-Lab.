@@ -9,107 +9,108 @@ import {
   Star,
   User,
 } from 'lucide-react';
-import { IntakeCharacter, IntakeData } from '../../shared/types';
+import type { StorySeedCharacter, StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';
-import { FormInput, FormTextarea } from '../form-fields';
 import {
-  WorkspaceShell,
-  WorkspaceSubheading,
-  workspaceCompactInputClass,
-  workspaceCompactLabelClass,
-} from './WorkspaceShell';
+  patchMainCharacter,
+  setAdditionalCharacters,
+  worldFoundations,
+  type UpdateSeed,
+} from '../seedState';
+import { LibraryTextArea, LibraryTextBox } from '../form-fields';
+import { WorkspaceShell, WorkspaceSubheading } from './WorkspaceShell';
 
 interface CharactersWorkspaceProps {
-  intake: IntakeData;
-  updateIntake: (field: keyof IntakeData, value: any) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
 }
 
 /**
- * Optional World workspace: the main character plus any pre-defined cast.
- * Merges Phase 1's Main Character Setup and Character Intake sections into one
- * focused surface.
+ * Optional World workspace (`world.optional.worldFoundations.mainCharacter`
+ * and `.additionalCharacters`): the main character plus any pre-defined cast.
  */
-export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspaceProps) => {
+export const CharactersWorkspace = ({ seed, updateSeed }: CharactersWorkspaceProps) => {
   const section = getSeedSection('characters');
-  const characters = intake.customCharacters || [];
+  const mainCharacter = worldFoundations(seed).mainCharacter || {};
+  const characters = worldFoundations(seed).additionalCharacters || [];
 
-  const updateCharacter = (index: number, patch: Partial<IntakeCharacter>) => {
+  const updateCharacter = (index: number, patch: Partial<StorySeedCharacter>) => {
     const next = [...characters];
     next[index] = { ...next[index], ...patch };
-    updateIntake('customCharacters', next);
+    updateSeed(setAdditionalCharacters(next));
   };
 
   return (
-    <WorkspaceShell section={section} complete={section.isFilled(intake)}>
+    <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <div className="space-y-4">
         <WorkspaceSubheading>Main Character</WorkspaceSubheading>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormInput
+          <LibraryTextBox
             id="a11y-control-7b2mqtu"
             label="Main Character Name"
             icon={User}
-            value={intake.mcName || ''}
-            onChange={(val) => updateIntake('mcName', val)}
+            value={mainCharacter.name || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ name: val }))}
             placeholder="e.g., Lin Fan"
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-starting-identity-input"
             label="Starting Identity"
             icon={Shield}
-            value={intake.startingIdentity || ''}
-            onChange={(val) => updateIntake('startingIdentity', val)}
+            value={mainCharacter.startingIdentity || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ startingIdentity: val }))}
             placeholder="e.g., Crippled young master, modern transmigrator..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-personality-input"
             label="Personality & Alignment"
             icon={Star}
-            value={intake.personality || ''}
-            onChange={(val) => updateIntake('personality', val)}
+            value={mainCharacter.personality || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ personality: val }))}
             placeholder="e.g., Ruthless but protective, chaotic neutral..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-secret-advantage-input"
             label="Secret Advantage / Cheat"
             icon={Sparkles}
-            value={intake.secretAdvantage || ''}
-            onChange={(val) => updateIntake('secretAdvantage', val)}
+            value={mainCharacter.secretAdvantage || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ secretAdvantage: val }))}
             placeholder="e.g., System interface, primeval bloodline..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-starting-weakness-input"
             label="Starting Weakness"
             icon={ShieldAlert}
-            value={intake.startingWeakness || ''}
-            onChange={(val) => updateIntake('startingWeakness', val)}
+            value={mainCharacter.startingWeakness || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ startingWeakness: val }))}
             placeholder="e.g., Destroyed meridians, demonic curse..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-main-flaw-input"
             label="Main Flaw"
             icon={HeartCrack}
-            value={intake.mainFlaw || ''}
-            onChange={(val) => updateIntake('mainFlaw', val)}
+            value={mainCharacter.mainFlaw || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ mainFlaw: val }))}
             placeholder="e.g., Cannot trust allies, crippling pride..."
           />
-          <FormInput
+          <LibraryTextBox
             id="mc-moral-alignment-input"
             label="Moral Alignment"
             icon={Scale}
-            value={intake.moralAlignment || ''}
-            onChange={(val) => updateIntake('moralAlignment', val)}
+            value={mainCharacter.moralAlignment || ''}
+            onChange={(val) => updateSeed(patchMainCharacter({ moralAlignment: val }))}
             placeholder="e.g., Chaotic neutral, lawful evil..."
           />
         </div>
-        <FormTextarea
+        <LibraryTextArea
           id="mc-bio-input"
           label="Main Character Biography & Backstory"
           icon={BookOpen}
           maxLength={2000}
           helpText="Describe their backstory, personality quirks, hidden talents, major flaws, or specific fated ties. High-density characterization forces a highly customized narrative."
-          value={intake.mcBio || ''}
-          onChange={(val) => updateIntake('mcBio', val)}
+          value={mainCharacter.bio || ''}
+          onChange={(val) => updateSeed(patchMainCharacter({ bio: val }))}
           rows={3}
           placeholder="e.g., Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective..."
         />
@@ -127,48 +128,81 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
               <h4 className="font-sc text-xs font-bold uppercase tracking-widest text-signal">Character {index + 1}</h4>
               <button
                 type="button"
-                onClick={() => updateIntake('customCharacters', characters.filter((_, i) => i !== index))}
+                onClick={() => updateSeed(setAdditionalCharacters(characters.filter((_, i) => i !== index)))}
                 className="font-sc text-xs uppercase tracking-widest text-neutral-500 transition-colors hover:text-human"
               >
                 Remove
               </button>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`}>Name</label>
-                <input type="text" value={char.name || ''} onChange={(e) => updateCharacter(index, { name: e.target.value })} placeholder="e.g. Lin Yue" className={workspaceCompactInputClass} id={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-age-${char.id}`}>Age</label>
-                <input type="text" value={char.age || ''} onChange={(e) => updateCharacter(index, { age: e.target.value })} placeholder="e.g. 18, Ancient..." className={workspaceCompactInputClass} id={`char-age-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-skin-${char.id}`}>Skin Tone</label>
-                <input type="text" value={char.skinTone || ''} onChange={(e) => updateCharacter(index, { skinTone: e.target.value })} placeholder="e.g. Pale, Olive..." className={workspaceCompactInputClass} id={`char-skin-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-eyes-${char.id}`}>Eye Color</label>
-                <input type="text" value={char.eyeColor || ''} onChange={(e) => updateCharacter(index, { eyeColor: e.target.value })} placeholder="e.g. Crimson, Blue..." className={workspaceCompactInputClass} id={`char-eyes-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-power-${char.id}`}>Power Type</label>
-                <input type="text" value={char.powerType || ''} onChange={(e) => updateCharacter(index, { powerType: e.target.value })} placeholder="e.g. Frost Dao, Sword..." className={workspaceCompactInputClass} id={`char-power-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-rank-${char.id}`}>Rank / Level</label>
-                <input type="text" value={char.rankLevel || ''} onChange={(e) => updateCharacter(index, { rankLevel: e.target.value })} placeholder="e.g. Foundation Est." className={workspaceCompactInputClass} id={`char-rank-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`char-role-${char.id}`}>Role</label>
-                <input type="text" value={char.role || ''} onChange={(e) => updateCharacter(index, { role: e.target.value })} placeholder="e.g. Sect Elder, Rogue..." className={workspaceCompactInputClass} id={`char-role-${char.id}`} />
-              </div>
-              <div>
-                <label className={workspaceCompactLabelClass} htmlFor={`mc-char-connection-${char.id}`}>Connection to MC</label>
-                <input type="text" value={char.connectionToMC || ''} onChange={(e) => updateCharacter(index, { connectionToMC: e.target.value })} placeholder="e.g. Rival, Foe, Ally..." className={workspaceCompactInputClass} id={`mc-char-connection-${char.id}`} />
-              </div>
+              <LibraryTextBox
+                size="compact"
+                label="Name"
+                id={index === 0 ? 'a11y-control-boqy7nd' : `char-name-${char.id}`}
+                value={char.name || ''}
+                onChange={(val) => updateCharacter(index, { name: val })}
+                placeholder="e.g. Lin Yue"
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Age"
+                id={`char-age-${char.id}`}
+                value={char.age || ''}
+                onChange={(val) => updateCharacter(index, { age: val })}
+                placeholder="e.g. 18, Ancient..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Skin Tone"
+                id={`char-skin-${char.id}`}
+                value={char.skinTone || ''}
+                onChange={(val) => updateCharacter(index, { skinTone: val })}
+                placeholder="e.g. Pale, Olive..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Eye Color"
+                id={`char-eyes-${char.id}`}
+                value={char.eyeColor || ''}
+                onChange={(val) => updateCharacter(index, { eyeColor: val })}
+                placeholder="e.g. Crimson, Blue..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Power Type"
+                id={`char-power-${char.id}`}
+                value={char.powerType || ''}
+                onChange={(val) => updateCharacter(index, { powerType: val })}
+                placeholder="e.g. Frost Dao, Sword..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Rank / Level"
+                id={`char-rank-${char.id}`}
+                value={char.rankLevel || ''}
+                onChange={(val) => updateCharacter(index, { rankLevel: val })}
+                placeholder="e.g. Foundation Est."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Role"
+                id={`char-role-${char.id}`}
+                value={char.role || ''}
+                onChange={(val) => updateCharacter(index, { role: val })}
+                placeholder="e.g. Sect Elder, Rogue..."
+              />
+              <LibraryTextBox
+                size="compact"
+                label="Connection to MC"
+                id={`mc-char-connection-${char.id}`}
+                value={char.connectionToMC || ''}
+                onChange={(val) => updateCharacter(index, { connectionToMC: val })}
+                placeholder="e.g. Rival, Foe, Ally..."
+              />
               <div className="col-span-1 sm:col-span-2 md:col-span-4">
-                <label className={workspaceCompactLabelClass} htmlFor={`char-aliases-${char.id}`}>Aliases / Known Titles</label>
-                <textarea
+                <LibraryTextArea
+                  size="compact"
+                  label="Aliases / Known Titles"
                   key={`${char.id}-${normalizeCodexAliases(char.aliases, char.name).join('|')}`}
                   id={`char-aliases-${char.id}`}
                   rows={2}
@@ -179,23 +213,19 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
                     updateCharacter(index, { aliases });
                   }}
                   placeholder="e.g. Sister Mei; Pavilion Mistress"
-                  className={`${workspaceCompactInputClass} resize-none`}
                 />
                 <p className="mt-1 font-sans text-[9px] text-neutral-600">User-authored only. Separate names or titles with commas, semicolons, or new lines.</p>
               </div>
               <div className="col-span-1 sm:col-span-2 md:col-span-4">
-                <div className="mb-1 flex items-end justify-between">
-                  <label className={workspaceCompactLabelClass} htmlFor={`char-bio-${char.id}`}>Biography &amp; Traits</label>
-                  <span className="font-mono text-[9px] text-neutral-500">{(char.bio || '').length} / 2000</span>
-                </div>
-                <textarea
+                <LibraryTextArea
+                  size="compact"
+                  label="Biography & Traits"
                   id={`char-bio-${char.id}`}
                   value={char.bio || ''}
-                  onChange={(e) => updateCharacter(index, { bio: e.target.value })}
+                  onChange={(val) => updateCharacter(index, { bio: val })}
                   maxLength={2000}
                   rows={2}
                   placeholder="Vivid biography, personality quirks, hidden talents, major flaws, or specific fated actions..."
-                  className={`${workspaceCompactInputClass} resize-none px-3 py-2`}
                 />
               </div>
             </div>
@@ -205,10 +235,10 @@ export const CharactersWorkspace = ({ intake, updateIntake }: CharactersWorkspac
           <button
             type="button"
             onClick={() => {
-              updateIntake('customCharacters', [
+              updateSeed(setAdditionalCharacters([
                 ...characters,
                 { id: crypto.randomUUID(), name: '', aliases: [], age: '', skinTone: '', eyeColor: '', powerType: '', rankLevel: '', role: '', connectionToMC: '', bio: '' },
-              ]);
+              ]));
             }}
             className="w-full rounded-xl border border-dashed border-neutral-700/70 py-2.5 font-sc text-xs uppercase tracking-widest text-neutral-400 transition-all hover:border-portal/50 hover:bg-portal/5 hover:text-portal"
           >

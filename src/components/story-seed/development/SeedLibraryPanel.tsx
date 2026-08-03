@@ -1,6 +1,6 @@
 import React from 'react';
 import { Database, Download, Play } from 'lucide-react';
-import type { StorySeedRecord } from '../shared/storySeedSchema';
+import type { StorySeedRecord } from '../shared/storySeedRepository';
 
 interface SeedLibraryPanelProps {
   seeds: StorySeedRecord[];

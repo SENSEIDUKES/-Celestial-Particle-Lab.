@@ -1,4 +1,29 @@
-import type { IntakeCharacter, IntakeData, IntakeFaction, WorldBlueprint } from './types';
+/**
+ * The canonical creator-controlled Story Seed contract.
+ *
+ * ```text
+ * STORY SEED
+ * ├── creator
+ * ├── story
+ * │   ├── required   storyTags · premise · genre · style
+ * │   └── optional   plotAndTropeSettings · additionalStoryDirection
+ * └── world
+ *     ├── required   (intentionally empty — World has no required inputs)
+ *     └── optional   worldIdentity · worldFoundations
+ * ```
+ *
+ * This is the *only* active Story Seed shape: it is what the creation
+ * workspace edits, what is saved, what is exported, and what enters every
+ * generation payload. System-owned data (ids, timestamps, status, ownership)
+ * never appears inside `creator` / `story` / `world` — the temporary Workshop
+ * record envelope lives in `storySeedRepository.ts`, and the story spine lives
+ * in `storyAdministrativeMetadata.ts`.
+ *
+ * The frozen Phase-1 flat intake contract is not part of this file; it now
+ * belongs to the locked `reference/` replica (see `referenceIntake.ts`).
+ */
+
+import type { WorldBlueprint } from './types';
 import {
   assertValidStoryAdministrativeMetadata,
   type StoryAdministrativeMetadata,
@@ -6,51 +31,95 @@ import {
 import { inferStoryTags } from './storyTagInference';
 import { normalizeStoryStyle, type StoryStyle } from './storyStyle';
 
-export const STORY_SEED_SCHEMA_VERSION = 2 as const;
+/**
+ * Bumped when the persisted / portable Story Seed shape changes
+ * incompatibly, so stale records are rejected instead of silently read as
+ * empty. Version 3 is the Creator / Story / World hierarchy above.
+ */
+export const STORY_SEED_SCHEMA_VERSION = 3 as const;
 
-export interface StorySeedCreator {
-  // Reserved for creator-controlled settings. The family is required even
-  // while there are no creator fields to collect.
-}
+// ─── Creator ─────────────────────────────────────────────────────────────────
 
-export interface StorySeedStoryOptional {
-  desiredPlotDirection?: string;
-  logline?: string;
-  estimatedArcs?: number;
-  generalAtmosphere?: string;
-  dangerLevel?: string;
-  powerPace?: string;
-  longTermGoal?: string;
-  firstMajorConflict?: string;
-  mainAntagonistPressure?: string;
-  romanceLevel?: string;
-  faceSlappingLevel?: string;
-  comedyLevel?: string;
-  tournamentArcPreference?: string;
-  haremPreference?: string;
-  betrayalLevel?: string;
-  thingsToAvoid?: string;
-  mustIncludeElements?: string;
-  hardcoreFateMode?: boolean;
-  fatePressure?: 'Relaxed' | 'Balanced' | 'Hardcore' | 'Dao Master';
-  makeItWorkInstruction?: string;
-  firstArcPromise?: string;
-  tropeRules?: string;
-  unresolvedPlotThreads?: string[];
-}
+/**
+ * Creator-owned settings. The family is part of the contract even while no
+ * creator-controlled field is collected yet, so nothing has to be restructured
+ * when the first one arrives.
+ */
+export interface StorySeedCreator {}
 
-export interface StorySeedStory {
+// ─── Story ───────────────────────────────────────────────────────────────────
+
+export interface StorySeedStoryRequired {
   storyTags: string[];
   premise: string;
   genre: string;
   /** The novel's storytelling tradition; `''` until the creator chooses one. */
   style: StoryStyle | '';
+}
+
+/** The narrative shape of the novel — where it is headed and what pushes back. */
+export interface StorySeedPlotAndTropeSettings {
+  longTermGoal?: string;
+  firstMajorConflict?: string;
+  mainAntagonistPressure?: string;
+}
+
+export interface StorySeedStoryOptional {
+  plotAndTropeSettings: StorySeedPlotAndTropeSettings;
+  /**
+   * One freeform channel for everything the creator wants to say about the
+   * story's direction. The Phase-1 seed spread the same intent across
+   * `desiredPlotDirection`, `makeItWorkInstruction`, `mustIncludeElements`,
+   * and `thingsToAvoid`; they are consolidated here.
+   */
+  additionalStoryDirection?: string;
+}
+
+export interface StorySeedStory {
+  required: StorySeedStoryRequired;
   optional: StorySeedStoryOptional;
+}
+
+// ─── World ───────────────────────────────────────────────────────────────────
+
+/** World has no required creator inputs. The family exists and stays empty. */
+export interface StorySeedWorldRequired {}
+
+/** Name, world type, society, and the place the story opens in. */
+export interface StorySeedWorldIdentity {
+  title?: string;
+  worldType?: string;
+  societyStructure?: string;
+  startingLocation?: string;
+}
+
+export interface StorySeedCharacter {
+  id: string;
+  name: string;
+  aliases?: string[];
+  age?: string;
+  skinTone?: string;
+  eyeColor?: string;
+  powerType?: string;
+  rankLevel?: string;
+  role?: string;
+  connectionToMC?: string;
+  bio?: string;
+}
+
+export interface StorySeedFaction {
+  id: string;
+  name: string;
+  aliases?: string[];
+  role?: string;
+  powerLevel?: string;
+  alignment?: string;
+  connectionToMC?: string;
+  description?: string;
 }
 
 export interface StorySeedMainCharacter {
   name?: string;
-  profile?: string;
   startingIdentity?: string;
   personality?: string;
   mainFlaw?: string;
@@ -68,43 +137,34 @@ export interface StorySeedAbilities {
 export interface StorySeedPowerSystem {
   flavor?: string;
   knownRanks?: string;
-  outline?: string;
 }
 
-export interface StorySeedWorldOptional {
-  title?: string;
-  worldType?: string;
-  universe?: string;
-  startingLocation?: string;
-  societyStructure?: string;
+/** The history already standing when the novel opens. */
+export interface StorySeedWorldFoundations {
   mainCharacter?: StorySeedMainCharacter;
-  additionalCharacters?: IntakeCharacter[];
-  factions?: IntakeFaction[];
+  additionalCharacters?: StorySeedCharacter[];
+  factions?: StorySeedFaction[];
   abilities?: StorySeedAbilities;
   powerSystem?: StorySeedPowerSystem;
   destinedEnding?: string;
-  majorMysteries?: string[];
+}
+
+export interface StorySeedWorldOptional {
+  worldIdentity: StorySeedWorldIdentity;
+  worldFoundations: StorySeedWorldFoundations;
 }
 
 export interface StorySeedWorld {
+  required: StorySeedWorldRequired;
   optional: StorySeedWorldOptional;
 }
 
-/** The complete user-controlled creative intake. Operational metadata lives elsewhere. */
+// ─── The seed ────────────────────────────────────────────────────────────────
+
 export interface StorySeedInput {
   creator: StorySeedCreator;
   story: StorySeedStory;
   world: StorySeedWorld;
-}
-
-/** Private account-owned record. Internal fields are excluded from portable exports. */
-export interface StorySeedRecord extends StorySeedInput {
-  schemaVersion: typeof STORY_SEED_SCHEMA_VERSION;
-  id: string;
-  userId: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface BlueprintGenerationPayload {
@@ -122,6 +182,8 @@ export interface StorySeedValidationResult {
   errors: string[];
 }
 
+// ─── Normalization primitives ────────────────────────────────────────────────
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -131,9 +193,6 @@ const text = (value: unknown): string | undefined => {
   return normalized || undefined;
 };
 
-const positiveInteger = (value: unknown): number | undefined =>
-  typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
-
 const stringList = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   return Array.from(new Set(value.map(text).filter((item): item is string => Boolean(item))));
@@ -142,77 +201,43 @@ const stringList = (value: unknown): string[] => {
 const optionalTextFields = <T extends object>(
   source: Record<string, unknown>,
   fields: readonly string[],
-): Partial<T> => Object.fromEntries(
+): T => Object.fromEntries(
   fields.flatMap(field => {
     const value = text(source[field]);
     return value ? [[field, value]] : [];
   }),
-) as Partial<T>;
+) as T;
 
-const STORY_OPTIONAL_TEXT_FIELDS = [
-  'desiredPlotDirection',
-  'logline',
-  'generalAtmosphere',
-  'dangerLevel',
-  'powerPace',
-  'longTermGoal',
-  'firstMajorConflict',
-  'mainAntagonistPressure',
-  'romanceLevel',
-  'faceSlappingLevel',
-  'comedyLevel',
-  'tournamentArcPreference',
-  'haremPreference',
-  'betrayalLevel',
-  'thingsToAvoid',
-  'mustIncludeElements',
-  'makeItWorkInstruction',
-  'firstArcPromise',
-  'tropeRules',
+const PLOT_AND_TROPE_FIELDS = ['longTermGoal', 'firstMajorConflict', 'mainAntagonistPressure'] as const;
+const WORLD_IDENTITY_FIELDS = ['title', 'worldType', 'societyStructure', 'startingLocation'] as const;
+const MAIN_CHARACTER_FIELDS = [
+  'name', 'startingIdentity', 'personality', 'mainFlaw',
+  'secretAdvantage', 'startingWeakness', 'moralAlignment', 'bio',
 ] as const;
-
-const MAIN_CHARACTER_TEXT_FIELDS = [
-  'name',
-  'profile',
-  'startingIdentity',
-  'personality',
-  'mainFlaw',
-  'secretAdvantage',
-  'startingWeakness',
-  'moralAlignment',
-  'bio',
+const ABILITY_FIELDS = ['startingPowerConcept', 'uniquePath'] as const;
+const POWER_SYSTEM_FIELDS = ['flavor', 'knownRanks'] as const;
+const CHARACTER_FIELDS = [
+  'name', 'age', 'skinTone', 'eyeColor', 'powerType', 'rankLevel', 'role', 'connectionToMC', 'bio',
 ] as const;
+const FACTION_FIELDS = ['name', 'role', 'powerLevel', 'alignment', 'connectionToMC', 'description'] as const;
 
-const WORLD_TEXT_FIELDS = [
-  'title',
-  'worldType',
-  'universe',
-  'startingLocation',
-  'societyStructure',
-  'destinedEnding',
-] as const;
-
-const normalizeCharacter = (value: unknown, index: number): IntakeCharacter | null => {
+const normalizeCharacter = (value: unknown, index: number): StorySeedCharacter | null => {
   if (!isRecord(value) || !text(value.name)) return null;
   const normalized = {
-    ...optionalTextFields<IntakeCharacter>(value, [
-      'name', 'age', 'skinTone', 'eyeColor', 'powerType', 'rankLevel', 'role', 'connectionToMC', 'bio',
-    ]),
+    ...optionalTextFields<Partial<StorySeedCharacter>>(value, CHARACTER_FIELDS),
     id: text(value.id) || `seed-character-${index + 1}`,
-  } as IntakeCharacter;
+  } as StorySeedCharacter;
   const aliases = stringList(value.aliases);
   if (aliases.length > 0) normalized.aliases = aliases;
   return normalized;
 };
 
-const normalizeFaction = (value: unknown, index: number): IntakeFaction | null => {
+const normalizeFaction = (value: unknown, index: number): StorySeedFaction | null => {
   if (!isRecord(value) || !text(value.name)) return null;
   const normalized = {
-    ...optionalTextFields<IntakeFaction>(value, [
-      'name', 'role', 'powerLevel', 'alignment', 'connectionToMC', 'description',
-    ]),
+    ...optionalTextFields<Partial<StorySeedFaction>>(value, FACTION_FIELDS),
     id: text(value.id) || `seed-faction-${index + 1}`,
-  } as IntakeFaction;
+  } as StorySeedFaction;
   const aliases = stringList(value.aliases);
   if (aliases.length > 0) normalized.aliases = aliases;
   return normalized;
@@ -220,98 +245,134 @@ const normalizeFaction = (value: unknown, index: number): IntakeFaction | null =
 
 const normalizeStoryOptional = (value: unknown): StorySeedStoryOptional => {
   const source = isRecord(value) ? value : {};
-  const normalized: StorySeedStoryOptional = optionalTextFields<StorySeedStoryOptional>(
-    source,
-    STORY_OPTIONAL_TEXT_FIELDS,
+  const normalized: StorySeedStoryOptional = {
+    plotAndTropeSettings: optionalTextFields<StorySeedPlotAndTropeSettings>(
+      isRecord(source.plotAndTropeSettings) ? source.plotAndTropeSettings : {},
+      PLOT_AND_TROPE_FIELDS,
+    ),
+  };
+  const additionalStoryDirection = text(source.additionalStoryDirection);
+  if (additionalStoryDirection) normalized.additionalStoryDirection = additionalStoryDirection;
+  return normalized;
+};
+
+const normalizeWorldFoundations = (value: unknown): StorySeedWorldFoundations => {
+  const source = isRecord(value) ? value : {};
+  const normalized: StorySeedWorldFoundations = {};
+
+  const mainCharacter = optionalTextFields<StorySeedMainCharacter>(
+    isRecord(source.mainCharacter) ? source.mainCharacter : {},
+    MAIN_CHARACTER_FIELDS,
   );
-  const estimatedArcs = positiveInteger(source.estimatedArcs);
-  if (estimatedArcs) normalized.estimatedArcs = estimatedArcs;
-  if (typeof source.hardcoreFateMode === 'boolean') normalized.hardcoreFateMode = source.hardcoreFateMode;
-  if (
-    source.fatePressure === 'Relaxed'
-    || source.fatePressure === 'Balanced'
-    || source.fatePressure === 'Hardcore'
-    || source.fatePressure === 'Dao Master'
-  ) normalized.fatePressure = source.fatePressure;
-  const unresolvedPlotThreads = stringList(source.unresolvedPlotThreads);
-  if (unresolvedPlotThreads.length > 0) normalized.unresolvedPlotThreads = unresolvedPlotThreads;
+  if (Object.keys(mainCharacter).length > 0) normalized.mainCharacter = mainCharacter;
+
+  const additionalCharacters = (Array.isArray(source.additionalCharacters) ? source.additionalCharacters : [])
+    .map(normalizeCharacter)
+    .filter((item): item is StorySeedCharacter => item !== null);
+  if (additionalCharacters.length > 0) normalized.additionalCharacters = additionalCharacters;
+
+  const factions = (Array.isArray(source.factions) ? source.factions : [])
+    .map(normalizeFaction)
+    .filter((item): item is StorySeedFaction => item !== null);
+  if (factions.length > 0) normalized.factions = factions;
+
+  const abilities = optionalTextFields<StorySeedAbilities>(
+    isRecord(source.abilities) ? source.abilities : {},
+    ABILITY_FIELDS,
+  );
+  if (Object.keys(abilities).length > 0) normalized.abilities = abilities;
+
+  const powerSystem = optionalTextFields<StorySeedPowerSystem>(
+    isRecord(source.powerSystem) ? source.powerSystem : {},
+    POWER_SYSTEM_FIELDS,
+  );
+  if (Object.keys(powerSystem).length > 0) normalized.powerSystem = powerSystem;
+
+  const destinedEnding = text(source.destinedEnding);
+  if (destinedEnding) normalized.destinedEnding = destinedEnding;
+
   return normalized;
 };
 
 const normalizeWorldOptional = (value: unknown): StorySeedWorldOptional => {
   const source = isRecord(value) ? value : {};
-  const normalized: StorySeedWorldOptional = optionalTextFields<StorySeedWorldOptional>(source, WORLD_TEXT_FIELDS);
-
-  if (isRecord(source.mainCharacter)) {
-    const mainCharacter = optionalTextFields<StorySeedMainCharacter>(
-      source.mainCharacter,
-      MAIN_CHARACTER_TEXT_FIELDS,
-    );
-    if (Object.keys(mainCharacter).length > 0) normalized.mainCharacter = mainCharacter;
-  }
-
-  if (Array.isArray(source.additionalCharacters)) {
-    const additionalCharacters = source.additionalCharacters
-      .map(normalizeCharacter)
-      .filter((item): item is IntakeCharacter => item !== null);
-    if (additionalCharacters.length > 0) normalized.additionalCharacters = additionalCharacters;
-  }
-  if (Array.isArray(source.factions)) {
-    const factions = source.factions
-      .map(normalizeFaction)
-      .filter((item): item is IntakeFaction => item !== null);
-    if (factions.length > 0) normalized.factions = factions;
-  }
-
-  if (isRecord(source.abilities)) {
-    const abilities = optionalTextFields<StorySeedAbilities>(source.abilities, ['startingPowerConcept', 'uniquePath']);
-    if (Object.keys(abilities).length > 0) normalized.abilities = abilities;
-  }
-  if (isRecord(source.powerSystem)) {
-    const powerSystem = optionalTextFields<StorySeedPowerSystem>(source.powerSystem, ['flavor', 'knownRanks', 'outline']);
-    if (Object.keys(powerSystem).length > 0) normalized.powerSystem = powerSystem;
-  }
-  const majorMysteries = stringList(source.majorMysteries);
-  if (majorMysteries.length > 0) normalized.majorMysteries = majorMysteries;
-  return normalized;
+  return {
+    worldIdentity: optionalTextFields<StorySeedWorldIdentity>(
+      isRecord(source.worldIdentity) ? source.worldIdentity : {},
+      WORLD_IDENTITY_FIELDS,
+    ),
+    worldFoundations: normalizeWorldFoundations(source.worldFoundations),
+  };
 };
+
+// ─── Construction ────────────────────────────────────────────────────────────
+
+/** A structurally complete, creatively empty seed — what a new draft starts as. */
+export const createEmptyStorySeedInput = (): StorySeedInput => ({
+  creator: {},
+  story: {
+    required: {
+      storyTags: [],
+      premise: '',
+      genre: '',
+      // No hidden Style default: an untouched Style stays empty and reads as
+      // incomplete rather than as a choice the creator never made.
+      style: '',
+    },
+    optional: { plotAndTropeSettings: {} },
+  },
+  world: {
+    required: {},
+    optional: { worldIdentity: {}, worldFoundations: {} },
+  },
+});
+
+// ─── Validation ──────────────────────────────────────────────────────────────
 
 /**
  * Structural validation only — the rule a *draft* has to satisfy. Creative
- * content may be entirely missing: a draft exists to preserve progress, so
- * Premise, Genre, Style, and Story Tags are all allowed to be empty here.
+ * content may be entirely missing: a draft exists to preserve progress.
  */
 export const validateStorySeedDraft = (value: unknown): StorySeedValidationResult => {
   const errors: string[] = [];
   if (!isRecord(value)) return { valid: false, errors: ['Story Seed must be an object.'] };
+
   if (!isRecord(value.creator)) errors.push('Creator is required.');
+
   if (!isRecord(value.story)) {
     errors.push('Story is required.');
-  } else if (!isRecord(value.story.optional)) {
-    errors.push('Story optional settings must be an object.');
+  } else {
+    if (!isRecord(value.story.required)) errors.push('Story required inputs must be an object.');
+    if (!isRecord(value.story.optional)) errors.push('Story optional settings must be an object.');
   }
+
   if (!isRecord(value.world)) {
     errors.push('World is required.');
-  } else if (!isRecord(value.world.optional)) {
-    errors.push('World optional settings must be an object.');
+  } else {
+    // World holds no required creator inputs, but the family must still exist.
+    if (!isRecord(value.world.required)) errors.push('World required inputs must be an object.');
+    if (!isRecord(value.world.optional)) errors.push('World optional settings must be an object.');
   }
+
   return { valid: errors.length === 0, errors };
 };
 
 /**
- * Generation readiness — the three required Story inputs. Story Tags are
- * deliberately absent: when empty they are inferred from Premise, Genre, and
- * Style (see `applyInferredStoryTags`), so they can never block generation.
- * World is required to exist as a family but never to hold content.
+ * Generation readiness — the four required Story inputs. Story Tags belong
+ * here like the other three; they never block a creator because
+ * `applyInferredStoryTags` fills an empty set from Premise, Genre, and Style
+ * before the generation payload builders assert.
  */
 export const validateStorySeedInput = (value: unknown): StorySeedValidationResult => {
   const draft = validateStorySeedDraft(value);
   const errors = [...draft.errors];
-  if (isRecord(value) && isRecord(value.story)) {
+  if (isRecord(value) && isRecord(value.story) && isRecord(value.story.required)) {
+    const required = value.story.required;
     // Style first: it is the first decision the creation flow asks for.
-    if (!normalizeStoryStyle(value.story.style)) errors.push('Style is required.');
-    if (!text(value.story.genre)) errors.push('Genre is required.');
-    if (!text(value.story.premise)) errors.push('Premise is required.');
+    if (!normalizeStoryStyle(required.style)) errors.push('Style is required.');
+    if (!text(required.genre)) errors.push('Genre is required.');
+    if (!text(required.premise)) errors.push('Premise is required.');
+    if (stringList(required.storyTags).length === 0) errors.push('Story Tags are required.');
   }
   return { valid: errors.length === 0, errors };
 };
@@ -335,16 +396,20 @@ export const normalizeStorySeedInput = (value: unknown): StorySeedInput => {
   assertValidStorySeedDraft(value);
   const story = value.story as unknown as Record<string, unknown>;
   const world = value.world as unknown as Record<string, unknown>;
+  const required = (isRecord(story.required) ? story.required : {}) as Record<string, unknown>;
   return {
     creator: {},
     story: {
-      storyTags: stringList(story.storyTags),
-      premise: text(story.premise) || '',
-      genre: text(story.genre) || '',
-      style: normalizeStoryStyle(story.style) || '',
+      required: {
+        storyTags: stringList(required.storyTags),
+        premise: text(required.premise) || '',
+        genre: text(required.genre) || '',
+        style: normalizeStoryStyle(required.style) || '',
+      },
       optional: normalizeStoryOptional(story.optional),
     },
     world: {
+      required: {},
       optional: normalizeWorldOptional(world.optional),
     },
   };
@@ -357,242 +422,50 @@ export const normalizeStorySeedInput = (value: unknown): StorySeedInput => {
  * so the stored seed and the generated novel always share one tag set.
  */
 export const applyInferredStoryTags = (seed: StorySeedInput): StorySeedInput => {
-  if (seed.story.storyTags.length > 0) return seed;
+  if (seed.story.required.storyTags.length > 0) return seed;
   const storyTags = inferStoryTags({
-    premise: seed.story.premise,
-    genre: seed.story.genre,
-    style: seed.story.style,
+    premise: seed.story.required.premise,
+    genre: seed.story.required.genre,
+    style: seed.story.required.style,
   });
-  return { ...seed, story: { ...seed.story, storyTags } };
+  return { ...seed, story: { ...seed.story, required: { ...seed.story.required, storyTags } } };
 };
 
-const compact = <T extends object>(value: T): T | undefined =>
-  Object.values(value).some(item => item !== undefined && item !== '') ? value : undefined;
-
-const entityNameKey = (value: string): string => value
-  .normalize('NFKC')
-  .replace(/\s*\([^)]*\)\s*$/, '')
-  .trim()
-  .replace(/\s+/g, ' ')
-  .toLocaleLowerCase();
-
-const mergeNamedCharacters = (intake: IntakeData, blueprint?: WorldBlueprint): IntakeCharacter[] => {
-  const characters = [...(intake.customCharacters || [])];
-  const existing = new Set(characters.map(character => entityNameKey(character.name)));
-  for (const [index, name] of (blueprint?.initialCharacters || []).entries()) {
-    const normalizedName = name.trim();
-    const key = entityNameKey(normalizedName);
-    if (!key || existing.has(key)) continue;
-    existing.add(key);
-    characters.push({ id: `blueprint-character-${index + 1}`, name: normalizedName });
-  }
-  return characters;
-};
-
-const mergeNamedFactions = (intake: IntakeData, blueprint?: WorldBlueprint): IntakeFaction[] => {
-  const factions = [...(intake.customFactions || [])];
-  const existing = new Set(factions.map(faction => entityNameKey(faction.name)));
-  for (const [index, name] of (blueprint?.majorFactions || []).entries()) {
-    const normalizedName = name.trim();
-    const key = entityNameKey(normalizedName);
-    if (!key || existing.has(key)) continue;
-    existing.add(key);
-    factions.push({ id: `blueprint-faction-${index + 1}`, name: normalizedName });
-  }
-  return factions;
-};
+// ─── Generation boundary ─────────────────────────────────────────────────────
 
 /**
- * Boundary adapter for the Phase 2 creation workspace. The flat IntakeData
- * view model never crosses persistence, serialization, or generation after
- * this point.
+ * A first-pass World Blueprint projected from the seed. One-way and
+ * generation-facing only: the Blueprint is generated output and is never
+ * stored back inside the Story Seed contract.
  */
-export const createStorySeedInput = (
-  intake: IntakeData,
-  blueprint?: WorldBlueprint,
-): StorySeedInput => ({
-  creator: {},
-  story: {
-    storyTags: stringList(intake.storyTags),
-    premise: intake.corePremise?.trim() || '',
-    genre: intake.genrePath?.trim() || '',
-    // Style is the chosen novel tradition. No hidden default: an untouched
-    // Style stays empty and reads as incomplete. A blueprint's style bible
-    // carries over only when it already holds a valid tradition (a reused or
-    // imported seed); freeform prose text from older seeds does not qualify.
-    style: normalizeStoryStyle(intake.proseStyle) || normalizeStoryStyle(blueprint?.styleBible) || '',
-    optional: {
-      ...optionalTextFields<StorySeedStoryOptional>(intake as unknown as Record<string, unknown>, [
-        'desiredPlotDirection',
-        'generalAtmosphere',
-        'dangerLevel',
-        'powerPace',
-        'longTermGoal',
-        'firstMajorConflict',
-        'mainAntagonistPressure',
-        'romanceLevel',
-        'faceSlappingLevel',
-        'comedyLevel',
-        'tournamentArcPreference',
-        'haremPreference',
-        'betrayalLevel',
-        'thingsToAvoid',
-        'mustIncludeElements',
-        'makeItWorkInstruction',
-      ]),
-      ...(text(blueprint?.logline) ? { logline: text(blueprint?.logline) } : {}),
-      ...(positiveInteger(intake.estimatedArcs ?? blueprint?.estimatedArcs)
-        ? { estimatedArcs: positiveInteger(intake.estimatedArcs ?? blueprint?.estimatedArcs) }
-        : {}),
-      ...(typeof intake.hardcoreFateMode === 'boolean' ? { hardcoreFateMode: intake.hardcoreFateMode } : {}),
-      ...(intake.fatePressure ? { fatePressure: intake.fatePressure } : {}),
-      ...(text(blueprint?.firstArcPromise) ? { firstArcPromise: text(blueprint?.firstArcPromise) } : {}),
-      ...(text(blueprint?.tropeRules) ? { tropeRules: text(blueprint?.tropeRules) } : {}),
-      ...(stringList(blueprint?.unresolvedPlotThreads).length > 0
-        ? { unresolvedPlotThreads: stringList(blueprint?.unresolvedPlotThreads) }
-        : {}),
-    },
-  },
-  world: {
-    optional: {
-      ...(text(blueprint?.title || intake.novelTitle) ? { title: text(blueprint?.title || intake.novelTitle) } : {}),
-      ...(text(intake.worldType) ? { worldType: text(intake.worldType) } : {}),
-      ...(text(blueprint?.worldOverview) ? { universe: text(blueprint?.worldOverview) } : {}),
-      ...(text(blueprint?.startingLocation || intake.startingLocation)
-        ? { startingLocation: text(blueprint?.startingLocation || intake.startingLocation) }
-        : {}),
-      ...(text(blueprint?.societyStructure || intake.societyStructure)
-        ? { societyStructure: text(blueprint?.societyStructure || intake.societyStructure) }
-        : {}),
-      ...(compact<StorySeedMainCharacter>({
-        name: text(intake.mcName),
-        profile: text(blueprint?.mcProfile),
-        startingIdentity: text(intake.startingIdentity),
-        personality: text(intake.personality),
-        mainFlaw: text(intake.mainFlaw),
-        secretAdvantage: text(intake.secretAdvantage),
-        startingWeakness: text(intake.startingWeakness),
-        moralAlignment: text(intake.moralAlignment),
-        bio: text(intake.mcBio),
-      }) ? { mainCharacter: compact<StorySeedMainCharacter>({
-        name: text(intake.mcName),
-        profile: text(blueprint?.mcProfile),
-        startingIdentity: text(intake.startingIdentity),
-        personality: text(intake.personality),
-        mainFlaw: text(intake.mainFlaw),
-        secretAdvantage: text(intake.secretAdvantage),
-        startingWeakness: text(intake.startingWeakness),
-        moralAlignment: text(intake.moralAlignment),
-        bio: text(intake.mcBio),
-      }) } : {}),
-      ...(mergeNamedCharacters(intake, blueprint).length > 0
-        ? { additionalCharacters: mergeNamedCharacters(intake, blueprint) }
-        : {}),
-      ...(mergeNamedFactions(intake, blueprint).length > 0
-        ? { factions: mergeNamedFactions(intake, blueprint) }
-        : {}),
-      ...(compact<StorySeedAbilities>({
-        startingPowerConcept: text(intake.startingPowerConcept),
-        uniquePath: text(intake.uniquePath),
-      }) ? { abilities: compact<StorySeedAbilities>({
-        startingPowerConcept: text(intake.startingPowerConcept),
-        uniquePath: text(intake.uniquePath),
-      }) } : {}),
-      ...(compact<StorySeedPowerSystem>({
-        flavor: text(intake.powerFlavor),
-        knownRanks: text(intake.knownRanks),
-        outline: text(blueprint?.powerSystemOutline),
-      }) ? { powerSystem: compact<StorySeedPowerSystem>({
-        flavor: text(intake.powerFlavor),
-        knownRanks: text(intake.knownRanks),
-        outline: text(blueprint?.powerSystemOutline),
-      }) } : {}),
-      ...(text(blueprint?.destinedEnding || intake.destinedEnding)
-        ? { destinedEnding: text(blueprint?.destinedEnding || intake.destinedEnding) }
-        : {}),
-      ...(stringList(blueprint?.majorMysteries).length > 0
-        ? { majorMysteries: stringList(blueprint?.majorMysteries) }
-        : {}),
-    },
-  },
-});
-
-export const storySeedToIntake = (seed: StorySeedInput): IntakeData => {
-  const { optional: story } = seed.story;
-  const { optional: world } = seed.world;
-  const mainCharacter = world.mainCharacter || {};
+export const createBlueprintDraftFromSeed = (seed: StorySeedInput): WorldBlueprint => {
+  const { worldIdentity, worldFoundations } = seed.world.optional;
   return {
-    novelTitle: world.title || '',
-    mcName: mainCharacter.name || '',
-    genrePath: seed.story.genre,
-    corePremise: seed.story.premise,
-    proseStyle: seed.story.style,
-    desiredPlotDirection: story.desiredPlotDirection || '',
-    storyTags: [...seed.story.storyTags],
-    destinedEnding: world.destinedEnding || '',
-    estimatedArcs: story.estimatedArcs,
-    worldType: world.worldType || '',
-    startingLocation: world.startingLocation || '',
-    societyStructure: world.societyStructure || '',
-    dangerLevel: story.dangerLevel || '',
-    generalAtmosphere: story.generalAtmosphere || '',
-    startingIdentity: mainCharacter.startingIdentity || '',
-    personality: mainCharacter.personality || '',
-    mainFlaw: mainCharacter.mainFlaw || '',
-    secretAdvantage: mainCharacter.secretAdvantage || '',
-    startingWeakness: mainCharacter.startingWeakness || '',
-    moralAlignment: mainCharacter.moralAlignment || '',
-    mcBio: mainCharacter.bio || '',
-    customCharacters: world.additionalCharacters ? [...world.additionalCharacters] : [],
-    customFactions: world.factions ? [...world.factions] : [],
-    startingPowerConcept: world.abilities?.startingPowerConcept || '',
-    powerFlavor: world.powerSystem?.flavor || '',
-    powerPace: story.powerPace || '',
-    knownRanks: world.powerSystem?.knownRanks || '',
-    uniquePath: world.abilities?.uniquePath || '',
-    longTermGoal: story.longTermGoal || '',
-    firstMajorConflict: story.firstMajorConflict || '',
-    mainAntagonistPressure: story.mainAntagonistPressure || '',
-    romanceLevel: story.romanceLevel || '',
-    faceSlappingLevel: story.faceSlappingLevel || '',
-    comedyLevel: story.comedyLevel || '',
-    tournamentArcPreference: story.tournamentArcPreference || '',
-    haremPreference: story.haremPreference || '',
-    betrayalLevel: story.betrayalLevel || '',
-    thingsToAvoid: story.thingsToAvoid || '',
-    mustIncludeElements: story.mustIncludeElements || '',
-    hardcoreFateMode: story.hardcoreFateMode,
-    fatePressure: story.fatePressure,
-    makeItWorkInstruction: story.makeItWorkInstruction || '',
-  };
-};
-
-export const storySeedToBlueprint = (seed: StorySeedInput): WorldBlueprint => {
-  const { optional: story } = seed.story;
-  const { optional: world } = seed.world;
-  return {
-    title: world.title || 'Untitled Story',
-    logline: story.logline || seed.story.premise,
-    worldOverview: world.universe || world.worldType || '',
-    startingLocation: world.startingLocation || '',
-    societyStructure: world.societyStructure || '',
-    powerSystemOutline: world.powerSystem?.outline || world.abilities?.startingPowerConcept || '',
-    mcProfile: world.mainCharacter?.profile || world.mainCharacter?.bio || '',
-    majorFactions: (world.factions || []).map(faction => faction.name),
-    initialCharacters: (world.additionalCharacters || []).map(character => character.name),
-    majorMysteries: [...(world.majorMysteries || [])],
-    firstArcPromise: story.firstArcPromise || '',
-    tropeRules: story.tropeRules || '',
-    styleBible: seed.story.style,
-    destinedEnding: world.destinedEnding || '',
-    estimatedArcs: story.estimatedArcs || 10,
-    unresolvedPlotThreads: [...(story.unresolvedPlotThreads || [])],
+    title: worldIdentity.title || 'Untitled Story',
+    logline: seed.story.required.premise,
+    worldOverview: worldIdentity.worldType || '',
+    startingLocation: worldIdentity.startingLocation || '',
+    societyStructure: worldIdentity.societyStructure || '',
+    powerSystemOutline: worldFoundations.abilities?.startingPowerConcept
+      || worldFoundations.powerSystem?.knownRanks
+      || '',
+    mcProfile: worldFoundations.mainCharacter?.bio || worldFoundations.mainCharacter?.startingIdentity || '',
+    majorFactions: (worldFoundations.factions || []).map(faction => faction.name),
+    initialCharacters: (worldFoundations.additionalCharacters || []).map(character => character.name),
+    majorMysteries: [],
+    firstArcPromise: seed.story.optional.plotAndTropeSettings.firstMajorConflict || '',
+    tropeRules: '',
+    styleBible: seed.story.required.style,
+    destinedEnding: worldFoundations.destinedEnding || '',
+    estimatedArcs: 10,
+    unresolvedPlotThreads: [],
   };
 };
 
 export const buildBlueprintGenerationPayload = (seed: StorySeedInput): BlueprintGenerationPayload => {
-  assertValidStorySeedInput(seed);
-  return { storySeed: applyInferredStoryTags(normalizeStorySeedInput(seed)) };
+  const storySeed = applyInferredStoryTags(normalizeStorySeedInput(seed));
+  assertValidStorySeedInput(storySeed);
+  return { storySeed };
 };
 
 export const buildInitialStoryGenerationPayload = (
@@ -601,12 +474,8 @@ export const buildInitialStoryGenerationPayload = (
   blueprint: WorldBlueprint,
   chapterCount: number,
 ): InitialStoryGenerationPayload => {
-  assertValidStorySeedInput(seed);
+  const storySeed = applyInferredStoryTags(normalizeStorySeedInput(seed));
+  assertValidStorySeedInput(storySeed);
   assertValidStoryAdministrativeMetadata(administrative);
-  return {
-    storySeed: applyInferredStoryTags(normalizeStorySeedInput(seed)),
-    administrative,
-    blueprint,
-    chapterCount,
-  };
+  return { storySeed, administrative, blueprint, chapterCount };
 };

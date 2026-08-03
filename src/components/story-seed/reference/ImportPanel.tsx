@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Layers, Upload } from 'lucide-react';
-import { StorySeedPayload, WorldBlueprint } from '../shared/types';
-import { parseStorySeedJson } from '../shared/storySeedFormat';
+import type { StorySeedPayload, WorldBlueprint } from '../shared/referenceIntake';
+import { parseStorySeedJson } from '../shared/referenceIntake';
 
 interface ImportPanelProps {
   show: boolean;

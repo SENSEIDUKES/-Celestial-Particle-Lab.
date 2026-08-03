@@ -1,10 +1,15 @@
-import type { IntakeData, WorldBlueprint } from './types';
+/**
+ * Portable Story Seed files. Import and export both speak the canonical
+ * Creator / Story / World contract; reading a pre-hierarchy file is delegated
+ * to the isolated adapter in `legacySeedImport.ts`.
+ */
+
 import {
   STORY_SEED_SCHEMA_VERSION,
-  createStorySeedInput,
   normalizeStorySeedInput,
   type StorySeedInput,
 } from './storySeedSchema';
+import { importLegacyStorySeed, isLegacyStorySeedShape } from './legacySeedImport';
 
 export const STORY_SEED_FORMAT = 'seihouse-story-seed' as const;
 export const STORY_SEED_COLLECTION_FORMAT = 'seihouse-story-seed-collection' as const;
@@ -13,19 +18,24 @@ export const STORY_SEED_FORMAT_VERSION = STORY_SEED_SCHEMA_VERSION;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+/** Strips the local-only entity ids so a shared file carries no internal keys. */
 const portableSeed = (seed: StorySeedInput): Record<string, unknown> => {
   const normalized = normalizeStorySeedInput(seed);
-  const additionalCharacters = normalized.world.optional.additionalCharacters
+  const { worldIdentity, worldFoundations } = normalized.world.optional;
+  const additionalCharacters = worldFoundations.additionalCharacters
     ?.map(({ id: _id, ...character }) => character);
-  const factions = normalized.world.optional.factions
-    ?.map(({ id: _id, ...faction }) => faction);
+  const factions = worldFoundations.factions?.map(({ id: _id, ...faction }) => faction);
   return {
     ...normalized,
     world: {
+      required: {},
       optional: {
-        ...normalized.world.optional,
-        ...(additionalCharacters ? { additionalCharacters } : {}),
-        ...(factions ? { factions } : {}),
+        worldIdentity,
+        worldFoundations: {
+          ...worldFoundations,
+          ...(additionalCharacters ? { additionalCharacters } : {}),
+          ...(factions ? { factions } : {}),
+        },
       },
     },
   };
@@ -46,11 +56,11 @@ export const createStorySeedCollectionExport = (seeds: StorySeedInput[]) => ({
 const isGeneratedStoryPackage = (value: Record<string, unknown>): boolean =>
   'memory' in value || 'arcs' in value || 'chapters' in value || 'imageHistory' in value || 'codex' in value;
 
-const migrateLegacyPayload = (value: Record<string, unknown>): StorySeedInput => {
-  const intake = isRecord(value.intake) ? value.intake as IntakeData : value as IntakeData;
-  const blueprint = isRecord(value.blueprint) ? value.blueprint as unknown as WorldBlueprint : undefined;
-  return normalizeStorySeedInput(createStorySeedInput(intake, blueprint));
-};
+const isCanonicalShape = (value: Record<string, unknown>): boolean =>
+  isRecord(value.creator)
+  && isRecord(value.story)
+  && isRecord((value.story as Record<string, unknown>).required)
+  && isRecord(value.world);
 
 const extractStorySeed = (value: unknown): StorySeedInput => {
   if (!isRecord(value)) throw new Error('Each seed must be a JSON object.');
@@ -58,10 +68,8 @@ const extractStorySeed = (value: unknown): StorySeedInput => {
     throw new Error('This is a generated story package, not a portable story seed.');
   }
   if (isRecord(value.seed)) return extractStorySeed(value.seed);
-  if (isRecord(value.creator) && isRecord(value.story) && isRecord(value.world)) {
-    return normalizeStorySeedInput(value);
-  }
-  if (isRecord(value.intake) || isRecord(value.blueprint)) return migrateLegacyPayload(value);
+  if (isCanonicalShape(value)) return normalizeStorySeedInput(value);
+  if (isLegacyStorySeedShape(value)) return importLegacyStorySeed(value);
   throw new Error('No reusable Story Seed data was found in this JSON file.');
 };
 
@@ -132,7 +140,7 @@ export const downloadStorySeed = (seed: StorySeedInput): Promise<void> => {
   const normalized = normalizeStorySeedInput(seed);
   return downloadJsonFile(
     createStorySeedExport(normalized),
-    `seihouse_story_seed_${safeFilenamePart(normalized.world.optional.title || 'untitled')}.json`,
+    `seihouse_story_seed_${safeFilenamePart(normalized.world.optional.worldIdentity.title || 'untitled')}.json`,
   );
 };
 

@@ -1,122 +1,61 @@
-import { generateUUID } from './id';
+/**
+ * The Story Seed storage port.
+ *
+ * The creator-controlled seed (`StorySeedInput`) is stored *inside* the
+ * record, never merged with it, so the account-level fields below stay out of
+ * `creator` / `story` / `world`. The real record and its database layer are a
+ * later phase; for now the port is backed by the temporary Workshop
+ * localStorage adapter, which can be swapped through `setStorySeedRepository`
+ * without the Story Seed domain structure changing again.
+ */
+
 import {
   STORY_SEED_SCHEMA_VERSION,
-  normalizeStorySeedInput,
   type StorySeedInput,
-  type StorySeedRecord,
 } from './storySeedSchema';
+import { workshopStorySeedStorage } from './workshopStorySeedStorage';
 
-const STORAGE_KEY = 'seihouse-workshop-story-seeds-v2';
-let memoryRecords: StorySeedRecord[] = [];
+/** A saved seed plus the minimum needed to list and reopen it. */
+export interface StorySeedRecord {
+  schemaVersion: typeof STORY_SEED_SCHEMA_VERSION;
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  seed: StorySeedInput;
+}
 
-const storage = (): Storage | null => {
-  try {
-    return typeof window === 'undefined' ? null : window.localStorage;
-  } catch {
-    return null;
-  }
+export interface StorySeedRepository {
+  create(userId: string, input: StorySeedInput): Promise<StorySeedRecord>;
+  update(userId: string, existing: StorySeedRecord, input: StorySeedInput): Promise<StorySeedRecord>;
+  list(userId: string): Promise<StorySeedRecord[]>;
+  importMany(userId: string, inputs: StorySeedInput[]): Promise<StorySeedRecord[]>;
+  reset(records?: StorySeedRecord[]): void;
+}
+
+let repository: StorySeedRepository = workshopStorySeedStorage;
+
+/** Swap the backing store (used when the real repository replaces the Workshop one). */
+export const setStorySeedRepository = (next: StorySeedRepository): void => {
+  repository = next;
 };
 
-const normalizeRecord = (value: unknown): StorySeedRecord | null => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const source = value as Record<string, unknown>;
-  if (
-    source.schemaVersion !== STORY_SEED_SCHEMA_VERSION
-    || typeof source.id !== 'string'
-    || typeof source.userId !== 'string'
-    || typeof source.createdAt !== 'string'
-    || typeof source.updatedAt !== 'string'
-  ) return null;
-  try {
-    const seed = normalizeStorySeedInput(source);
-    return {
-      ...seed,
-      schemaVersion: STORY_SEED_SCHEMA_VERSION,
-      id: source.id,
-      userId: source.userId,
-      title: typeof source.title === 'string' && source.title.trim()
-        ? source.title.trim()
-        : seed.world.optional.title || 'Untitled Seed',
-      createdAt: source.createdAt,
-      updatedAt: source.updatedAt,
-    };
-  } catch {
-    return null;
-  }
-};
+export const createStorySeed = (userId: string, input: StorySeedInput): Promise<StorySeedRecord> =>
+  repository.create(userId, input);
 
-const readRecords = (): StorySeedRecord[] => {
-  const persisted = storage()?.getItem(STORAGE_KEY);
-  if (!persisted) return [...memoryRecords];
-  try {
-    const parsed = JSON.parse(persisted);
-    if (!Array.isArray(parsed)) return [];
-    const records = parsed.map(normalizeRecord).filter((seed): seed is StorySeedRecord => seed !== null);
-    memoryRecords = records;
-    return [...records];
-  } catch {
-    return [];
-  }
-};
-
-const writeRecords = (records: StorySeedRecord[]): void => {
-  memoryRecords = [...records];
-  storage()?.setItem(STORAGE_KEY, JSON.stringify(records));
-};
-
-const buildRecord = (
-  userId: string,
-  id: string,
-  input: StorySeedInput,
-  createdAt = new Date().toISOString(),
-): StorySeedRecord => {
-  if (!userId) throw new Error('Sign in to save story seeds to your account.');
-  const seed = normalizeStorySeedInput(input);
-  return {
-    ...seed,
-    schemaVersion: STORY_SEED_SCHEMA_VERSION,
-    id,
-    userId,
-    title: seed.world.optional.title || seed.story.premise.slice(0, 80) || 'Untitled Seed',
-    createdAt,
-    updatedAt: new Date().toISOString(),
-  };
-};
-
-export const createStorySeed = async (userId: string, input: StorySeedInput): Promise<StorySeedRecord> => {
-  const record = buildRecord(userId, `seed-${generateUUID()}`, input);
-  writeRecords([record, ...readRecords()]);
-  return record;
-};
-
-export const updateStorySeed = async (
+export const updateStorySeed = (
   userId: string,
   existing: StorySeedRecord,
   input: StorySeedInput,
-): Promise<StorySeedRecord> => {
-  if (existing.userId !== userId) throw new Error('Cannot update a story seed owned by another account.');
-  const record = buildRecord(userId, existing.id, input, existing.createdAt);
-  writeRecords(readRecords().map(seed => seed.id === record.id ? record : seed));
-  return record;
-};
+): Promise<StorySeedRecord> => repository.update(userId, existing, input);
 
-export const listStorySeeds = async (userId: string): Promise<StorySeedRecord[]> => {
-  if (!userId) return [];
-  return readRecords()
-    .filter(seed => seed.userId === userId)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-};
+export const listStorySeeds = (userId: string): Promise<StorySeedRecord[]> => repository.list(userId);
 
-export const importStorySeeds = async (
+export const importStorySeeds = (
   userId: string,
   inputs: StorySeedInput[],
-): Promise<StorySeedRecord[]> => {
-  if (inputs.length > 500) throw new Error('A seed import can contain at most 500 seeds at a time.');
-  const imported = inputs.map(input => buildRecord(userId, `seed-${generateUUID()}`, input));
-  writeRecords([...imported, ...readRecords()]);
-  return imported;
-};
+): Promise<StorySeedRecord[]> => repository.importMany(userId, inputs);
 
-export const resetStorySeedRepository = (records: StorySeedRecord[] = []): void => {
-  writeRecords(records);
-};
+export const resetStorySeedRepository = (records: StorySeedRecord[] = []): void =>
+  repository.reset(records);
