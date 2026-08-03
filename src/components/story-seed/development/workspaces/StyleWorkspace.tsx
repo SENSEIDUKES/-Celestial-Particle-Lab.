@@ -1,7 +1,7 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Flower2, Gem, Scroll, type LucideIcon } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
-import { normalizeStoryStyle, STORY_STYLE_OPTIONS } from '../../shared/storyStyle';
+import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
 import { getSeedSection } from '../seedSections';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
@@ -9,6 +9,17 @@ interface StyleWorkspaceProps {
   intake: IntakeData;
   updateIntake: (field: keyof IntakeData, value: any) => void;
 }
+
+/**
+ * Per-tradition presentation for the glass choice cards: a custom icon and
+ * the tradition's accent color (Chinese blue, Korean red, Japanese green).
+ * Purely visual — the stored values stay the stable `StoryStyle` keys.
+ */
+const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; accent: string }> = {
+  chinese: { icon: Scroll, accent: '#04ACFF' },
+  korean: { icon: Gem, accent: '#FF4545' },
+  japanese: { icon: Flower2, accent: '#34D399' },
+};
 
 /**
  * The first required Story workspace: the novel's storytelling tradition.
@@ -32,6 +43,7 @@ export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) =>
       >
         {STORY_STYLE_OPTIONS.map(option => {
           const isSelected = selected === option.value;
+          const { icon: Icon, accent } = STYLE_PRESENTATION[option.value];
           return (
             <button
               key={option.value}
@@ -40,14 +52,19 @@ export const StyleWorkspace = ({ intake, updateIntake }: StyleWorkspaceProps) =>
               aria-checked={isSelected}
               id={`story-style-${option.value}`}
               onClick={() => updateIntake('proseStyle', option.value)}
-              className={`flex min-h-[5rem] flex-col items-center justify-center gap-2 rounded-xl border px-4 py-4 transition-all duration-200 ${
-                isSelected
-                  ? 'border-portal bg-portal/10 text-signal shadow-[0_0_16px_rgba(4,172,255,0.15)]'
-                  : 'border-neutral-900 bg-neutral-950/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
-              }`}
+              data-selected={isSelected}
+              style={{ '--choice-accent': accent } as React.CSSProperties}
+              className="glass-choice flex min-h-[5.5rem] flex-col items-center justify-center gap-2.5 px-4 py-4"
             >
-              <span className="flex items-center gap-2 font-display text-lg font-bold uppercase tracking-[0.12em]">
-                {isSelected && <Check size={14} className="text-portal" aria-hidden="true" />}
+              <Icon size={19} aria-hidden="true" className="glass-choice-icon" />
+              <span
+                className={`flex items-center gap-2 font-display text-lg font-bold uppercase tracking-[0.12em] transition-colors ${
+                  isSelected ? 'text-signal' : 'text-neutral-300'
+                }`}
+              >
+                {isSelected && (
+                  <Check size={14} aria-hidden="true" style={{ color: accent }} />
+                )}
                 {option.label}
               </span>
             </button>

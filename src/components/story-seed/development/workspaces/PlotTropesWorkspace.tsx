@@ -1,4 +1,5 @@
 import React from 'react';
+import { Compass, ShieldAlert, Swords, Target } from 'lucide-react';
 import { IntakeData } from '../../shared/types';
 import { getSeedSection } from '../seedSections';
 import { FormInput, FormTextarea } from '../form-fields';
@@ -27,6 +28,7 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
       <FormTextarea
         id="desired-plot-direction-input"
         label="Desired Plot Direction"
+        icon={Compass}
         maxLength={1500}
         value={intake.desiredPlotDirection || ''}
         onChange={(val) => updateIntake('desiredPlotDirection', val)}
@@ -38,6 +40,7 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
         <FormInput
           id="a11y-control-jolpc3b"
           label="Long-term Goal"
+          icon={Target}
           value={intake.longTermGoal || ''}
           onChange={(val) => updateIntake('longTermGoal', val)}
           placeholder="e.g., Shatter the heavens..."
@@ -45,6 +48,7 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
         <FormInput
           id="a11y-control-6a6tmbf"
           label="First Major Conflict"
+          icon={Swords}
           value={intake.firstMajorConflict || ''}
           onChange={(val) => updateIntake('firstMajorConflict', val)}
           placeholder="e.g., Sect tournament, survival trial..."
@@ -52,6 +56,7 @@ export const PlotTropesWorkspace = ({ intake, updateIntake }: PlotTropesWorkspac
         <FormInput
           id="main-antagonist-pressure-input"
           label="Main Antagonist Pressure"
+          icon={ShieldAlert}
           helpText="Who or what pushes back against the main character the hardest."
           value={intake.mainAntagonistPressure || ''}
           onChange={(val) => updateIntake('mainAntagonistPressure', val)}

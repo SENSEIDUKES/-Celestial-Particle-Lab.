@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface FormTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange'> {
   id: string;
@@ -7,6 +8,10 @@ export interface FormTextareaProps extends Omit<React.TextareaHTMLAttributes<HTM
   onChange: (value: string) => void;
   helpText?: ReactNode;
   rightElement?: ReactNode;
+  /** Small contextual icon resting inside the field's top-left edge. */
+  icon?: LucideIcon;
+  /** Marks the field invalid (keeps the glass surface, warning-colored edge). */
+  invalid?: boolean;
   children?: ReactNode; // For overlays
 }
 
@@ -17,11 +22,14 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
   onChange,
   helpText,
   rightElement,
+  icon: Icon,
+  invalid = false,
   children,
   className = '',
   maxLength,
   ...rest
 }) => {
+  const complete = !invalid && Boolean(value?.trim());
   return (
     <div>
       <div className="flex justify-between items-end mb-2">
@@ -48,13 +56,18 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
         </p>
       )}
 
-      <div className="relative">
+      <div className="glass-field-wrap">
+        {Icon && (
+          <Icon size={15} aria-hidden="true" className="glass-field-icon top-[1rem]" />
+        )}
         <textarea
           id={id}
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
           maxLength={maxLength}
-          className={`w-full bg-neutral-950/80 border border-neutral-800 text-signal font-sans placeholder-neutral-600 focus:outline-none focus:border-portal rounded p-3 text-sm resize-none ${className}`}
+          data-complete={complete || undefined}
+          data-invalid={invalid || undefined}
+          className={`glass-field resize-none p-3 text-sm ${Icon ? 'pl-10' : ''} ${className}`}
           {...rest}
         />
         {children}

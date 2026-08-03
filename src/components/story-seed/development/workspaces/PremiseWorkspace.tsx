@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Feather, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { IntakeData } from '../../shared/types';
 import { PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
@@ -115,7 +115,8 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             <span className="font-mono text-[10px] text-neutral-500">{(intake.corePremise || '').length} / 3000</span>
           </div>
         </div>
-        <div className="relative">
+        <div className="glass-field-wrap">
+          <Feather size={15} aria-hidden="true" className="glass-field-icon top-[1rem]" />
           <textarea
             id="core-premise-input"
             required
@@ -130,7 +131,8 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
             }}
             rows={5}
             placeholder="The main hook or cheat..."
-            className="w-full resize-none rounded border border-neutral-800 bg-neutral-950/80 p-3 pr-10 pb-10 font-sans text-sm text-signal placeholder-neutral-600 focus:border-portal focus:outline-none"
+            data-complete={Boolean(intake.corePremise?.trim()) || undefined}
+            className="glass-field resize-none p-3 pb-10 pl-10 pr-10 text-sm"
           />
           <AnimatePresence>
             {ghostSuggestion && (
@@ -141,7 +143,7 @@ export const PremiseWorkspace = ({ intake, updateIntake }: PremiseWorkspaceProps
                 exit={{ opacity: 0, scale: 0.95, y: 2 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => handleAddGhostTag(ghostSuggestion)}
-                className="absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] cursor-pointer items-center gap-1.5 rounded border border-portal/40 bg-black/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal hover:shadow-[0_0_18px_rgba(4,172,255,0.3)] sm:max-w-full"
+                className="absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] cursor-pointer items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal hover:shadow-[0_0_18px_rgba(4,172,255,0.3)] sm:max-w-full"
                 title="Click or press Tab to weave this tag into your Story Tags"
               >
                 <Sparkles size={11} className="animate-pulse text-portal" />

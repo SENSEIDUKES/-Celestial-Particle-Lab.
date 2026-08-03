@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface FormInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   id: string;
@@ -7,6 +8,10 @@ export interface FormInputProps extends Omit<React.InputHTMLAttributes<HTMLInput
   onChange: (value: string) => void;
   helpText?: ReactNode;
   rightElement?: ReactNode;
+  /** Small contextual icon resting inside the field's left edge. */
+  icon?: LucideIcon;
+  /** Marks the field invalid (keeps the glass surface, warning-colored edge). */
+  invalid?: boolean;
 }
 
 export const FormInput: React.FC<FormInputProps> = ({
@@ -16,10 +21,13 @@ export const FormInput: React.FC<FormInputProps> = ({
   onChange,
   helpText,
   rightElement,
+  icon: Icon,
+  invalid = false,
   className = '',
   type = 'text',
   ...rest
 }) => {
+  const complete = !invalid && value !== undefined && value !== null && String(value).trim().length > 0;
   return (
     <div>
       <div className="flex justify-between items-end mb-2">
@@ -38,14 +46,21 @@ export const FormInput: React.FC<FormInputProps> = ({
         </p>
       )}
 
-      <input
-        id={id}
-        type={type}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full bg-neutral-950/80 border border-neutral-800 text-signal font-sans placeholder-neutral-600 focus:outline-none focus:border-portal rounded px-4 py-2 text-sm ${className}`}
-        {...rest}
-      />
+      <div className="glass-field-wrap">
+        {Icon && (
+          <Icon size={15} aria-hidden="true" className="glass-field-icon top-1/2 -translate-y-1/2" />
+        )}
+        <input
+          id={id}
+          type={type}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          data-complete={complete || undefined}
+          data-invalid={invalid || undefined}
+          className={`glass-field min-h-[2.75rem] px-4 py-2.5 text-sm ${Icon ? 'pl-10' : ''} ${className}`}
+          {...rest}
+        />
+      </div>
     </div>
   );
 };
