@@ -369,14 +369,16 @@ body {
   50% { transform: scale(1.05); opacity: 0.13; }
 }
 
-/* Google-style fluid rainbow glow behind the Story Seed title plaque. */
+/* Fluid glow behind the Story Seed title plaque — cool portal/violet
+   tones with a whisper of gold so it sits with the page palette
+   instead of fighting it. Gold stays as sharp ink on text + emblem. */
 @keyframes seedRainbow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
 
 .seed-rainbow-glow {
-  background: linear-gradient(115deg, #4285f4, #ea4335, #fbbc05, #34a853, #4285f4);
+  background: linear-gradient(115deg, #04acff, #7c5cff, rgba(212, 175, 55, 0.7), #04acff);
   background-size: 300% 300%;
   animation: seedRainbow 18s ease-in-out infinite;
 }

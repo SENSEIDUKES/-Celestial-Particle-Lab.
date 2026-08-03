@@ -394,7 +394,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             {/* Fluid rainbow glow bleeding out from behind the glass shell. */}
             <div
               aria-hidden="true"
-              className="seed-rainbow-glow absolute -inset-1 rounded-2xl opacity-45 blur-xl"
+              className="seed-rainbow-glow absolute -inset-0.5 rounded-2xl opacity-25 blur-lg"
             />
             <div className="relative rounded-xl border border-white/15 bg-white/[0.05] px-5 py-3 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05)]">
               <h1 className="seed-title-presence font-display font-bold text-3xl sm:text-4xl uppercase tracking-[0.08em]">
