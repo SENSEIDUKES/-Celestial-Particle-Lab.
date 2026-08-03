@@ -374,8 +374,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   return (
     <div className="mx-auto max-w-7xl pb-24" id="creation-portal-root">
-      {/* Header */}
-      <header className="flex items-start justify-between gap-4">
+      {/* Header — wraps on narrow screens so the action buttons drop to a
+          second row instead of overflowing the viewport. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         {/* S emblem doubles as the home button — back to the main page. */}
         <LibraryHeaderBadge
           title="Story Seed"
@@ -388,7 +389,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         {/* Save Draft is never gated on creative completeness — a draft exists
             to preserve progress. Seed import/library/export stay plain,
             always-visible actions rather than a hidden overflow menu. */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
           <button
             type="button"
             onClick={handleSaveDraft}

@@ -10,6 +10,19 @@
 
 ## Workshop history
 
+- **2026-08-03:** Mobile refinement pass on the `LibraryHeaderBadge` title
+  plaque — on phones the badge dominated the header and the subtitle wrapped
+  onto two lines. Below `sm` the emblem is now 40px (was 48px), the title is
+  `text-2xl` (was `text-3xl`), the plaque padding tightens to `px-4 py-2.5`,
+  and the subtitle drops to 10px with 0.24em tracking and `whitespace-nowrap`
+  so "Grow Your Universe" stays on one line; `sm` and up is unchanged. The
+  title also gains a dark drop shadow behind the glyphs for depth
+  (`drop-shadow`, since `text-shadow` bleeds through the transparent
+  background-clip text), layered under the existing gold aura. Header
+  viewport fit: the `CreationModal` header now wraps below `sm`-ish widths so
+  Save Draft / Import / My Seeds fall to a second, right-aligned row instead
+  of clipping off the right edge — their visual design is untouched pending
+  the dedicated button pass.
 - **2026-08-03:** LibraryTextArea — the textarea counterpart joins the family,
   and the old form-field generation is gone from the active fork. Same rules
   as `LibraryTextBox`: SEIHouse-ported behavior (forwardRef, useId fallback,

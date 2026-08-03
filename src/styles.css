@@ -408,11 +408,13 @@ body {
 }
 
 /* Luminous ivory-to-gold title — static so it anchors the moving
-   shimmer of the subtitle beneath it. */
+   shimmer of the subtitle beneath it. A dark drop shadow sits behind
+   the glyphs for depth (text-shadow would bleed through the
+   transparent background-clip text), then the soft gold aura. */
 .seed-title-presence {
   background: linear-gradient(180deg, #fffdf5 22%, #f6e9c4 58%, #d9b45b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.3));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 16px rgba(212, 175, 55, 0.3));
 }
