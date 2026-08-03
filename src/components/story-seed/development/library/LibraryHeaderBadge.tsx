@@ -8,7 +8,7 @@ import React from 'react';
  * (.seed-title-presence), and an optional gold-shimmer subtitle
  * (.seed-subtitle-shimmer). An optional emblem can sit to the left inside
  * the same animated portal spectrum as the plaque; pass `emblemHref` to
- * make it a home button.
+ * make it a home link.
  *
  * The seed-* styles live globally in src/styles.css.
  *
