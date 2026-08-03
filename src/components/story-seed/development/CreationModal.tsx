@@ -533,7 +533,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                     <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Generating...'}</span>
                   </>
                 ) : (
-                  <span>Forge World Blueprint</span>
+                  <>
+                    <span className="hidden sm:inline">Forge World Blueprint</span>
+                    <span className="sm:hidden">Forge</span>
+                  </>
                 )}
               </button>
             </div>

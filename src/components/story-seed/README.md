@@ -10,6 +10,21 @@
 
 ## Workshop history
 
+- **2026-08-03:** Mobile/tablet pass on the LibraryTextBox rollout — verified
+  Genre, Characters, Factions, and Story Tags in the real preview (headless
+  Chromium) at 375, 430, 768, and 1280px widths, including a focused-field
+  shot at 375px. No horizontal overflow on any page/width. Component-level
+  fixes: compact fields now use 16px text below the `sm` breakpoint (12px
+  above it) so the character/faction grid inputs stop triggering iOS
+  auto-zoom on phones, and compact labels do the same (12px → 10px at `sm`)
+  for phone legibility. Shell-level fix: the sticky action bar's primary
+  button read "Forge World Blueprint" with `shrink-0` and clipped ~65px at
+  375px; it now collapses to "Forge" below `sm` (same responsive-label
+  pattern Save Draft already used). Preview-harness fix (Workshop tooling
+  only): the `filled-intake` scenario's genre click matched `/^Xianxia$/`
+  against text that includes the preset's emoji, so it silently never
+  selected a genre — loosened to `/Xianxia/`. Known follow-up, not in scope:
+  the compact card **textareas** still use 12px text at phone width.
 - **2026-08-03:** LibraryTextBox rollout — every single-line text input in the
   active workspaces now uses `LibraryTextBox`. The 15 remaining `FormInput`
   call sites (World Identity, Plot & Tropes, Characters, Abilities, Power

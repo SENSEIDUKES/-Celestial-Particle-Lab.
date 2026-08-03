@@ -151,9 +151,9 @@ async function runDevelopmentFillScenario() {
   getRoots('development').forEach(root =>
     (root.querySelector('[id="story-style-chinese"]') as HTMLElement | null)?.click());
 
-  // Genre
+  // Genre (button text includes the preset's emoji icon, so match loosely)
   await selectSection(/^Genre/);
-  getRoots('development').forEach(root => clickByText(root, 'button', /^Xianxia$/));
+  getRoots('development').forEach(root => clickByText(root, 'button', /Xianxia/));
 
   // Premise
   await selectSection(/^Premise/);

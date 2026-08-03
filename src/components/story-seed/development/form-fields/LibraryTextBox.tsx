@@ -66,10 +66,11 @@ export interface LibraryTextBoxProps
 }
 
 const sizeClasses: Record<NonNullable<LibraryTextBoxProps['size']>, string> = {
-  // 16px text at the comfortable size: anything smaller makes iOS Safari
-  // auto-zoom the page on focus.
+  // 16px text on phones at both sizes: anything smaller makes iOS Safari
+  // auto-zoom the page on focus. Compact keeps its dense 12px text from the
+  // sm breakpoint up, where the character/faction grids go multi-column.
   comfortable: 'min-h-[2.75rem] px-4 py-2.5 text-base',
-  compact: 'px-2.5 py-1.5 text-xs',
+  compact: 'px-2.5 py-1.5 text-base sm:text-xs',
 };
 
 export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
@@ -119,7 +120,7 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
         {(label != null || rightElement) && (
           <div className={`flex justify-between items-end ${compact ? 'mb-1' : 'mb-2'}`}>
             <label
-              className={`block flex gap-2 items-center font-sc ${compact ? 'text-[10px]' : 'text-xs'} text-neutral-400 uppercase tracking-widest ${disabled ? 'opacity-45' : ''}`}
+              className={`block flex gap-2 items-center font-sc text-xs ${compact ? 'sm:text-[10px]' : ''} text-neutral-400 uppercase tracking-widest ${disabled ? 'opacity-45' : ''}`}
               htmlFor={inputId}
             >
               {label}
