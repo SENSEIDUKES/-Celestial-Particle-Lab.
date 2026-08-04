@@ -4,6 +4,74 @@ Shared, reusable Library-skinned components. Not a Workshop preview feature —
 these primitives back the feature replicas (Story Seed, Story Settings,
 Relics, Reader surfaces) and transfer to production alongside them.
 
+## LibraryPanel
+
+Glass panel shell — the official Celestial Library section container (main
+content surfaces, guidance callouts, footer action strips).
+
+- **Source repository:** SENSEIDUKES UI repo (`UI`)
+- **Source location:** `packages/seihouse-ui/src/primitives/sei-panel.tsx`
+  (exports `SEIPanel` + `SEIPanelProps`) with `seiPanelVariants` in
+  `packages/seihouse-ui/src/styles/variants.ts` (inspected 2026-08-04)
+- **Workshop consumer:** `?preview=story-seed` (development fork — the
+  two-panel creation workspace shell and its action-bar footer strip)
+- **Replica created:** 2026-08-04
+- **Last Workshop update:** 2026-08-04
+- **Last source comparison:** 2026-08-04
+- **Replica status:** faithful port (re-skinned as the Celestial Library glass)
+
+### What was ported
+
+- The component shape: polymorphic `as` (div / section / article / aside /
+  header / footer), `variant` + `padding` props, `cn` composition, and the
+  `min-w-0 overflow-hidden` containment base.
+- The SEIPanel `glass` variant technique: the sheen is an explicit
+  `background-image` layer (a `bg-[gradient,color]` list compiles to an
+  invalid `background-color` and is dropped); the base color stays opaque
+  enough for browsers without `backdrop-filter`, with the translucent body
+  layered on behind a `supports-[backdrop-filter]` guard; blur is lighter on
+  small screens and fuller from `sm` up.
+
+### What was adapted (stack differences from the source)
+
+- No `tailwind-variants` dependency — plain Record class maps, same pattern
+  as `LibraryButton`.
+- SEIHouse `--sh-*` theme variables → Library theme tokens (`portal`,
+  `gold-accent`, neutral ink).
+- Variants trimmed to `default` / `callout` / `footer`; SEIPanel's
+  `interactive` and `glow` props were intentionally not carried over.
+- The glass is re-skinned to the Celestial Library target: translucent
+  black-blue depth, thin luminous cool border, faint inner top highlight,
+  and a gentle portal/gold rim glow — premium, not flat black, not neon.
+- `footer` has no SEIPanel equivalent: a bottom action strip with a luminous
+  top divider, translucent dark body, and backdrop blur. Render it as the
+  last child of a `padding="none"` panel so the panel's `overflow-hidden`
+  clips its corners to the panel radius.
+
+### Usage
+
+```tsx
+import { LibraryPanel } from '../library';
+
+// Main section container:
+<LibraryPanel>…</LibraryPanel>
+
+// Guidance / notice block inside a panel:
+<LibraryPanel variant="callout">…</LibraryPanel>
+
+// Section shell with a footer action strip:
+<LibraryPanel padding="none">
+  <main className="p-4 sm:p-8">…</main>
+  <LibraryPanel variant="footer" padding="none" className="px-4 py-3.5">…</LibraryPanel>
+</LibraryPanel>
+```
+
+### Workshop history
+
+- **2026-08-04:** Ported `SEIPanel` from the UI repo, re-skinned it as the
+  Celestial Library glass, and adopted it as the Story Seed
+  creation-workspace shell (main glass container + action-bar footer strip).
+
 ## LibraryNavigationDrawer
 
 Navigation drawer/menu shell used as the Story Seed section menu and reusable

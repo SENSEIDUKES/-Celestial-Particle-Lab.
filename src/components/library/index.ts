@@ -1,11 +1,19 @@
 /**
  * The Celestial Library component set.
  *
- * `LibraryButton` is the official button for every Library surface — Story
- * Seed, Story Settings, Fate Survival, Relics, Reader menus, admin pages.
- * `SEIButton` is exported only for building new Library-skinned controls on
- * top of the shared base behavior; pages should not use it directly.
+ * `LibraryPanel` is the official Library glass panel — the section container
+ * every Library surface shells its content in. `LibraryButton` is the
+ * official button for every Library surface — Story Seed, Story Settings,
+ * Fate Survival, Relics, Reader menus, admin pages. `SEIButton` is exported
+ * only for building new Library-skinned controls on top of the shared base
+ * behavior; pages should not use it directly.
  */
+export { LibraryPanel } from './LibraryPanel';
+export type {
+  LibraryPanelPadding,
+  LibraryPanelProps,
+  LibraryPanelVariant,
+} from './LibraryPanel';
 export { LibraryButton } from './LibraryButton';
 export type {
   LibraryButtonProps,
