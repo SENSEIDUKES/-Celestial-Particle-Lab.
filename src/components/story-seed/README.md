@@ -10,6 +10,22 @@
 
 ## Workshop history
 
+- **2026-08-04:** `LibraryPanel` premium refinement pass (see
+  `src/components/library/README.md`): crisper/brighter glass border, deeper
+  body glass, stronger rim lighting, a thin spectral SEIHouse edge along the
+  top and corners, and a polished action-bar divider. No Story Seed markup,
+  layout, or logic changed — the shell picks up the new skin automatically.
+
+- **2026-08-04:** Shelled the two-panel creation workspace in the new
+  `LibraryPanel` (`src/components/library/LibraryPanel.tsx`), ported from the
+  SEIHouse UI repo's `SEIPanel` and re-skinned as the Celestial Library glass
+  (translucent black-blue depth, backdrop blur, thin luminous border, faint
+  inner top highlight, gentle portal/gold rim glow). The main section
+  container is now `LibraryPanel` and the action bar is its `footer` variant
+  (luminous top divider, translucent blur) instead of ad-hoc neutral divs.
+  Layout, grid columns, section switching, the selector, the ambience layer,
+  and every form field are unchanged.
+
 - **2026-08-04:** Replaced the Story Seed section menu shell with the new
   Library navigation drawer, ported from the SEIHouse UI repo's
   `SEINavigationDrawer` (`UI/packages/seihouse-ui/src/layout/sei-navigation-drawer.tsx`).
@@ -371,10 +387,11 @@ reference/                    — untouched replica of production, locked
     FormTextarea.tsx
     index.ts
 development/                  — active Workshop version (Phase 2 creation workspace)
-  CreationModal.tsx            — two-panel shell: header (Save Draft + plain
-                                 Import / My Seeds / Export All actions),
-                                 selector/workspace grid, sticky action bar,
-                                 mobile Library navigation drawer
+  CreationModal.tsx            — two-panel shell in `LibraryPanel` glass:
+                                 header (Save Draft + plain Import / My Seeds /
+                                 Export All actions), selector/workspace grid,
+                                 sticky action bar (`LibraryPanel` footer
+                                 variant), mobile Library navigation drawer
   seedSections.ts              — the Story/World section model: ids, labels,
                                  icons, required flags, per-section filled
                                  checks, missing-required helpers

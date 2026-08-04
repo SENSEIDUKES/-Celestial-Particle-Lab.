@@ -54,7 +54,7 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { LibraryHeaderBadge } from './library';
-import { LibraryButton, LibraryNavigationDrawer } from '../../library';
+import { LibraryButton, LibraryNavigationDrawer, LibraryPanel } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
@@ -449,8 +449,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         </div>
       )}
 
-      {/* Two-panel creation workspace */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-900/80 bg-neutral-950/30 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+      {/* Two-panel creation workspace — shelled in the Celestial Library
+          glass panel; the action bar below is its footer strip. */}
+      <LibraryPanel padding="none" className="mt-6 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-neutral-900/70 lg:block">
           <StorySeedSelector
             seed={seed}
@@ -474,8 +475,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             </motion.div>
           </main>
 
-          {/* Action bar — required tracking + generation */}
-          <div className="sticky bottom-0 z-30 border-t border-neutral-900/80 bg-black/85 px-4 py-3.5 backdrop-blur-md sm:px-8">
+          {/* Action bar — required tracking + generation, rendered as the
+              panel's footer strip (luminous top divider, translucent blur). */}
+          <LibraryPanel variant="footer" padding="none" className="sticky bottom-0 z-30 px-4 py-3.5 sm:px-8">
             <div className="flex items-center gap-3">
               <LibraryButton
                 onClick={() => setSelectorOpen(true)}
@@ -528,9 +530,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 )}
               </LibraryButton>
             </div>
-          </div>
+          </LibraryPanel>
         </div>
-      </div>
+      </LibraryPanel>
 
       <p className="mt-4 text-center font-sans text-[11px] leading-relaxed text-neutral-600">
         Every empty field will be intelligently extrapolated using Chinese light-novel logic.
