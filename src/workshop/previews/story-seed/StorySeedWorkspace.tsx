@@ -162,6 +162,7 @@ async function runDevelopmentFillScenario() {
     'core-premise-input',
     'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
   ));
+  getRoots('development').forEach(root => setFieldValue(root, 'origin-story-title-input', 'Ashes of the Ninth Meridian'));
 
   // Catalog children remain invisible until their parent family is opened.
   getRoots('development').forEach(root => clickByText(root, 'button', /^Fate & Destiny/));
@@ -174,7 +175,6 @@ async function runDevelopmentFillScenario() {
   // World Identity
   await selectSection(/^World Identity$/);
   getRoots('development').forEach(root => {
-    setFieldValue(root, 'a11y-control-v2xlbs8', 'Ashes of the Ninth Meridian');
     setFieldValue(root, 'world-type-input', 'Ancient sect world with a collapsing celestial court');
     setFieldValue(root, 'society-structure-input', 'Sect-led feudal hierarchy');
     setFieldValue(root, 'starting-location-input', 'Outer sect labor quarry inside a volcanic rift.');

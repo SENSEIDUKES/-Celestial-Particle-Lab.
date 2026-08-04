@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Check, ChevronDown, Feather, Flower2, Gem, RefreshCw, Scroll,
+  BookOpen, Check, ChevronDown, Feather, Flower2, Gem, RefreshCw, Scroll,
   Search, Sparkles, Tag, X, type LucideIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -9,7 +9,7 @@ import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../..
 import { CATEGORIZED_TAGS, GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
-import { patchStoryRequired, storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
+import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
 import { LibraryTextArea, LibraryTextBox } from '../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
@@ -58,6 +58,7 @@ const SEMANTIC_TAGS = [
 export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const section = getSeedSection('origin');
   const { premise, genre, storyTags } = storyRequired(seed);
+  const identity = worldIdentity(seed);
   const selectedStyle = normalizeStoryStyle(storyRequired(seed).style);
   const [ghostSuggestion, setGhostSuggestion] = useState<string | null>(null);
   const [activeTagFamily, setActiveTagFamily] = useState<string | null>(null);
@@ -330,6 +331,16 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
       </section>
 
       <GuidanceNote title="One origin, four signals">Premise leads the way; Style and Genre set its lens; Story Tags sharpen the details the Library should protect.</GuidanceNote>
+
+      <LibraryTextBox
+        id="origin-story-title-input"
+        label="Story Title"
+        icon={BookOpen}
+        helpText="Optional — the Library will generate a title if you leave this blank."
+        value={identity.title || ''}
+        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
+        placeholder="e.g., Ashes of the Ninth Meridian"
+      />
     </WorkspaceShell>
   );
 };

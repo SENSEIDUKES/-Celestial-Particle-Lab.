@@ -16,6 +16,10 @@
   moved. Destined Ending no longer appears under World, while every other
   Story Seed section remains in place.
 
+- **2026-08-03:** Added the optional Story Title to the bottom of Origin while
+  retaining its existing `world.optional.worldIdentity.title` storage path and
+  the existing World Identity input.
+
 - **2026-08-03:** Combined Premise, Genre, Style, and Story Tags into one
   compact **Origin** workspace. Premise leads the page, with Style and Genre
   as supporting choices. Story Tags keep custom entry, suggestions, selected
@@ -487,8 +491,10 @@ save, export, or generation, so the flat prototype shape is never durable data.
 
 - **Creator:** no user-facing fields. The family stays in the contract for
   future creator-controlled settings.
-- **Story:** the required Premise / Style / Genre inputs and optional Story
-  Tags share the compact Origin workspace. The optional ARC workspace combines
+- **Story:** the required Premise / Style / Genre inputs, optional Story Tags,
+  and optional Story Title share the compact Origin workspace. Story Title
+  continues to use the canonical `world.optional.worldIdentity.title` path so
+  the World Identity input stays synchronized. The optional ARC workspace combines
   plot direction, long-term goal, first conflict, antagonist pressure, and
   Destined Ending while preserving their existing stored paths. The remaining
   `story.optional` fields — atmosphere,
@@ -628,7 +634,7 @@ are unchanged; the development script walks the new selector).
 
 - `empty-intake` — default mount, Origin active, nothing filled
 - `filled-intake` — scripts a representative fill across both forks: Origin
-  (Premise, Chinese Style, Xianxia Genre, and two Story Tags), World Identity,
+  (Premise, Chinese Style, Xianxia Genre, two Story Tags, and Story Title), World Identity,
   Characters (MC fields + 1 added character), Factions (+1), Abilities, Power
   System, and ARC (including Destined Ending), landing back on Origin
 - `generating-blueprint` — `isGenerating` prop `true`, showing the Forge
