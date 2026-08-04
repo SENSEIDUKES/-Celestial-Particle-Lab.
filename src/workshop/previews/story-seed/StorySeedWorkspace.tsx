@@ -138,37 +138,38 @@ async function runReferenceFillScenario() {
   getRoots('reference').forEach(root => clickByText(root, 'button', /1\. Core Seed/));
 }
 
-/** Development pane: fills the Phase 2 two-panel workspace through its real
- *  selector items and field controls (same data as the reference fill). */
+/** Development pane: fills the compact Origin flow through its real controls
+ *  before continuing through the remaining Story and World workspaces. */
 async function runDevelopmentFillScenario() {
   const selectSection = async (pattern: RegExp) => {
     getRoots('development').forEach(root => clickByText(root, 'button', pattern));
     await wait(150);
   };
 
-  // Style (default active section) — the first decision: the novel tradition
-  await selectSection(/^Style/);
+  // Origin is the single home for the four core story ingredients.
+  await selectSection(/^Origin/);
   getRoots('development').forEach(root =>
     (root.querySelector('[id="story-style-chinese"]') as HTMLElement | null)?.click());
 
-  // Genre (button text includes the preset's emoji icon, so match loosely)
-  await selectSection(/^Genre/);
+  // Genre presets remain available through the compact path picker.
+  getRoots('development').forEach(root => clickByText(root, 'button', /^Pick a path/));
+  await wait(80);
   getRoots('development').forEach(root => clickByText(root, 'button', /Xianxia/));
 
-  // Premise
-  await selectSection(/^Premise/);
+  // Premise remains the dominant Origin field.
   getRoots('development').forEach(root => setFieldValue(
     root,
     'core-premise-input',
     'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
   ));
 
-  // Story Tags — optional, but manual tags must survive untouched
-  await selectSection(/^Story Tags/);
-  getRoots('development').forEach(root => {
-    clickByText(root, 'button', /^\+ death flags$/);
-    clickByText(root, 'button', /^\+ sect politics$/);
-  });
+  // Catalog children remain invisible until their parent family is opened.
+  getRoots('development').forEach(root => clickByText(root, 'button', /^Fate & Destiny/));
+  await wait(80);
+  getRoots('development').forEach(root => clickByText(root, 'button', /^\+ death flags$/));
+  getRoots('development').forEach(root => clickByText(root, 'button', /^Politics & War/));
+  await wait(80);
+  getRoots('development').forEach(root => clickByText(root, 'button', /^\+ sect politics$/));
 
   // World Identity
   await selectSection(/^World Identity$/);
@@ -219,8 +220,8 @@ async function runDevelopmentFillScenario() {
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
   });
 
-  // Land back on Style
-  await selectSection(/^Style/);
+  // Land back on Origin.
+  await selectSection(/^Origin/);
 }
 
 export function StorySeedWorkspace() {

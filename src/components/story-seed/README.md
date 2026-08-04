@@ -5,10 +5,18 @@
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-03
-- **Last source comparison:** 2026-08-01
+- **Last source comparison:** 2026-08-03
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-03:** Combined Premise, Genre, Style, and Story Tags into one
+  compact **Origin** workspace. Premise leads the page, with Style and Genre
+  as supporting choices. Story Tags keep custom entry, suggestions, selected
+  chips, search, families, and the tag limit; catalog children remain hidden
+  until a creator opens a parent family. Plot & Tropes remains separate and
+  unchanged. The canonical `story.required` paths, validation checks,
+  generation payload, saved data, and locked Reference replica are unchanged.
 
 - **2026-08-03:** Extended the title plaque's animated blue-violet-gold
   spectrum into the Celestial Library `S` emblem. The development badge now

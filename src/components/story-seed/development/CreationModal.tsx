@@ -40,10 +40,7 @@ import {
 } from './seedSections';
 import type { SeedUpdate } from './seedState';
 import { StorySeedSelector } from './StorySeedSelector';
-import { StoryTagsWorkspace } from './workspaces/StoryTagsWorkspace';
-import { PremiseWorkspace } from './workspaces/PremiseWorkspace';
-import { GenreWorkspace } from './workspaces/GenreWorkspace';
-import { StyleWorkspace } from './workspaces/StyleWorkspace';
+import { OriginWorkspace } from './workspaces/OriginWorkspace';
 import { PlotTropesWorkspace } from './workspaces/PlotTropesWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
 import { CharactersWorkspace } from './workspaces/CharactersWorkspace';
@@ -97,7 +94,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const wasAuthRef = useRef(false);
 
   // Creation workspace state
-  const [activeSection, setActiveSection] = useState<SeedSectionId>('style');
+  const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
@@ -357,10 +354,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const renderWorkspace = () => {
     switch (activeSection) {
-      case 'premise': return <PremiseWorkspace {...workspaceProps} />;
-      case 'genre': return <GenreWorkspace {...workspaceProps} />;
-      case 'style': return <StyleWorkspace {...workspaceProps} />;
-      case 'story-tags': return <StoryTagsWorkspace {...workspaceProps} />;
+      case 'origin': return <OriginWorkspace {...workspaceProps} />;
       case 'plot-tropes': return <PlotTropesWorkspace {...workspaceProps} />;
       case 'world-identity': return <WorldIdentityWorkspace {...workspaceProps} />;
       case 'characters': return <CharactersWorkspace {...workspaceProps} />;
