@@ -4,7 +4,8 @@ import { SEED_FAMILIES, type SeedSection } from '../seedSections';
 
 /**
  * Shared field styling for the Phase 2 workspaces — the glass field system
- * from `library/glass-field.css` (imported via `library`), combined
+ * from `src/components/library/glass-field.css` (imported via the Library
+ * barrel), combined
  * with layout utilities. Text inputs and textareas use `LibraryTextBox` /
  * `LibraryTextArea` (which own these classes internally); only
  * `workspaceCompactLabelClass` remains, for the Story Tags picker headings.

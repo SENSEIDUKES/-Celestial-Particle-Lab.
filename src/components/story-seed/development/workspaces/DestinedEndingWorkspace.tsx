@@ -3,7 +3,7 @@ import { Hourglass } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldFoundations, worldFoundations, type UpdateSeed } from '../seedState';
-import { LibraryTextArea } from '../library';
+import { LibraryTextArea } from '../../../library';
 import { WorkspaceShell } from './WorkspaceShell';
 
 interface DestinedEndingWorkspaceProps {

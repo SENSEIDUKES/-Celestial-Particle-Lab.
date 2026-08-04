@@ -10,7 +10,7 @@ import { CATEGORIZED_TAGS, GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS } fro
 import { getSeedSection } from '../seedSections';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../library';
+import { LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface OriginWorkspaceProps {

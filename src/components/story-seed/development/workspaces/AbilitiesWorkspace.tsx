@@ -3,7 +3,7 @@ import { Route, Zap } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchAbilities, worldFoundations, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../library';
+import { LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface AbilitiesWorkspaceProps {
