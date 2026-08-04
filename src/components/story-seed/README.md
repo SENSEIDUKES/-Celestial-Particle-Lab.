@@ -4,11 +4,25 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-03
+- **Last Workshop update:** 2026-08-04
 - **Last source comparison:** 2026-08-03
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-04:** Replaced the Story Seed section menu shell with the new
+  Library navigation drawer, ported from the SEIHouse UI repo's
+  `SEINavigationDrawer` (`UI/packages/seihouse-ui/src/layout/sei-navigation-drawer.tsx`).
+  The reusable shell lives at `src/components/library/LibraryNavigationDrawer.tsx`:
+  a mock profile header (`SENSEI` / `Cultivator Profile` — placeholder only,
+  no account behavior), grouped Story/World icon + label destinations, 44px
+  rows, an 85vw mobile drawer capped at 20rem with scrim tap / Escape /
+  close-button dismissal, body scroll lock, safe-area bottom padding, and a
+  reduced-motion collapse. The desktop sidebar renders the same panel
+  standalone. Selected-section state, click behavior, required/filled
+  indicators, and per-family portal/gold accents are unchanged;
+  `StorySeedSelector.tsx` now maps the Story/World section model onto the
+  drawer for both surfaces.
 
 - **2026-08-03:** Combined Plot & Tropes with Destined Ending in one optional,
   compact **ARC** workspace. The five existing controls and their canonical
@@ -360,12 +374,15 @@ development/                  — active Workshop version (Phase 2 creation work
   CreationModal.tsx            — two-panel shell: header (Save Draft + plain
                                  Import / My Seeds / Export All actions),
                                  selector/workspace grid, sticky action bar,
-                                 mobile section drawer
+                                 mobile Library navigation drawer
   seedSections.ts              — the Story/World section model: ids, labels,
                                  icons, required flags, per-section filled
                                  checks, missing-required helpers
-  StorySeedSelector.tsx        — left-panel navigation (desktop sidebar and
-                                 mobile drawer share it)
+  StorySeedSelector.tsx        — maps the Story/World section model onto the
+                                 Library navigation drawer (mock profile header,
+                                 required/filled indicators); the desktop
+                                 sidebar and mobile drawer share it. The shell
+                                 itself is `src/components/library/LibraryNavigationDrawer.tsx`
   workspaces/
     WorkspaceShell.tsx          — shared breadcrumb/title/chip shell, field
                                   classes, GuidanceNote, WorkspaceSubheading
@@ -666,6 +683,10 @@ are unchanged; the development script walks the new selector).
 
 ## Reusable Workshop dependencies
 
+- `src/components/library/LibraryNavigationDrawer.tsx` — the Library
+  navigation drawer/menu shell (ported from the SEIHouse UI repo's
+  `SEINavigationDrawer`, no `@seihouse/ui` dependency); provides the mock
+  profile header, section rows, and mobile drawer behavior for the selector
 - `FeatureWorkspace` + one `manifest.ts` entry (`story-seed`, category `other`
   — no existing `WorkshopCategory` fits an intake/creation flow better; the
   union was not extended since `other` already covers `chapter-generation-flow`)
@@ -799,6 +820,13 @@ tree below and should be removed in the same transfer, with one caution
 - `development/CreationModal.tsx` → `src/components/CreationModal.tsx`
 - `development/seedSections.ts` → `src/features/creation/seedSections.ts`
 - `development/StorySeedSelector.tsx` → `src/features/creation/components/StorySeedSelector.tsx`
+  (now also exports `buildStorySeedDrawerSections` and
+  `STORY_SEED_DRAWER_PROFILE`; depends on the drawer below transferring too)
+- `src/components/library/LibraryNavigationDrawer.tsx` →
+  `src/components/LibraryNavigationDrawer.tsx` (alongside `LibraryButton`;
+  self-contained port — no `@seihouse/ui` dependency to install. Replace
+  `STORY_SEED_DRAWER_PROFILE` with the real profile menu entry when the
+  Library profile tab lands)
 - `development/StorySeedSummary.tsx` → `src/features/creation/components/StorySeedSummary.tsx`
 - `development/workspaces/*` → `src/features/creation/components/workspaces/*`
 - `development/StoryAuthGate.tsx` → `src/components/StoryAuthGate.tsx`
