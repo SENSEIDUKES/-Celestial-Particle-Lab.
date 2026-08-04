@@ -41,12 +41,19 @@ content surfaces, guidance callouts, footer action strips).
 - Variants trimmed to `default` / `callout` / `footer`; SEIPanel's
   `interactive` and `glow` props were intentionally not carried over.
 - The glass is re-skinned to the Celestial Library target: translucent
-  black-blue depth, thin luminous cool border, faint inner top highlight,
-  and a gentle portal/gold rim glow — premium, not flat black, not neon.
-- `footer` has no SEIPanel equivalent: a bottom action strip with a luminous
-  top divider, translucent dark body, and backdrop blur. Render it as the
-  last child of a `padding="none"` panel so the panel's `overflow-hidden`
-  clips its corners to the panel radius.
+  black-blue depth with a top-light falloff, a crisp luminous cool border,
+  strengthened inner rim lighting, and a gentle portal/gold rim glow that
+  lifts the panel off the void page. A thin spectral ring — the SEIHouse
+  portal → violet → gold spectrum on a conic gradient, masked to the outer
+  1px (longhand masks only: the `mask` shorthand resets `mask-composite` and
+  would wash the gradient over the whole panel) and screen-blended at low
+  opacity — adds iridescent life along the top edge and corners without ever
+  reading as a rainbow stripe. Premium, not flat black, not neon.
+- `footer` has no SEIPanel equivalent: a bottom action strip with a crisp
+  luminous top divider, a soft portal glow rising above the divider, a
+  translucent dark body with its own top sheen, and backdrop blur. Render it
+  as the last child of a `padding="none"` panel so the panel's
+  `overflow-hidden` clips its corners to the panel radius.
 
 ### Usage
 
@@ -68,6 +75,13 @@ import { LibraryPanel } from '../library';
 
 ### Workshop history
 
+- **2026-08-04:** Premium refinement pass toward the Celestial Library glass
+  reference: crisper, brighter border; deeper body glass with a top-light
+  falloff; strengthened inner rim lighting and page-separating rim glow; a
+  thin masked spectral edge (SEIHouse portal → violet → gold) adding
+  iridescent life along the top edge and corners; and a polished footer
+  strip with a crisp luminous divider and soft upward glow. Story Seed
+  markup untouched — the refinement is entirely inside the panel skin.
 - **2026-08-04:** Ported `SEIPanel` from the UI repo, re-skinned it as the
   Celestial Library glass, and adopted it as the Story Seed
   creation-workspace shell (main glass container + action-bar footer strip).

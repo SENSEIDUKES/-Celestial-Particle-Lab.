@@ -10,6 +10,12 @@
 
 ## Workshop history
 
+- **2026-08-04:** `LibraryPanel` premium refinement pass (see
+  `src/components/library/README.md`): crisper/brighter glass border, deeper
+  body glass, stronger rim lighting, a thin spectral SEIHouse edge along the
+  top and corners, and a polished action-bar divider. No Story Seed markup,
+  layout, or logic changed — the shell picks up the new skin automatically.
+
 - **2026-08-04:** Shelled the two-panel creation workspace in the new
   `LibraryPanel` (`src/components/library/LibraryPanel.tsx`), ported from the
   SEIHouse UI repo's `SEIPanel` and re-skinned as the Celestial Library glass
