@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import './story-seed.css';
 import { motion } from 'motion/react';
 import { Bookmark, Check, Copy, Database, Download, List } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
@@ -53,8 +54,12 @@ import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
-import { LibraryHeaderBadge } from './library';
-import { LibraryButton, LibraryNavigationDrawer, LibraryPanel } from '../../library';
+import {
+  LibraryButton,
+  LibraryHeaderBadge,
+  LibraryNavigationDrawer,
+  LibraryPanel,
+} from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';

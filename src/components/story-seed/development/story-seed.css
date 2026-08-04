@@ -1,0 +1,11 @@
+/* Ambient depth behind the active Story Seed workspace. Gradients only, so
+   the layer remains inexpensive while the form scrolls. */
+.seed-workspace-ambience {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 26rem at 85% -10%, rgba(64, 100, 220, 0.1), transparent 60%),
+    radial-gradient(36rem 24rem at 8% 112%, rgba(122, 82, 200, 0.08), transparent 62%),
+    radial-gradient(30rem 20rem at 55% 45%, rgba(4, 172, 255, 0.035), transparent 65%);
+}

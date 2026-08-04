@@ -4,6 +4,54 @@ Shared, reusable Library-skinned components. Not a Workshop preview feature —
 these primitives back the feature replicas (Story Seed, Story Settings,
 Relics, Reader surfaces) and transfer to production alongside them.
 
+## Component ownership
+
+`src/components/library/` is the single Workshop owner for the reusable
+Celestial Library UI system:
+
+- `LibraryButton`, `LibraryPanel`, and `LibraryNavigationDrawer`
+- `LibraryTextBox` and `LibraryTextArea`
+- `LibraryHeaderBadge` and its emblem/header spectrum treatments
+- `SEIButton`, `cn`, shared glass-field styles, and the Library spectrum styles
+- the public `index.ts` exports used by feature consumers
+
+Feature folders import these components from the Library barrel. They must not
+keep local copies or compatibility barrels. Feature-only presentation remains
+with the feature; for example, Story Seed owns only its workspace ambience in
+`src/components/story-seed/development/story-seed.css`.
+
+Reusable visual names use the `library-*` namespace:
+`library-spectrum-glow`, `library-spectrum-flow`,
+`library-title-presence`, and `library-subtitle-shimmer`. There are no legacy
+`seed-*` aliases.
+
+### Shared-component history
+
+- **2026-08-04:** Consolidated `LibraryTextBox`, `LibraryTextArea`,
+  `LibraryHeaderBadge`, the glass-field skin, and the shared spectrum styles
+  from Story Seed into this canonical folder. Updated the public barrel and
+  removed the Story Seed compatibility path without changing component APIs or
+  presentation.
+
+## LibraryTextBox and LibraryTextArea
+
+The official single-line and multi-line Library fields. Both preserve the
+existing controlled/uncontrolled behavior, forwarded refs, generated IDs,
+accessible descriptions and errors, required markers, compact/comfortable
+sizes, icon slots, completion state, and the shared glass skin.
+
+Import them through the shared barrel:
+
+```tsx
+import { LibraryTextArea, LibraryTextBox } from '../../library';
+```
+
+## LibraryHeaderBadge
+
+The reusable Library identity header: optional linked emblem, spectral aura,
+luminous title, and optional shimmering subtitle. Its reduced-motion handling
+and spectrum classes live in `library-spectrum.css`.
+
 ## LibraryPanel
 
 Glass panel shell — the official Celestial Library section container (main

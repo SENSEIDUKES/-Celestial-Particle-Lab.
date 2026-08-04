@@ -10,6 +10,15 @@
 
 ## Workshop history
 
+- **2026-08-04:** Consolidated the reusable Celestial Library UI into
+  `src/components/library/`. Story Seed now imports `LibraryTextBox`,
+  `LibraryTextArea`, `LibraryHeaderBadge`, `LibraryButton`, `LibraryPanel`, and
+  `LibraryNavigationDrawer` from the shared Library barrel. The shared
+  glass-field and spectrum styles moved with those components; reusable
+  `seed-*` names became `library-*` names with no compatibility aliases. Only
+  the Story Seed workspace ambience remains local in `development/story-seed.css`.
+  Form state, DOM IDs, navigation, generation, and visual behavior are unchanged.
+
 - **2026-08-04:** `LibraryPanel` premium refinement pass (see
   `src/components/library/README.md`): crisper/brighter glass border, deeper
   body glass, stronger rim lighting, a thin spectral SEIHouse edge along the
@@ -211,13 +220,13 @@
   inner highlight, restrained focus glow), matching the approved design
   reference. Layout, Story/World hierarchy, section order, data wiring, and
   navigation are unchanged. Details:
-  - **`library/glass-field.css` (new)** — the shared system, applied as
+  - **`src/components/library/glass-field.css`** — the shared system, applied as
     one `glass-field` class plus Tailwind layout utilities. Pure gradients
     and box-shadows, no `backdrop-filter`, so mobile scrolling stays cheap.
     Covers text inputs, textareas, selects (`.glass-select` wrapper with a
     custom chevron — never native chrome), tag chips (`.glass-chip`), group
-    panels (`.glass-panel`), and the workspace ambience
-    (`.seed-workspace-ambience`). States: default, hover, focus (strongest
+    panels (`.glass-panel`). Story Seed's workspace ambience remains local in
+    `development/story-seed.css`. States: default, hover, focus (strongest
     cool-blue edge + glow), completed (`data-complete`, a quiet cool
     accent), invalid (`data-invalid`, the existing warning color on the
     same glass surface), and native disabled.
@@ -429,23 +438,8 @@ development/                  — active Workshop version (Phase 2 creation work
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
                                    CATEGORIZED_TAGS (no Fate Survival genre;
                                    fate tags live in the Fate & Destiny category)
-  library/                     — shared Library components (glass fields,
-                                  header badge) used by workspaces + header
-    glass-field.css             — glass surface + select/chip/panel/ambience
-                                  variants and all interactive states
-    LibraryTextBox.tsx          — official Celestial Library text input;
-                                  SEIInput/SEIField behavior ported from the
-                                  SEIHouse UI repo on the glass skin; used by
-                                  every workspace text field
-    LibraryTextArea.tsx         — official Celestial Library multi-line field;
-                                  same ported behavior + skin, character
-                                  counter, overlay children; used by every
-                                  workspace textarea
-    LibraryHeaderBadge.tsx      — official Celestial Library header identity
-                                  block: glass title plaque, fluid glow,
-                                  gradient title, shimmer subtitle, optional
-                                  emblem home link
-    index.ts                    — imports glass-field.css, re-exports all three
+  story-seed.css               — Story Seed-only workspace ambience; reusable
+                                  field/header styles live in components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
                                   WorldBlueprint, StorySeedPayload, StorySeed,
@@ -839,9 +833,9 @@ tree below and should be removed in the same transfer, with one caution
 - `development/StorySeedSelector.tsx` → `src/features/creation/components/StorySeedSelector.tsx`
   (now also exports `buildStorySeedDrawerSections` and
   `STORY_SEED_DRAWER_PROFILE`; depends on the drawer below transferring too)
-- `src/components/library/LibraryNavigationDrawer.tsx` →
-  `src/components/LibraryNavigationDrawer.tsx` (alongside `LibraryButton`;
-  self-contained port — no `@seihouse/ui` dependency to install. Replace
+- `src/components/library/*` → `src/components/library/*` (shared Library
+  buttons, panels, drawer, fields, header badge, styles, helpers, and barrel;
+  self-contained ports — no `@seihouse/ui` dependency to install. Replace
   `STORY_SEED_DRAWER_PROFILE` with the real profile menu entry when the
   Library profile tab lands)
 - `development/StorySeedSummary.tsx` → `src/features/creation/components/StorySeedSummary.tsx`
@@ -861,7 +855,6 @@ tree below and should be removed in the same transfer, with one caution
   (still exports `GENRE_PRESETS`, used by
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
   is removed in this transfer)
-- `development/library/*` → `src/features/creation/components/library/*`
 - `shared/storySeedSchema.ts` draft/generation validation split, the Style
   correction, and `applyInferredStoryTags` → production's Phase 1 schema
   module (the `IntakeData` view-model field `proseStyle` belongs to
@@ -882,8 +875,9 @@ registry line.
 
 ## Transfer notes and cautions
 
-- `LibraryTextBox.tsx` is self-contained: its SEIInput/SEIField behavior was
-  ported into the file, so transferring `development/library/*` carries it
+- `src/components/library/LibraryTextBox.tsx` is self-contained: its
+  SEIInput/SEIField behavior was ported into the file, so transferring the
+  shared Library component folder carries it
   with **no `@seihouse/ui` dependency to install**. If Light-Novels later
   adopts the SEIHouse UI package directly, re-base `LibraryTextBox`'s behavior
   on the real `SEIInput`/`SEIField` instead of the port.

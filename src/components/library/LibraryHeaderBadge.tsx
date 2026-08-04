@@ -4,13 +4,13 @@ import React from 'react';
  * LibraryHeaderBadge — the reusable Library header identity block.
  *
  * Frosted-glass title plaque with the cool fluid glow behind it
- * (.seed-rainbow-glow), luminous ivory-to-gold title
- * (.seed-title-presence), and an optional gold-shimmer subtitle
- * (.seed-subtitle-shimmer). An optional emblem can sit to the left inside
+ * (`library-spectrum-glow`), luminous ivory-to-gold title
+ * (`library-title-presence`), and an optional gold-shimmer subtitle
+ * (`library-subtitle-shimmer`). An optional emblem can sit to the left inside
  * the same animated portal spectrum as the plaque; pass `emblemHref` to
  * make it a home link.
  *
- * The seed-* styles live globally in src/styles.css.
+ * The Library spectrum styles live globally in `src/styles.css`.
  *
  * Usage:
  *   <LibraryHeaderBadge
@@ -47,11 +47,11 @@ export function LibraryHeaderBadge({
           chromatic rim. The emblem remains gold at its core for contrast. */}
       <span
         aria-hidden="true"
-        className="seed-rainbow-glow absolute -inset-2 rounded-full opacity-60 blur-[10px] transition-all duration-500 group-hover/emblem:scale-110 group-hover/emblem:opacity-90 group-hover/emblem:blur-[13px]"
+        className="library-spectrum-glow absolute -inset-2 rounded-full opacity-60 blur-[10px] transition-all duration-500 group-hover/emblem:scale-110 group-hover/emblem:opacity-90 group-hover/emblem:blur-[13px]"
       />
       <span
         aria-hidden="true"
-        className="seed-rainbow-glow absolute -inset-[2px] rounded-full opacity-90 shadow-[0_0_14px_rgba(124,92,255,0.35)] transition-opacity duration-300 group-hover/emblem:opacity-100"
+        className="library-spectrum-glow absolute -inset-[2px] rounded-full opacity-90 shadow-[0_0_14px_rgba(124,92,255,0.35)] transition-opacity duration-300 group-hover/emblem:opacity-100"
       />
       <img
         src={emblemSrc}
@@ -81,14 +81,14 @@ export function LibraryHeaderBadge({
         {/* Fluid glow bleeding out from behind the glass shell. */}
         <div
           aria-hidden="true"
-          className="seed-rainbow-glow absolute -inset-0.5 rounded-2xl opacity-25 blur-lg"
+          className="library-spectrum-glow absolute -inset-0.5 rounded-2xl opacity-25 blur-lg"
         />
         <div className="relative rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 sm:px-5 sm:py-3 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05)]">
-          <h1 className="seed-title-presence font-display font-bold text-2xl sm:text-4xl uppercase tracking-[0.08em]">
+          <h1 className="library-title-presence font-display font-bold text-2xl sm:text-4xl uppercase tracking-[0.08em]">
             {title}
           </h1>
           {subtitle ? (
-            <p className="seed-subtitle-shimmer mt-1 font-sc text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.24em] sm:tracking-[0.3em] whitespace-nowrap">
+            <p className="library-subtitle-shimmer mt-1 font-sc text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.24em] sm:tracking-[0.3em] whitespace-nowrap">
               {subtitle}
             </p>
           ) : null}

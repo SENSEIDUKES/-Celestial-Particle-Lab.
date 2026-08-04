@@ -10,7 +10,7 @@ import {
   worldFoundations,
   type UpdateSeed,
 } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../library';
+import { LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface ArcWorkspaceProps {
