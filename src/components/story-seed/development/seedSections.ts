@@ -24,11 +24,11 @@ import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } 
  *
  * ```text
  * story.required   Story Tags · Premise · Genre · Style
- * story.optional   Plot & Tropes → plotAndTropeSettings + additionalStoryDirection
+ * story.optional   ARC → plotAndTropeSettings + additionalStoryDirection
  * world.required   (none)
  * world.optional   World Identity → worldIdentity
  *                  Characters / Factions / Abilities / Power System /
- *                  Destined Ending → worldFoundations
+ *                  ARC also presents Destined Ending from worldFoundations
  * ```
  *
  * A section earns its place here only if it helps *define or recreate the
@@ -41,6 +41,7 @@ export type SeedFamily = 'story' | 'world';
 
 export type SeedSectionId =
   | 'origin'
+  | 'arc'
   | 'style'
   | 'genre'
   | 'premise'
@@ -138,10 +139,26 @@ export const SEED_SECTIONS: SeedSection[] = [
     isFilled: seed => storyRequired(seed).storyTags.length > 0,
   },
   {
+    id: 'arc',
+    family: 'story',
+    label: 'ARC',
+    icon: Route,
+    tagline: 'The forces that shape the journey and the destination it ultimately reaches.',
+    isFilled: seed => {
+      const settings = plotAndTropeSettings(seed);
+      return hasText(seed.story.optional.additionalStoryDirection)
+        || hasText(settings.longTermGoal)
+        || hasText(settings.firstMajorConflict)
+        || hasText(settings.mainAntagonistPressure)
+        || hasText(worldFoundations(seed).destinedEnding);
+    },
+  },
+  {
     id: 'plot-tropes',
     family: 'story',
     label: 'Plot & Tropes',
     icon: Route,
+    navigation: false,
     tagline: 'The narrative shape of the novel — where it is headed and what pushes back.',
     isFilled: seed => {
       const settings = plotAndTropeSettings(seed);
@@ -212,6 +229,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'world',
     label: 'Destined Ending',
     icon: Hourglass,
+    navigation: false,
     tagline: 'The final destination this story is fated to reach.',
     isFilled: seed => hasText(worldFoundations(seed).destinedEnding),
   },

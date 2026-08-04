@@ -53,7 +53,7 @@ export const scenarios: PreviewScenario[] = [
   },
   {
     id: 'filled-intake',
-    label: 'Filled workspace (origin, plot, world, characters, faction)',
+    label: 'Filled workspace (origin, ARC, world, characters, faction)',
     category: 'intake',
     uiAction: 'fill-intake',
   },

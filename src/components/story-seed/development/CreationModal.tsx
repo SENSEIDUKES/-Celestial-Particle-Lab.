@@ -41,13 +41,12 @@ import {
 import type { SeedUpdate } from './seedState';
 import { StorySeedSelector } from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
-import { PlotTropesWorkspace } from './workspaces/PlotTropesWorkspace';
+import { ArcWorkspace } from './workspaces/ArcWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
 import { CharactersWorkspace } from './workspaces/CharactersWorkspace';
 import { FactionsWorkspace } from './workspaces/FactionsWorkspace';
 import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
-import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { LibraryHeaderBadge } from './library';
@@ -355,13 +354,12 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const renderWorkspace = () => {
     switch (activeSection) {
       case 'origin': return <OriginWorkspace {...workspaceProps} />;
-      case 'plot-tropes': return <PlotTropesWorkspace {...workspaceProps} />;
+      case 'arc': return <ArcWorkspace {...workspaceProps} />;
       case 'world-identity': return <WorldIdentityWorkspace {...workspaceProps} />;
       case 'characters': return <CharactersWorkspace {...workspaceProps} />;
       case 'factions': return <FactionsWorkspace {...workspaceProps} />;
       case 'abilities': return <AbilitiesWorkspace {...workspaceProps} />;
       case 'power-system': return <PowerSystemWorkspace {...workspaceProps} />;
-      case 'destined-ending': return <DestinedEndingWorkspace {...workspaceProps} />;
     }
   };
 

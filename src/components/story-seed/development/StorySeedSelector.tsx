@@ -107,7 +107,7 @@ const FamilyBlock = ({
       </div>
       <p className="mt-2 px-1 font-sans text-[10px] leading-relaxed text-neutral-600">
         {family === 'story'
-          ? 'Origin holds Style, Genre, Premise, and Story Tags. Everything below it is optional.'
+          ? 'Origin defines the story. ARC optionally shapes its journey and ending.'
           : 'Optional — the Library can generate the complete world automatically.'}
       </p>
     </div>

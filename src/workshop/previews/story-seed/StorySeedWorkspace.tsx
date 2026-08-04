@@ -213,11 +213,12 @@ async function runDevelopmentFillScenario() {
   await selectSection(/^Power System$/);
   getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist'));
 
-  // Plot & Tropes (seed-level narrative direction only)
-  await selectSection(/^Plot & Tropes/);
+  // ARC combines plot direction with the story's intended destination.
+  await selectSection(/^ARC$/);
   getRoots('development').forEach(root => {
     setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
+    setFieldValue(root, 'destined-ending-input', 'The prince survives and severs the celestial court from fate.');
   });
 
   // Land back on Origin.

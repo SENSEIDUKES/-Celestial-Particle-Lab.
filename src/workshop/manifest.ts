@@ -112,7 +112,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Premise, Style, Genre, and Story Tags; tags are inferred automatically if left empty and their catalog opens one family at a time. Plot & Tropes stays separate. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; Fate Survival and experience settings live in the separate Story Settings feature.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Premise, Style, Genre, and Story Tags, plus an optional ARC workspace combining plot direction, conflict, antagonist pressure, and Destined Ending. Tag families open one at a time. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; Fate Survival and experience settings live in the separate Story Settings feature.',
     category: 'other',
     version: 'v1.4',
     source: {
