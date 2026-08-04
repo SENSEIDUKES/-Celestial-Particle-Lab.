@@ -11,8 +11,8 @@ export const RELIC_RARITIES = [
 
 export type RelicRarity = (typeof RELIC_RARITIES)[number];
 
-/** Keeps Relic rewards meaningful without turning achievements into the Qi economy. */
-export const MAX_RELIC_QI_REWARD = 250;
+/** Maximum allowed award; individual achievements choose their own lower value. */
+export const MAX_RELIC_QI_REWARD = 1000;
 
 export type JsonPrimitive = boolean | number | string | null;
 export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];

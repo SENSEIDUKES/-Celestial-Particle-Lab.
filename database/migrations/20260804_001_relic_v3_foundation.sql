@@ -22,7 +22,7 @@ CREATE TABLE relic_achievement_template (
     CHECK (jsonb_typeof(condition_parameters) = 'object'),
   title_reward JSONB
     CHECK (title_reward IS NULL OR jsonb_typeof(title_reward) = 'object'),
-  qi_reward SMALLINT NOT NULL DEFAULT 0 CHECK (qi_reward BETWEEN 0 AND 250),
+  qi_reward SMALLINT NOT NULL DEFAULT 0 CHECK (qi_reward BETWEEN 0 AND 1000),
   cosmetic_rewards JSONB NOT NULL DEFAULT '[]'::jsonb
     CHECK (jsonb_typeof(cosmetic_rewards) = 'array'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,7 +52,7 @@ CREATE TABLE story_relic_assignment (
     CHECK (jsonb_typeof(condition_parameters_snapshot) = 'object'),
   title_reward_snapshot JSONB
     CHECK (title_reward_snapshot IS NULL OR jsonb_typeof(title_reward_snapshot) = 'object'),
-  qi_reward_snapshot SMALLINT NOT NULL DEFAULT 0 CHECK (qi_reward_snapshot BETWEEN 0 AND 250),
+  qi_reward_snapshot SMALLINT NOT NULL DEFAULT 0 CHECK (qi_reward_snapshot BETWEEN 0 AND 1000),
   cosmetic_rewards_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb
     CHECK (jsonb_typeof(cosmetic_rewards_snapshot) = 'array'),
 

@@ -34,8 +34,8 @@ once in each different story.
 - Optional title rewards.
 - Optional cosmetic rewards with open JSON metadata, without choosing the
   future cosmetic catalog or fulfillment system.
-- Qi rewards bounded to 0–250 so Relics remain a modest supplement rather than
-  becoming a second Qi economy.
+- Qi rewards bounded to 0–1000. This is only the maximum allowed value, not a
+  default; each once-per-story achievement still defines its own award.
 - Versioned evaluator keys and JSON parameters.
 - Immutable completion evidence recording evaluator version, source identity,
   observation time, and supporting facts.

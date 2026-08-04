@@ -67,6 +67,14 @@ describe('Relic v3 backend foundation', () => {
       parameters: { requiredChapters: 3 },
     });
 
+    const maximumQiTemplate = await repository.createTemplate({
+      ...templateDefinition(),
+      id: 'template-maximum-qi',
+      key: 'maximum-qi',
+      rewards: { ...templateDefinition().rewards, qi: MAX_RELIC_QI_REWARD },
+    });
+    expect(maximumQiTemplate.rewards.qi).toBe(1000);
+
     await expect(repository.createTemplate({
       ...templateDefinition(),
       id: 'template-excessive-qi',
