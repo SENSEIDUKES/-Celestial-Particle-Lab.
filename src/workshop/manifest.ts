@@ -112,13 +112,13 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with focused section workspaces, three required Story inputs in order (Style — the Chinese/Korean/Japanese novel tradition — then Genre and Premise), automatic Story Tag inference, always-available Save Draft, and a mobile section drawer. Blueprint review, import/export, and saved-seed library included; Fate Survival and experience settings live in the separate Story Settings feature.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Premise, Style, Genre, and Story Tags, plus an optional ARC workspace combining plot direction, conflict, antagonist pressure, and Destined Ending. Tag families open one at a time. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; Fate Survival and experience settings live in the separate Story Settings feature.',
     category: 'other',
     version: 'v1.4',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',
-      lastCompared: '2026-08-01',
+      lastCompared: '2026-08-03',
     },
   },
   {

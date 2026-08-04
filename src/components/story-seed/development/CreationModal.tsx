@@ -40,17 +40,13 @@ import {
 } from './seedSections';
 import type { SeedUpdate } from './seedState';
 import { StorySeedSelector } from './StorySeedSelector';
-import { StoryTagsWorkspace } from './workspaces/StoryTagsWorkspace';
-import { PremiseWorkspace } from './workspaces/PremiseWorkspace';
-import { GenreWorkspace } from './workspaces/GenreWorkspace';
-import { StyleWorkspace } from './workspaces/StyleWorkspace';
-import { PlotTropesWorkspace } from './workspaces/PlotTropesWorkspace';
+import { OriginWorkspace } from './workspaces/OriginWorkspace';
+import { ArcWorkspace } from './workspaces/ArcWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
 import { CharactersWorkspace } from './workspaces/CharactersWorkspace';
 import { FactionsWorkspace } from './workspaces/FactionsWorkspace';
 import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
-import { DestinedEndingWorkspace } from './workspaces/DestinedEndingWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { LibraryHeaderBadge } from './library';
@@ -97,7 +93,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const wasAuthRef = useRef(false);
 
   // Creation workspace state
-  const [activeSection, setActiveSection] = useState<SeedSectionId>('style');
+  const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
@@ -357,17 +353,13 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const renderWorkspace = () => {
     switch (activeSection) {
-      case 'premise': return <PremiseWorkspace {...workspaceProps} />;
-      case 'genre': return <GenreWorkspace {...workspaceProps} />;
-      case 'style': return <StyleWorkspace {...workspaceProps} />;
-      case 'story-tags': return <StoryTagsWorkspace {...workspaceProps} />;
-      case 'plot-tropes': return <PlotTropesWorkspace {...workspaceProps} />;
+      case 'origin': return <OriginWorkspace {...workspaceProps} />;
+      case 'arc': return <ArcWorkspace {...workspaceProps} />;
       case 'world-identity': return <WorldIdentityWorkspace {...workspaceProps} />;
       case 'characters': return <CharactersWorkspace {...workspaceProps} />;
       case 'factions': return <FactionsWorkspace {...workspaceProps} />;
       case 'abilities': return <AbilitiesWorkspace {...workspaceProps} />;
       case 'power-system': return <PowerSystemWorkspace {...workspaceProps} />;
-      case 'destined-ending': return <DestinedEndingWorkspace {...workspaceProps} />;
     }
   };
 

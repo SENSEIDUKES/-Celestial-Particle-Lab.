@@ -24,11 +24,11 @@ import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } 
  *
  * ```text
  * story.required   Story Tags · Premise · Genre · Style
- * story.optional   Plot & Tropes → plotAndTropeSettings + additionalStoryDirection
+ * story.optional   ARC → plotAndTropeSettings + additionalStoryDirection
  * world.required   (none)
  * world.optional   World Identity → worldIdentity
  *                  Characters / Factions / Abilities / Power System /
- *                  Destined Ending → worldFoundations
+ *                  ARC also presents Destined Ending from worldFoundations
  * ```
  *
  * A section earns its place here only if it helps *define or recreate the
@@ -40,6 +40,8 @@ import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } 
 export type SeedFamily = 'story' | 'world';
 
 export type SeedSectionId =
+  | 'origin'
+  | 'arc'
   | 'style'
   | 'genre'
   | 'premise'
@@ -64,6 +66,8 @@ export interface SeedSection {
    * and Style, so it can never block the flow.
    */
   required?: boolean;
+  /** Whether the section belongs in the Story / World selector. */
+  navigation?: boolean;
   /** One-line guidance shown under the workspace title. */
   tagline: string;
   /** Whether the section currently holds creator-entered content. */
@@ -78,13 +82,30 @@ export const SEED_FAMILIES: Record<SeedFamily, { label: string; tagline: string 
 const hasText = (value?: string): boolean => Boolean(value?.trim());
 
 export const SEED_SECTIONS: SeedSection[] = [
-  // Style first: the tradition frames how every later section is read.
+  // Origin combines the four core Story ingredients into one creation flow.
+  // The individual records below remain the validation authority.
+  {
+    id: 'origin',
+    family: 'story',
+    label: 'Origin',
+    icon: PenLine,
+    required: true,
+    tagline: 'The premise, tradition, genre, and story details that give this novel its first shape.',
+    isFilled: seed => Boolean(
+      normalizeStoryStyle(storyRequired(seed).style)
+      && hasText(storyRequired(seed).genre)
+      && hasText(storyRequired(seed).premise),
+    ),
+  },
+  // These remain addressable for validation and the isolated legacy workspace
+  // files, but Origin is their single visible editing surface.
   {
     id: 'style',
     family: 'story',
     label: 'Style',
     icon: PenLine,
     required: true,
+    navigation: false,
     tagline: 'The storytelling tradition your novel belongs to.',
     isFilled: seed => Boolean(normalizeStoryStyle(storyRequired(seed).style)),
   },
@@ -94,6 +115,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Genre',
     icon: Drama,
     required: true,
+    navigation: false,
     tagline: 'The shelf your novel lives on — its logic, dialect, and promises.',
     isFilled: seed => hasText(storyRequired(seed).genre),
   },
@@ -103,6 +125,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     label: 'Premise',
     icon: Feather,
     required: true,
+    navigation: false,
     tagline: 'The hook or secret catalyst the whole novel bends around.',
     isFilled: seed => hasText(storyRequired(seed).premise),
   },
@@ -111,14 +134,31 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'story',
     label: 'Story Tags',
     icon: Tag,
+    navigation: false,
     tagline: 'Themes, tones, and elements that shape your story. Generated automatically if left empty.',
     isFilled: seed => storyRequired(seed).storyTags.length > 0,
+  },
+  {
+    id: 'arc',
+    family: 'story',
+    label: 'ARC',
+    icon: Route,
+    tagline: 'The forces that shape the journey and the destination it ultimately reaches.',
+    isFilled: seed => {
+      const settings = plotAndTropeSettings(seed);
+      return hasText(seed.story.optional.additionalStoryDirection)
+        || hasText(settings.longTermGoal)
+        || hasText(settings.firstMajorConflict)
+        || hasText(settings.mainAntagonistPressure)
+        || hasText(worldFoundations(seed).destinedEnding);
+    },
   },
   {
     id: 'plot-tropes',
     family: 'story',
     label: 'Plot & Tropes',
     icon: Route,
+    navigation: false,
     tagline: 'The narrative shape of the novel — where it is headed and what pushes back.',
     isFilled: seed => {
       const settings = plotAndTropeSettings(seed);
@@ -189,17 +229,22 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'world',
     label: 'Destined Ending',
     icon: Hourglass,
+    navigation: false,
     tagline: 'The final destination this story is fated to reach.',
     isFilled: seed => hasText(worldFoundations(seed).destinedEnding),
   },
 ];
 
 export const FAMILY_SECTIONS: Record<SeedFamily, SeedSection[]> = {
-  story: SEED_SECTIONS.filter(section => section.family === 'story'),
-  world: SEED_SECTIONS.filter(section => section.family === 'world'),
+  story: SEED_SECTIONS.filter(section => section.family === 'story' && section.navigation !== false),
+  world: SEED_SECTIONS.filter(section => section.family === 'world' && section.navigation !== false),
 };
 
-export const REQUIRED_STORY_SECTIONS = SEED_SECTIONS.filter(section => section.required);
+// Origin is presentation-only. The generation gate remains deliberately
+// granular so validation messages still name the exact missing ingredient.
+export const REQUIRED_STORY_SECTIONS = SEED_SECTIONS.filter(section =>
+  section.id === 'style' || section.id === 'genre' || section.id === 'premise',
+);
 
 export const getSeedSection = (id: SeedSectionId): SeedSection =>
   SEED_SECTIONS.find(section => section.id === id)!;

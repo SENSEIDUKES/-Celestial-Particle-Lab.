@@ -5,10 +5,28 @@
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-03
-- **Last source comparison:** 2026-08-01
+- **Last source comparison:** 2026-08-03
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-03:** Combined Plot & Tropes with Destined Ending in one optional,
+  compact **ARC** workspace. The five existing controls and their canonical
+  data paths are unchanged; only their presentation and navigation ownership
+  moved. Destined Ending no longer appears under World, while every other
+  Story Seed section remains in place.
+
+- **2026-08-03:** Added the optional Story Title to the bottom of Origin while
+  retaining its existing `world.optional.worldIdentity.title` storage path and
+  the existing World Identity input.
+
+- **2026-08-03:** Combined Premise, Genre, Style, and Story Tags into one
+  compact **Origin** workspace. Premise leads the page, with Style and Genre
+  as supporting choices. Story Tags keep custom entry, suggestions, selected
+  chips, search, families, and the tag limit; catalog children remain hidden
+  until a creator opens a parent family. Plot & Tropes remains separate and
+  unchanged. The canonical `story.required` paths, validation checks,
+  generation payload, saved data, and locked Reference replica are unchanged.
 
 - **2026-08-03:** Extended the title plaque's animated blue-violet-gold
   spectrum into the Celestial Library `S` emblem. The development badge now
@@ -473,18 +491,20 @@ save, export, or generation, so the flat prototype shape is never durable data.
 
 - **Creator:** no user-facing fields. The family stays in the contract for
   future creator-controlled settings.
-- **Story:** required Style / Genre / Premise first, in that order (Style is
-  the novel tradition — Chinese, Korean, or Japanese — stored in
-  `story.style`; Genre is an explicit preset-or-custom input), then optional
-  Story Tags (inferred when empty) and the curated
-  Plot & Tropes branch. The remaining `story.optional` fields — atmosphere,
+- **Story:** the required Premise / Style / Genre inputs, optional Story Tags,
+  and optional Story Title share the compact Origin workspace. Story Title
+  continues to use the canonical `world.optional.worldIdentity.title` path so
+  the World Identity input stays synchronized. The optional ARC workspace combines
+  plot direction, long-term goal, first conflict, antagonist pressure, and
+  Destined Ending while preserving their existing stored paths. The remaining
+  `story.optional` fields — atmosphere,
   danger, pacing, romance/comedy/trope levels, Fate settings, custom rules —
   stay in the schema and still round-trip through import/export, but they are
   **not presented in Story Seed**: they are experience settings owned by the
   separate [Story Settings](../story-settings/README.md) feature.
 - **World:** title, world type, location, society, main character, additional
-  characters, factions, abilities, power-system definition, and destined
-  ending — all optional; empty World stays valid. `universe` and
+  characters, factions, abilities, and power-system definition — all optional;
+  empty World stays valid. `universe` and
   `majorMysteries` are populated from the generated blueprint, not collected
   as intake.
 - **Internal metadata:** schema version, seed/account IDs, display title, and
@@ -612,12 +632,11 @@ are unchanged; the development script walks the new selector).
 
 **Creation Workspace** — the intake stage (`stage === 'intake'`)
 
-- `empty-intake` — default mount, Premise active, nothing filled
-- `filled-intake` — scripts a representative fill across both forks: Premise,
-  Style (Chinese), Genre (Xianxia), Story Tags
-  (2 preset tags), World Identity, Characters (MC fields + 1 added character),
-  Factions (+1), Abilities, Power System, and Plot & Tropes, landing back on
-  Premise
+- `empty-intake` — default mount, Origin active, nothing filled
+- `filled-intake` — scripts a representative fill across both forks: Origin
+  (Premise, Chinese Style, Xianxia Genre, two Story Tags, and Story Title), World Identity,
+  Characters (MC fields + 1 added character), Factions (+1), Abilities, Power
+  System, and ARC (including Destined Ending), landing back on Origin
 - `generating-blueprint` — `isGenerating` prop `true`, showing the Forge
   button's spinner state
 - `import-panel-open` — clicks the real header "Import" action to open
