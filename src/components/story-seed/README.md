@@ -10,6 +10,15 @@
 
 ## Workshop history
 
+- **2026-08-03:** Save and Import moved out of the header into a new floating
+  Ⓢ action menu (`FloatingActionMenu`) at the bottom-right of the intake
+  workspace. The circular Ⓢ trigger keeps the header completely open; tapping
+  it fans the actions upward above the sticky Forge bar, and the mark lights
+  portal blue instead of morphing into an "X". Save keeps its never-gated
+  draft behavior and Saved confirmation swap; the account-only My Seeds /
+  Export All actions stay in the header. The `import-panel-open` preview state
+  now opens the menu through its real trigger before tapping Import.
+
 - **2026-08-03:** Combined Plot & Tropes with Destined Ending in one optional,
   compact **ARC** workspace. The five existing controls and their canonical
   data paths are unchanged; only their presentation and navigation ownership
@@ -357,10 +366,14 @@ reference/                    — untouched replica of production, locked
     FormTextarea.tsx
     index.ts
 development/                  — active Workshop version (Phase 2 creation workspace)
-  CreationModal.tsx            — two-panel shell: header (Save Draft + plain
-                                 Import / My Seeds / Export All actions),
-                                 selector/workspace grid, sticky action bar,
-                                 mobile section drawer
+  CreationModal.tsx            — two-panel shell: header (account-only
+                                 My Seeds / Export All actions), selector/
+                                 workspace grid, sticky action bar, mobile
+                                 section drawer, floating Ⓢ action menu
+  FloatingActionMenu.tsx       — the floating Ⓢ action menu: circular trigger
+                                 that fans Save / Import upward above the
+                                 sticky Forge bar; Ⓢ lights portal blue while
+                                 open (never an "X"), Escape/outside tap closes
   seedSections.ts              — the Story/World section model: ids, labels,
                                  icons, required flags, per-section filled
                                  checks, missing-required helpers
@@ -639,8 +652,8 @@ are unchanged; the development script walks the new selector).
   System, and ARC (including Destined Ending), landing back on Origin
 - `generating-blueprint` — `isGenerating` prop `true`, showing the Forge
   button's spinner state
-- `import-panel-open` — clicks the real header "Import" action to open
-  `ImportPanel`
+- `import-panel-open` — opens the floating Ⓢ action menu through its real
+  trigger and clicks the "Import" action to open `ImportPanel`
 
 **Blueprint Review** — the blueprint review stage (`stage === 'blueprint'`)
 

@@ -49,6 +49,7 @@ import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
+import { FloatingActionMenu } from './FloatingActionMenu';
 import { LibraryHeaderBadge } from './library';
 import { LibraryButton } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
@@ -380,40 +381,21 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           emblemLinkLabel="Return to Workshop home"
         />
 
-        {/* Save Draft is never gated on creative completeness — a draft exists
-            to preserve progress. Seed import/library/export stay plain,
-            always-visible actions rather than a hidden overflow menu. */}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
-          <LibraryButton
-            onClick={handleSaveDraft}
-            disabled={isGenerating}
-            title="Save this Story Seed draft"
-            icon={savedFeedback ? Check : Bookmark}
-          >
-            <span className="hidden sm:inline">{savedFeedback ? 'Saved' : 'Save Draft'}</span>
-            <span className="sm:hidden">{savedFeedback ? 'Saved' : 'Save'}</span>
-          </LibraryButton>
-
-          <div className="flex items-center gap-1">
+        {/* Save Draft and Import moved into the floating Ⓢ action menu so the
+            header stays completely open. Only the account-only library and
+            export actions remain here; Save Draft itself is never gated on
+            creative completeness — a draft exists to preserve progress. */}
+        {accountSignedIn && (
+          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-1 gap-y-2 pt-1">
             <LibraryButton
               variant="ghost"
               size="sm"
-              onClick={() => setShowImportPanel(open => !open)}
-              icon={Copy}
+              onClick={() => setShowLibrary(open => !open)}
+              icon={Database}
             >
-              Import
+              My Seeds
             </LibraryButton>
-            {accountSignedIn && (
-              <LibraryButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLibrary(open => !open)}
-                icon={Database}
-              >
-                My Seeds
-              </LibraryButton>
-            )}
-            {accountSignedIn && savedSeeds.length > 0 && (
+            {savedSeeds.length > 0 && (
               <LibraryButton
                 variant="ghost"
                 size="sm"
@@ -424,7 +406,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
               </LibraryButton>
             )}
           </div>
-        </div>
+        )}
       </header>
 
       {accountSignedIn && showLibrary && (
@@ -537,6 +519,33 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         show={showImportPanel}
         onClose={() => setShowImportPanel(false)}
         onImport={handleImport}
+      />
+
+      {/* Floating Ⓢ action menu — Save Draft and Import, lifted out of the
+          header so the creation workspace stays uncluttered. */}
+      <FloatingActionMenu
+        actions={[
+          {
+            id: 'save-draft',
+            label: 'Save',
+            icon: Bookmark,
+            active: savedFeedback,
+            activeLabel: 'Saved',
+            activeIcon: Check,
+            disabled: isGenerating,
+            title: 'Save this Story Seed draft',
+            onSelect: () => {
+              void handleSaveDraft();
+            },
+          },
+          {
+            id: 'import',
+            label: 'Import',
+            icon: Copy,
+            title: 'Import a Story Seed',
+            onSelect: () => setShowImportPanel(open => !open),
+          },
+        ]}
       />
 
       {/* Mobile section drawer */}

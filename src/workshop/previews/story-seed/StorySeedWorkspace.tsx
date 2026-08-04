@@ -263,6 +263,13 @@ export function StorySeedWorkspace() {
       if (cancelled) return;
       if (scenario.uiAction === 'open-import-panel') {
         getRoots('reference').forEach(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
+        // Development keeps Import inside the floating Ⓢ action menu — open
+        // the menu through its real trigger first, then tap Import.
+        getRoots('development').forEach(root => {
+          root.querySelector<HTMLElement>('button[aria-label="Open story actions"]')?.click();
+        });
+        await wait(200);
+        if (cancelled) return;
         getRoots('development').forEach(root => clickByText(root, 'button', /^Import$/));
       } else if (scenario.uiAction === 'open-library') {
         getRoots('development').forEach(root => clickByText(root, 'button', /^My Seeds$/));
