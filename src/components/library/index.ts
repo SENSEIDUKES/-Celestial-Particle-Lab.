@@ -14,4 +14,16 @@ export type {
 } from './LibraryButton';
 export { SEIButton } from './SEIButton';
 export type { SEIButtonProps } from './SEIButton';
+export {
+  LibraryNavigationDrawer,
+  LibraryNavigationDrawerPanel,
+} from './LibraryNavigationDrawer';
+export type {
+  LibraryNavigationDrawerAccent,
+  LibraryNavigationDrawerItem,
+  LibraryNavigationDrawerPanelProps,
+  LibraryNavigationDrawerProfile,
+  LibraryNavigationDrawerProps,
+  LibraryNavigationDrawerSection,
+} from './LibraryNavigationDrawer';
 export { cn } from './cn';

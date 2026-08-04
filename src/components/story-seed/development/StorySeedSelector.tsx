@@ -2,6 +2,13 @@ import React from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
 import {
+  LibraryNavigationDrawerPanel,
+  type LibraryNavigationDrawerAccent,
+  type LibraryNavigationDrawerItem,
+  type LibraryNavigationDrawerProfile,
+  type LibraryNavigationDrawerSection,
+} from '../../library';
+import {
   FAMILY_ICONS,
   FAMILY_SECTIONS,
   SEED_FAMILIES,
@@ -16,115 +23,101 @@ interface StorySeedSelectorProps {
   onSelect: (id: SeedSectionId) => void;
 }
 
-const SelectorItem = ({
-  section,
-  filled,
-  active,
-  onSelect,
-}: {
-  section: SeedSection;
-  filled: boolean;
-  active: boolean;
-  onSelect: () => void;
-}) => {
-  const Icon = section.icon;
-  const familyAccent = section.family === 'story' ? 'text-portal' : 'text-gold-accent';
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-current={active ? 'true' : undefined}
-      className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all duration-150 ${
-        active
-          ? section.family === 'story'
-            ? 'border-portal/50 bg-portal/10 text-signal shadow-[0_0_14px_rgba(4,172,255,0.08)]'
-            : 'border-gold-accent/40 bg-gold-accent/10 text-signal'
-          : 'border-transparent text-neutral-400 hover:bg-white/5 hover:text-neutral-200'
-      }`}
-    >
-      <Icon
-        size={15}
-        aria-hidden="true"
-        className={active ? familyAccent : 'text-neutral-500 group-hover:text-neutral-400'}
-      />
-      <span className="flex-1 font-sc text-xs font-bold uppercase tracking-widest">
-        {section.label}
-        {section.required && (
-          <span className="ml-1 text-human" aria-label="required">*</span>
-        )}
-      </span>
-      {section.required ? (
-        filled ? (
-          <Check size={13} className="text-portal" aria-label="complete" />
-        ) : (
-          <span className="h-1.5 w-1.5 rounded-full bg-human/90" aria-label="missing" />
-        )
-      ) : (
-        filled && <span className="h-1.5 w-1.5 rounded-full bg-portal/70" aria-label="has content" />
-      )}
-      <ChevronRight
-        size={13}
-        aria-hidden="true"
-        className={`transition-opacity ${active ? 'opacity-70' : 'opacity-25 group-hover:opacity-50'}`}
-      />
-    </button>
-  );
+/**
+ * Mock profile block pinned to the top of the Story Seed navigation drawer.
+ * Placeholder only — no account/auth behavior. It reserves the slot where the
+ * future Library profile tab/menu entry will open from.
+ */
+export const STORY_SEED_DRAWER_PROFILE: LibraryNavigationDrawerProfile = {
+  name: 'SENSEI',
+  detail: 'Cultivator Profile',
 };
 
-const FamilyBlock = ({
-  family,
-  seed,
-  activeSection,
-  onSelect,
-}: {
-  family: SeedFamily;
-  seed: StorySeedInput;
-  activeSection: SeedSectionId;
-  onSelect: (id: SeedSectionId) => void;
-}) => {
-  const meta = SEED_FAMILIES[family];
-  const FamilyIcon = FAMILY_ICONS[family];
-  const accent = family === 'story' ? 'text-portal' : 'text-gold-accent';
-  return (
-    <div>
-      <div className="mb-2 flex items-center gap-2.5 px-1">
-        <FamilyIcon size={15} aria-hidden="true" className={accent} />
-        <div>
-          <p className={`font-sc text-xs font-bold uppercase tracking-[0.2em] ${accent}`}>{meta.label}</p>
-          <p className="font-sans text-[10px] text-neutral-500">{meta.tagline}</p>
-        </div>
-      </div>
-      <div className="space-y-1">
-        {FAMILY_SECTIONS[family].map(section => (
-          <SelectorItem
-            key={section.id}
-            section={section}
-            filled={section.isFilled(seed)}
-            active={activeSection === section.id}
-            onSelect={() => onSelect(section.id)}
-          />
-        ))}
-      </div>
-      <p className="mt-2 px-1 font-sans text-[10px] leading-relaxed text-neutral-600">
-        {family === 'story'
-          ? 'Origin defines the story. ARC optionally shapes its journey and ending.'
-          : 'Optional — the Library can generate the complete world automatically.'}
-      </p>
-    </div>
-  );
-};
+const familyAccent = (family: SeedFamily): LibraryNavigationDrawerAccent =>
+  family === 'story' ? 'portal' : 'gold';
+
+const sectionTrailing = (section: SeedSection, filled: boolean, active: boolean) => (
+  <>
+    {section.required ? (
+      filled ? (
+        <Check size={13} className="text-portal" aria-label="complete" />
+      ) : (
+        <span className="h-1.5 w-1.5 rounded-full bg-human/90" aria-label="missing" />
+      )
+    ) : (
+      filled && <span className="h-1.5 w-1.5 rounded-full bg-portal/70" aria-label="has content" />
+    )}
+    <ChevronRight
+      size={13}
+      aria-hidden="true"
+      className={`transition-opacity ${active ? 'opacity-70' : 'opacity-25 group-hover:opacity-50'}`}
+    />
+  </>
+);
 
 /**
- * The left-panel navigation hierarchy (Story → World) for the creation
- * workspace. Rendered in the desktop sidebar and inside the mobile drawer.
+ * Maps the Story/World section model onto the Library navigation drawer
+ * shell, preserving the selector's required/filled status indicators and the
+ * per-family portal/gold accents.
+ */
+export function buildStorySeedDrawerSections(
+  seed: StorySeedInput,
+  activeSection: SeedSectionId,
+  onSelect: (id: SeedSectionId) => void,
+): LibraryNavigationDrawerSection[] {
+  return (['story', 'world'] as SeedFamily[]).map(family => {
+    const accent = familyAccent(family);
+    // Explicit class names (never template-built) so Tailwind picks them up.
+    const accentText = family === 'story' ? 'text-portal' : 'text-gold-accent';
+    const FamilyIcon = FAMILY_ICONS[family];
+    const items: LibraryNavigationDrawerItem[] = FAMILY_SECTIONS[family].map(section => {
+      const active = activeSection === section.id;
+      const filled = section.isFilled(seed);
+      const Icon = section.icon;
+      return {
+        id: section.id,
+        label: section.label,
+        icon: (
+          <Icon
+            size={16}
+            aria-hidden="true"
+            className={active ? accentText : 'text-neutral-500 group-hover:text-neutral-400'}
+          />
+        ),
+        active,
+        accent,
+        required: section.required,
+        trailing: sectionTrailing(section, filled, active),
+        onSelect: () => onSelect(section.id),
+      };
+    });
+    return {
+      id: family,
+      label: SEED_FAMILIES[family].label,
+      tagline: SEED_FAMILIES[family].tagline,
+      icon: <FamilyIcon size={14} aria-hidden="true" className={accentText} />,
+      items,
+      footer: (
+        <p className="font-sans text-[10px] leading-relaxed text-neutral-600">
+          {family === 'story'
+            ? 'Origin defines the story. ARC optionally shapes its journey and ending.'
+            : 'Optional — the Library can generate the complete world automatically.'}
+        </p>
+      ),
+    };
+  });
+}
+
+/**
+ * The Story Seed navigation menu (Story → World) rendered through the Library
+ * navigation drawer panel with the mock profile header. The desktop sidebar
+ * renders it directly; the mobile drawer wraps the same sections in
+ * `LibraryNavigationDrawer` (see CreationModal).
  */
 export const StorySeedSelector = ({ seed, activeSection, onSelect }: StorySeedSelectorProps) => (
-  <div className="flex h-full flex-col gap-7">
-    <p className="px-1 font-sc text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500">
-      Build Your Novel
-    </p>
-
-    <FamilyBlock family="story" seed={seed} activeSection={activeSection} onSelect={onSelect} />
-    <FamilyBlock family="world" seed={seed} activeSection={activeSection} onSelect={onSelect} />
-  </div>
+  <LibraryNavigationDrawerPanel
+    aria-label="Story Seed sections"
+    profile={STORY_SEED_DRAWER_PROFILE}
+    sections={buildStorySeedDrawerSections(seed, activeSection, onSelect)}
+  />
 );

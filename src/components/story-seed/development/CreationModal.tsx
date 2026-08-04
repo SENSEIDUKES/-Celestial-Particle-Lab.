@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { Bookmark, Check, Copy, Database, Download, List, X } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Bookmark, Check, Copy, Database, Download, List } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -39,7 +39,11 @@ import {
   type SeedSectionId,
 } from './seedSections';
 import type { SeedUpdate } from './seedState';
-import { StorySeedSelector } from './StorySeedSelector';
+import {
+  buildStorySeedDrawerSections,
+  STORY_SEED_DRAWER_PROFILE,
+  StorySeedSelector,
+} from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
 import { ArcWorkspace } from './workspaces/ArcWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
@@ -50,7 +54,7 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import { LibraryHeaderBadge } from './library';
-import { LibraryButton } from '../../library';
+import { LibraryButton, LibraryNavigationDrawer } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
@@ -447,7 +451,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
       {/* Two-panel creation workspace */}
       <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-900/80 bg-neutral-950/30 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-neutral-900/70 p-5 lg:block">
+        <aside className="hidden border-r border-neutral-900/70 lg:block">
           <StorySeedSelector
             seed={seed}
             activeSection={activeSection}
@@ -539,52 +543,19 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         onImport={handleImport}
       />
 
-      {/* Mobile section drawer */}
-      <AnimatePresence>
-        {selectorOpen && (
-          <div className="fixed inset-0 z-[250] lg:hidden" key="seed-selector-drawer">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setSelectorOpen(false)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Story Seed sections"
-              className="absolute inset-y-0 left-0 w-[86%] max-w-xs overflow-y-auto border-r border-neutral-800 bg-neutral-950 p-5"
-            >
-              <div className="mb-5 flex items-center justify-between">
-                <p className="font-sc text-xs font-bold uppercase tracking-widest text-neutral-400">
-                  Story Seed Sections
-                </p>
-                <LibraryButton
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectorOpen(false)}
-                  aria-label="Close sections"
-                  icon={X}
-                />
-              </div>
-              <StorySeedSelector
-                seed={seed}
-                activeSection={activeSection}
-                onSelect={(id) => {
-                  setActiveSection(id);
-                  setSelectorOpen(false);
-                }}
-              />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Mobile section drawer — the Library navigation shell (mock profile
+          header + Story/World destinations) over the same section state. */}
+      <LibraryNavigationDrawer
+        open={selectorOpen}
+        onClose={() => setSelectorOpen(false)}
+        aria-label="Story Seed sections"
+        closeLabel="Close sections"
+        profile={STORY_SEED_DRAWER_PROFILE}
+        sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
+          setActiveSection(id);
+          setSelectorOpen(false);
+        })}
+      />
     </div>
   );
 }
