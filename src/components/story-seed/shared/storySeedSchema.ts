@@ -6,7 +6,7 @@
  * ├── creator
  * ├── story
  * │   ├── required   storyTags · premise · genre · style
- * │   └── optional   intendedForMatureAudiences · plotAndTropeSettings · additionalStoryDirection · makeItWorkInstruction
+ * │   └── optional   intendedForMatureAudiences · fateSurvival · plotAndTropeSettings · additionalStoryDirection · makeItWorkInstruction
  * └── world
  *     ├── required   (intentionally empty — World has no required inputs)
  *     └── optional   worldIdentity · worldFoundations
@@ -59,6 +59,14 @@ export interface StorySeedStoryRequired {
 
 /** The narrative shape of the novel — where it is headed and what pushes back. */
 export type StorySeedStorySauceLevel = 'low' | 'medium' | 'high';
+export type StorySeedFateVisibility = 'full' | 'partial' | 'none';
+export type StorySeedSurvivalPressure = 'heaven' | 'immortal' | 'mortal';
+
+export interface StorySeedFateSurvivalSettings {
+  enabled: boolean;
+  visibility: StorySeedFateVisibility;
+  pressure: StorySeedSurvivalPressure;
+}
 
 export interface StorySeedPlotAndTropeSettings {
   faceSlap?: StorySeedStorySauceLevel;
@@ -72,6 +80,7 @@ export interface StorySeedPlotAndTropeSettings {
 export interface StorySeedStoryOptional {
   /** Story metadata only; this does not request explicit generated content. */
   intendedForMatureAudiences: boolean;
+  fateSurvival: StorySeedFateSurvivalSettings;
   plotAndTropeSettings: StorySeedPlotAndTropeSettings;
   /**
    * General freeform direction for the story. Legacy `desiredPlotDirection`,
@@ -224,6 +233,16 @@ const normalizeStorySauceLevel = (value: unknown): StorySeedStorySauceLevel => {
   return normalized === 'low' || normalized === 'high' ? normalized : 'medium';
 };
 
+const normalizeFateVisibility = (value: unknown): StorySeedFateVisibility => {
+  const normalized = text(value)?.toLowerCase();
+  return normalized === 'full' || normalized === 'none' ? normalized : 'partial';
+};
+
+const normalizeSurvivalPressure = (value: unknown): StorySeedSurvivalPressure => {
+  const normalized = text(value)?.toLowerCase();
+  return normalized === 'heaven' || normalized === 'mortal' ? normalized : 'immortal';
+};
+
 const PLOT_AND_TROPE_FIELDS = ['longTermGoal', 'firstMajorConflict', 'mainAntagonistPressure'] as const;
 const WORLD_IDENTITY_FIELDS = ['title', 'worldType', 'societyStructure', 'startingLocation'] as const;
 const MAIN_CHARACTER_FIELDS = [
@@ -264,6 +283,11 @@ const normalizeStoryOptional = (value: unknown): StorySeedStoryOptional => {
   const plotAndTropeSettings = isRecord(source.plotAndTropeSettings) ? source.plotAndTropeSettings : {};
   const normalized: StorySeedStoryOptional = {
     intendedForMatureAudiences: source.intendedForMatureAudiences === true,
+    fateSurvival: {
+      enabled: isRecord(source.fateSurvival) ? source.fateSurvival.enabled === true : false,
+      visibility: normalizeFateVisibility(isRecord(source.fateSurvival) ? source.fateSurvival.visibility : undefined),
+      pressure: normalizeSurvivalPressure(isRecord(source.fateSurvival) ? source.fateSurvival.pressure : undefined),
+    },
     plotAndTropeSettings: {
       ...optionalTextFields<StorySeedPlotAndTropeSettings>(plotAndTropeSettings, PLOT_AND_TROPE_FIELDS),
       faceSlap: normalizeStorySauceLevel(plotAndTropeSettings.faceSlap),
@@ -343,6 +367,11 @@ export const createEmptyStorySeedInput = (): StorySeedInput => ({
     },
     optional: {
       intendedForMatureAudiences: false,
+      fateSurvival: {
+        enabled: false,
+        visibility: 'partial',
+        pressure: 'immortal',
+      },
       plotAndTropeSettings: {
         faceSlap: 'medium',
         plotArmor: 'medium',

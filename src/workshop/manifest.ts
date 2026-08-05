@@ -112,9 +112,9 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Story Title, Premise, Style, Genre, and Story Tags, plus an optional ARC workspace combining Face Slap, Plot Armor, Recognition, story direction, conflict, main opposition, Destined Ending, and Make It Work. Navigation Settings includes a Rated 18+ story-metadata toggle. Tag families open one at a time. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; a `?` Help menu in the bottom navigation gathers per-topic guidance with matching English audio lines; Fate Survival and other experience settings live in the separate Story Settings feature.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Story Title, Premise, Style, Genre, and Story Tags, plus an optional ARC workspace combining Face Slap, Plot Armor, Recognition, story direction, conflict, main opposition, Destined Ending, and Make It Work. Navigation Settings includes Rated 18+ story metadata and the Fate Survival UI/state shell with Fate Visibility and Survival Pressure. Tag families open one at a time. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; a `?` Help menu in the bottom navigation gathers per-topic guidance with matching English audio lines.',
     category: 'other',
-    version: 'v1.7',
+    version: 'v1.8',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',
@@ -124,7 +124,7 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-settings',
     title: 'Story Settings',
-    description: 'Reusable user choices that shape how a Story Seed is generated and experienced, without changing the Seed itself — starting with the Genre Path / Fate Survival selector extracted out of CreationModal. Accessibility and output-language settings have not been migrated from production yet.',
+    description: 'Older separate Story Settings prototype retained only for historical comparison. Fate Survival now belongs to the current Story Seed Settings menu; do not use this page for new Story Seed flow work.',
     category: 'other',
     version: 'v1.0',
     source: {
