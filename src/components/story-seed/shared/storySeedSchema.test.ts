@@ -55,6 +55,7 @@ const completeSeed = (): StorySeedInput => ({
       style: 'chinese',
     },
     optional: {
+      intendedForMatureAudiences: true,
       plotAndTropeSettings: {
         faceSlap: 'low',
         plotArmor: 'high',
@@ -107,6 +108,7 @@ describe('Story Seed creator/story/world contract', () => {
     expect(Object.keys(seed.story.required).sort()).toEqual(['genre', 'premise', 'storyTags', 'style']);
     expect(Object.keys(seed.story.optional).sort()).toEqual([
       'additionalStoryDirection',
+      'intendedForMatureAudiences',
       'makeItWorkInstruction',
       'plotAndTropeSettings',
     ]);
@@ -129,6 +131,7 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'medium',
       recognition: 'medium',
     });
+    expect(empty.story.optional.intendedForMatureAudiences).toBe(false);
     expect(empty.story.optional.makeItWorkInstruction).toBeUndefined();
     expect(empty.world).toEqual({ required: {}, optional: { worldIdentity: {}, worldFoundations: {} } });
 
@@ -142,7 +145,7 @@ describe('Story Seed creator/story/world contract', () => {
           genre: 'Xianxia',
           style: 'korean',
         },
-        optional: { plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: false, plotAndTropeSettings: {} },
       },
     };
     expect(validateStorySeedInput(worldless)).toEqual({ valid: true, errors: [] });
@@ -184,7 +187,7 @@ describe('Story Seed creator/story/world contract', () => {
       ...completeSeed(),
       story: {
         ...completeSeed().story,
-        optional: { plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: false, plotAndTropeSettings: {} },
       },
     });
     expect(missing.story.optional.plotAndTropeSettings).toEqual({
@@ -192,6 +195,7 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'medium',
       recognition: 'medium',
     });
+    expect(missing.story.optional.intendedForMatureAudiences).toBe(false);
 
     const legacy = normalizeStorySeedInput({
       ...completeSeed(),
@@ -325,6 +329,7 @@ describe('Story Seed creator/story/world contract', () => {
 
     const [roundTripped] = parseStorySeedJson(JSON.stringify(exported));
     expect(roundTripped.story.required).toEqual(seed.story.required);
+    expect(roundTripped.story.optional.intendedForMatureAudiences).toBe(true);
     expect(roundTripped.story.optional.plotAndTropeSettings)
       .toEqual(seed.story.optional.plotAndTropeSettings);
     expect(roundTripped.story.optional.makeItWorkInstruction)
@@ -389,7 +394,7 @@ describe('Story Seed creator/story/world contract', () => {
       ...createEmptyStorySeedInput(),
       story: {
         required: { storyTags: [], premise: 'Only the premise so far.', genre: '', style: '' },
-        optional: { plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: true, plotAndTropeSettings: {} },
       },
     };
     const saved = await createStorySeed('creator-1', draft);
@@ -399,6 +404,7 @@ describe('Story Seed creator/story/world contract', () => {
 
     const [reloaded] = await listStorySeeds('creator-1');
     expect(reloaded.seed.story.required.premise).toBe('Only the premise so far.');
+    expect(reloaded.seed.story.optional.intendedForMatureAudiences).toBe(true);
     expect(reloaded.seed.story.optional.plotAndTropeSettings).toEqual({
       faceSlap: 'medium',
       plotArmor: 'medium',
@@ -472,6 +478,7 @@ describe('Story Seed creator/story/world contract', () => {
     for (const request of [blueprintRequest, storyRequest]) {
       expect(Object.keys(request.storySeed).sort()).toEqual(['creator', 'story', 'world']);
       expect(request.storySeed.story.required.storyTags).toEqual(['death flags', 'foreknowledge']);
+      expect(request.storySeed.story.optional.intendedForMatureAudiences).toBe(true);
       expect(request.storySeed.story.optional.plotAndTropeSettings).toMatchObject({
         faceSlap: 'low',
         plotArmor: 'high',

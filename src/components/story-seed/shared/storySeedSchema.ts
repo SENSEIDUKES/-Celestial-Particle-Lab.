@@ -6,7 +6,7 @@
  * ├── creator
  * ├── story
  * │   ├── required   storyTags · premise · genre · style
- * │   └── optional   plotAndTropeSettings · additionalStoryDirection · makeItWorkInstruction
+ * │   └── optional   intendedForMatureAudiences · plotAndTropeSettings · additionalStoryDirection · makeItWorkInstruction
  * └── world
  *     ├── required   (intentionally empty — World has no required inputs)
  *     └── optional   worldIdentity · worldFoundations
@@ -70,6 +70,8 @@ export interface StorySeedPlotAndTropeSettings {
 }
 
 export interface StorySeedStoryOptional {
+  /** Story metadata only; this does not request explicit generated content. */
+  intendedForMatureAudiences: boolean;
   plotAndTropeSettings: StorySeedPlotAndTropeSettings;
   /**
    * General freeform direction for the story. Legacy `desiredPlotDirection`,
@@ -261,6 +263,7 @@ const normalizeStoryOptional = (value: unknown): StorySeedStoryOptional => {
   const source = isRecord(value) ? value : {};
   const plotAndTropeSettings = isRecord(source.plotAndTropeSettings) ? source.plotAndTropeSettings : {};
   const normalized: StorySeedStoryOptional = {
+    intendedForMatureAudiences: source.intendedForMatureAudiences === true,
     plotAndTropeSettings: {
       ...optionalTextFields<StorySeedPlotAndTropeSettings>(plotAndTropeSettings, PLOT_AND_TROPE_FIELDS),
       faceSlap: normalizeStorySauceLevel(plotAndTropeSettings.faceSlap),
@@ -339,6 +342,7 @@ export const createEmptyStorySeedInput = (): StorySeedInput => ({
       style: '',
     },
     optional: {
+      intendedForMatureAudiences: false,
       plotAndTropeSettings: {
         faceSlap: 'medium',
         plotArmor: 'medium',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Globe, Landmark, MapPin } from 'lucide-react';
+import { Globe, Landmark, MapPin } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
@@ -24,14 +24,6 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
       </GuidanceNote>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <LibraryTextBox
-          id="a11y-control-v2xlbs8"
-          label="Novel Title"
-          icon={BookOpen}
-          value={identity.title || ''}
-          onChange={(val) => updateSeed(patchWorldIdentity({ title: val }))}
-          placeholder="Will be generated if empty"
-        />
         <LibraryTextBox
           id="world-type-input"
           label="World Type"

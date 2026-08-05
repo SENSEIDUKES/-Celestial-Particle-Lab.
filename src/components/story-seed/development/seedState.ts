@@ -60,6 +60,15 @@ export const setMakeItWorkInstruction = (value: string): SeedUpdate =>
     story: { ...seed.story, optional: { ...seed.story.optional, makeItWorkInstruction: value } },
   });
 
+export const setIntendedForMatureAudiences = (value: boolean): SeedUpdate =>
+  seed => ({
+    ...seed,
+    story: {
+      ...seed.story,
+      optional: { ...seed.story.optional, intendedForMatureAudiences: value },
+    },
+  });
+
 export const patchWorldIdentity = (patch: Partial<StorySeedWorldIdentity>): SeedUpdate =>
   seed => ({
     ...seed,

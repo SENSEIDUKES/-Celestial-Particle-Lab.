@@ -10,6 +10,17 @@
 
 ## Workshop history
 
+- **2026-08-05:** Removed the duplicate Story Title control from World Identity;
+  Origin remains its single editing surface while retaining the established
+  `world.optional.worldIdentity.title` storage path. World Identity completion
+  now reflects only world type, world order, and opening location. Added a
+  **Rated 18+** switch to the navigation Settings UI with the natural-language
+  label "Intended for mature audiences." It saves as the backward-compatible
+  `story.optional.intendedForMatureAudiences` boolean, defaults off for older
+  seeds, round-trips through draft storage and portable files, and reaches the
+  existing generation payload as story metadata only; no explicit-content or
+  moderation behavior was added. The locked Reference replica is unchanged.
+
 - **2026-08-05:** Restored **Make It Work** as its own optional ARC textarea
   immediately before the guidance note. Its high-priority creative instruction
   now lives at `story.optional.makeItWorkInstruction`, stays empty when missing,

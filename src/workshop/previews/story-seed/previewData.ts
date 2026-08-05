@@ -178,6 +178,7 @@ export const createFilledStorySeedInput = (): StorySeedInput => ({
       style: 'chinese',
     },
     optional: {
+      intendedForMatureAudiences: true,
       plotAndTropeSettings: {
         faceSlap: 'high',
         plotArmor: 'low',
