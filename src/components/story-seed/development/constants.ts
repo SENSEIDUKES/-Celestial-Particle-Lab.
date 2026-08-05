@@ -138,5 +138,21 @@ export const PREMISE_SUGGESTIONS = [
   "Waking up on a barren moon as the sole survivor of a dying stellar sect with an cosmic stellar inheritance diagram in my soul."
 ];
 
+/**
+ * Curated premise examples for the Origin page. Shown only while the premise
+ * field is empty, one at a time, to teach what a strong premise looks like —
+ * short hooks for the punchy one-line shape, full premises for the richer
+ * setup-and-stakes shape. Static list: no AI call, no storage. The example is
+ * inserted only when the user explicitly taps "Use this premise".
+ */
+export const CURATED_PREMISE_EXAMPLES: { label: string; text: string }[] = [
+  { label: 'Short hook', text: 'I Raised a Nameless Beast in a Forgotten Valley, and It Became the Ancestor of All Divine Monsters.' },
+  { label: 'Short hook', text: 'I Failed the Heavenly Tribulation, but the Lightning Chose Me as Its Disciple.' },
+  { label: 'Short hook', text: 'I Opened a Broken Sect Library and Accidentally Taught the Dead Gods to Cultivate Again.' },
+  { label: 'Full premise', text: 'A powerless village healer inherits a cracked jade bell that can summon the memories of extinct immortals, drawing the attention of sects, demons, and heavenly courts who all believe the bell contains the last path to ascension.' },
+  { label: 'Full premise', text: 'A disgraced academy student discovers that every failed spell he casts creates a living spirit, forcing him to protect a growing army of mistakes while rival clans hunt him for a power he cannot control.' },
+  { label: 'Full premise', text: 'A forgotten mountain shrine awakens as a young guardian spirit after centuries of silence, only to learn that the empire built around it has been feeding on its stolen divinity.' },
+];
+
 // Style presets are no longer defined here: Style is the novel tradition
 // (Chinese / Korean / Japanese), a closed set owned by `shared/storyStyle.ts`.

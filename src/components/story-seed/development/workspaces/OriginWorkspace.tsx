@@ -6,7 +6,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
-import { CATEGORIZED_TAGS, GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
+import { CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
@@ -69,7 +69,12 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const [tagSuggestions, setTagSuggestions] = useState<{ suggestedTags: string[]; reasoning: string } | null>(null);
   const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
+  const [exampleIndex, setExampleIndex] = useState(0);
   const routingConfig = useAppStore(state => state.routingConfig);
+
+  const premiseExample = CURATED_PREMISE_EXAMPLES[exampleIndex % CURATED_PREMISE_EXAMPLES.length];
+  const reshufflePremiseExample = () => setExampleIndex(index => (index + 1) % CURATED_PREMISE_EXAMPLES.length);
+  const usePremiseExample = () => updateSeed(patchStoryRequired({ premise: premiseExample.text }));
 
   useEffect(() => {
     if (!premise.trim() || storyTags.length >= TAG_LIMIT) {
@@ -149,6 +154,16 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
   return (
     <WorkspaceShell section={section} complete={originComplete}>
+      <LibraryTextBox
+        id="origin-story-title-input"
+        label="Story Title"
+        icon={BookOpen}
+        helpText="Optional — the Library will generate a title if you leave this blank."
+        value={identity.title || ''}
+        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
+        placeholder="e.g., Ashes of the Ninth Meridian"
+      />
+
       <LibraryTextArea
         id="core-premise-input"
         label="Core Premise / Secret Catalyst"
@@ -185,15 +200,43 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         </AnimatePresence>
       </LibraryTextArea>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 font-sc text-[10px] uppercase tracking-widest text-neutral-500">Premise sparks</span>
-        {PREMISE_SUGGESTIONS.map((suggestion, index) => (
-          <button key={suggestion} type="button" onClick={() => updateSeed(patchStoryRequired({ premise: suggestion }))} title={suggestion}
-            className="rounded border border-neutral-900 bg-neutral-950 px-2 py-1 font-mono text-[10px] text-neutral-400 transition-colors hover:border-portal/50 hover:text-portal">
-            #{index + 1}
-          </button>
-        ))}
-      </div>
+      <AnimatePresence initial={false}>
+        {!premise.trim() && (
+          <motion.div
+            key="premise-example"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+            aria-live="polite"
+            className="rounded-xl border border-portal/20 bg-portal/5 p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-sc text-[10px] font-bold uppercase tracking-widest text-portal">Example premise</p>
+              <span className="rounded-full border border-gold-accent/30 bg-gold-accent/10 px-2 py-0.5 font-sc text-[9px] uppercase tracking-widest text-gold-accent">{premiseExample.label}</span>
+            </div>
+            <p className="mt-2 font-sans text-sm leading-relaxed text-neutral-300">{premiseExample.text}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={usePremiseExample}
+                className="min-h-[2.75rem] rounded border border-portal/50 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:border-portal hover:bg-portal/20"
+              >
+                Use this premise
+              </button>
+              <button
+                type="button"
+                onClick={reshufflePremiseExample}
+                aria-label="Show another example"
+                title="Show another example"
+                className="inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded border border-neutral-800 text-base transition-colors hover:border-portal/50"
+              >
+                🔂
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="glass-panel p-4" aria-labelledby="origin-style-title">
@@ -331,16 +374,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
       </section>
 
       <GuidanceNote title="One origin, four signals">Premise leads the way; Style and Genre set its lens; Story Tags sharpen the details the Library should protect.</GuidanceNote>
-
-      <LibraryTextBox
-        id="origin-story-title-input"
-        label="Story Title"
-        icon={BookOpen}
-        helpText="Optional — the Library will generate a title if you leave this blank."
-        value={identity.title || ''}
-        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
-        placeholder="e.g., Ashes of the Ninth Meridian"
-      />
     </WorkspaceShell>
   );
 };

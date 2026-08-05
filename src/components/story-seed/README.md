@@ -10,6 +10,18 @@
 
 ## Workshop history
 
+- **2026-08-04:** Origin page layout refinement. The field order is now
+  Story Title → Premise → Style → Genre → Story Tags — the optional Story
+  Title moved from the bottom of the page to the top, and Premise stays the
+  main creative field. The old "Premise sparks" #1–#11 shortcut row was
+  replaced by a curated example-premise card that appears only while the
+  premise field is empty: one static example at a time from
+  `CURATED_PREMISE_EXAMPLES` (`development/constants.ts` — three short hooks,
+  three full premises), a 🔂 button cycles the list, and "Use this premise"
+  is the only action that writes into the field, so user-typed text is never
+  overwritten. No AI call, no storage, no contract or generation changes;
+  Style, Genre, and Story Tags behavior is unchanged.
+
 - **2026-08-04:** Bottom navigation refinement pass. The bar is now a soft
   floating dock (rounded glass pill inset from the screen edges) instead of a
   full-bleed strip. The section drawer and desktop selector dropped the mock
@@ -459,8 +471,10 @@ development/                  — active Workshop version (Phase 2 creation work
   SeedLibraryPanel.tsx         — account seed library; toggled from the header
                                  "My Seeds" action instead of always rendered
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
-                                   CATEGORIZED_TAGS (no Fate Survival genre;
-                                   fate tags live in the Fate & Destiny category)
+                                   CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES
+                                   (static Origin example premises; no Fate
+                                   Survival genre; fate tags live in the Fate
+                                   & Destiny category)
   story-seed.css               — Story Seed-only workspace ambience; reusable
                                   field/header styles live in components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries
