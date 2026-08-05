@@ -10,6 +10,22 @@
 
 ## Workshop history
 
+- **2026-08-05:** Origin header celestial polish pass. The workspace header
+  (`WorkspaceShell`, shared by every seed section) now reads as sacred
+  Library chrome instead of generic app UI: the family/section breadcrumb
+  switched from mono type to small-caps serif with a muted parchment-gold
+  family label, the section icon sits inside a soft gold ring medallion
+  (Origin's pencil became a quill), the title keeps its size but gains
+  parchment tone and wider tracking, the red error-style **Required** pill
+  became a muted-gold badge with a four-point sparkle (Complete softened to
+  silver-blue), the tagline moved to a softer serif with warmer color, and a
+  thin sparkle-centered hairline now separates the header from the form.
+  Workspace `.glass-panel` cards gained a scoped polish layer in
+  `story-seed.css` (`.seed-workspace-shell .glass-panel`): warmer
+  parchment-tinted border, faint inner gold glow, and a whisper of
+  starlight in the upper corner — layered over the shared Library glass,
+  not replacing it.
+
 - **2026-08-05:** Story Paths polish pass. The genre search field was removed
   from the expanded picker (the preset list is still small enough to scan),
   and the collapsed Genre section no longer shows an input-looking field: it
