@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './story-seed.css';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Bookmark, Check, CircleUserRound, Copy, Database, Download, List, Settings, X } from 'lucide-react';
+import { Bookmark, Check, CircleHelp, CircleUserRound, Copy, Database, Download, List, Settings, X } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -63,6 +63,7 @@ import {
 } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
+import { StorySeedHelpMenu } from './StorySeedHelpMenu';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
 
 interface CreationModalProps {
@@ -152,6 +153,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // Mobile bottom-navigation sheets: Settings carries the seed utility
   // actions moved out of the header; Profile is a placeholder sheet.
   const [mobileSheet, setMobileSheet] = useState<'settings' | 'profile' | null>(null);
+  // The `?` Help menu — one clean home for section guidance, opened from the
+  // bottom navigation on mobile and the header Help button on desktop.
+  const [helpOpen, setHelpOpen] = useState(false);
   const reduceMotion = useReducedMotion();
 
   // The workspace edits the canonical Story Seed directly — there is no
@@ -453,9 +457,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const accountSignedIn = !LOCAL_ONLY_MODE && Boolean(currentUser);
 
   // Mobile bottom navigation — Sections opens the existing section drawer,
-  // Settings toggles the utility sheet (Save Draft / Import / library), and
-  // Profile is a placeholder for the future Library profile surface. The bar
-  // is presentational; it drives the same state as the existing controls.
+  // Help opens the `?` guidance menu, Settings toggles the utility sheet
+  // (Save Draft / Import / library), and Profile is a placeholder for the
+  // future Library profile surface. The bar is presentational; it drives the
+  // same state as the existing controls.
   const bottomNavItems: LibraryBottomNavigationItem[] = [
     {
       id: 'sections',
@@ -465,6 +470,16 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       onSelect: () => {
         setMobileSheet(null);
         setSelectorOpen(true);
+      },
+    },
+    {
+      id: 'help',
+      label: 'Help',
+      icon: <CircleHelp size={20} />,
+      active: helpOpen,
+      onSelect: () => {
+        setMobileSheet(null);
+        setHelpOpen(true);
       },
     },
     {
@@ -571,6 +586,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
               </LibraryButton>
             )}
           </div>
+
+          {/* The `?` Help menu is a bottom-navigation destination on mobile;
+              on desktop it lives here with the always-visible actions. */}
+          <LibraryButton
+            variant="ghost"
+            size="sm"
+            onClick={() => setHelpOpen(true)}
+            icon={CircleHelp}
+            title="Story Seed Help — guidance for every section"
+          >
+            Help
+          </LibraryButton>
         </div>
       </header>
 
@@ -827,6 +854,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           </div>
         )}
       </AnimatePresence>
+
+      {/* Story Seed Help — the `?` guidance menu shared by the mobile bottom
+          navigation and the desktop header button. */}
+      <StorySeedHelpMenu open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
