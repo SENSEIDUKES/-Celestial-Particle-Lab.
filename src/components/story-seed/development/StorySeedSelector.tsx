@@ -1,10 +1,11 @@
 import React from 'react';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, Sparkles } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
 import {
   LibraryNavigationDrawerPanel,
   type LibraryNavigationDrawerAccent,
   type LibraryNavigationDrawerItem,
+  type LibraryNavigationDrawerProfile,
   type LibraryNavigationDrawerSection,
 } from '../../library';
 import {
@@ -20,10 +21,25 @@ interface StorySeedSelectorProps {
   seed: StorySeedInput;
   activeSection: SeedSectionId;
   onSelect: (id: SeedSectionId) => void;
+  equippedTitle?: string | null;
 }
 
 const familyAccent = (family: SeedFamily): LibraryNavigationDrawerAccent =>
   family === 'story' ? 'portal' : 'gold';
+
+export const storySeedDrawerProfile = (equippedTitle?: string | null): LibraryNavigationDrawerProfile => ({
+  name: equippedTitle?.trim() || 'Wandering Disciple',
+  detail: equippedTitle?.trim() ? 'Equipped relic title' : 'Default Library title',
+  eyebrow: 'Equipped Relic',
+  emblem: (
+    <span
+      aria-hidden="true"
+      className="grid size-11 shrink-0 place-items-center rounded-full border border-gold-accent/45 bg-[radial-gradient(circle_at_50%_35%,rgba(212,175,55,0.24),rgba(124,58,237,0.16)_48%,rgba(0,0,0,0.42))] text-gold-accent shadow-[0_0_26px_-10px_rgba(212,175,55,0.78),inset_0_1px_0_rgba(255,255,255,0.14)]"
+    >
+      <Sparkles size={18} strokeWidth={1.5} />
+    </span>
+  ),
+});
 
 const sectionTrailing = (section: SeedSection, filled: boolean, active: boolean) => (
   <>
@@ -87,7 +103,7 @@ export function buildStorySeedDrawerSections(
       icon: <FamilyIcon size={14} aria-hidden="true" className={accentText} />,
       items,
       footer: (
-        <p className="font-sans text-[10px] leading-relaxed text-neutral-600">
+        <p className="font-serif text-[11px] leading-relaxed text-neutral-500">
           {family === 'story'
             ? 'Origin defines the story. ARC optionally shapes its journey and ending.'
             : 'Optional — the Library can generate the complete world automatically.'}
@@ -104,9 +120,10 @@ export function buildStorySeedDrawerSections(
  * CreationModal). Pure section navigation — profile access lives in the
  * bottom navigation's Profile tab, not here.
  */
-export const StorySeedSelector = ({ seed, activeSection, onSelect }: StorySeedSelectorProps) => (
+export const StorySeedSelector = ({ seed, activeSection, onSelect, equippedTitle }: StorySeedSelectorProps) => (
   <LibraryNavigationDrawerPanel
     aria-label="Story Seed sections"
+    profile={storySeedDrawerProfile(equippedTitle)}
     sections={buildStorySeedDrawerSections(seed, activeSection, onSelect)}
   />
 );

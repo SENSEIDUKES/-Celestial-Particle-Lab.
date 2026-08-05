@@ -42,6 +42,7 @@ import {
 import { setIntendedForMatureAudiences, type SeedUpdate } from './seedState';
 import {
   buildStorySeedDrawerSections,
+  storySeedDrawerProfile,
   StorySeedSelector,
 } from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
@@ -125,8 +126,14 @@ const MatureAudienceSetting = ({ checked, onChange }: MatureAudienceSettingProps
 
 export default function CreationModal({ onStartStory, onGenerateBlueprint, isGenerating: isGeneratingProp, error }: CreationModalProps) {
   const storeIsGenerating = useAppStore(selectIsGenerating);
-    const activeAgentId = useAppStore(state => state.activeAgentId);
-    const currentUser = useAppStore(state => state.currentUser);
+  const activeAgentId = useAppStore(state => state.activeAgentId);
+  const currentUser = useAppStore(state => state.currentUser);
+  const equippedRelicTitle = useAppStore(state => {
+    const storyMaker = state.routingConfig.storyMaker;
+    return typeof storyMaker?.equippedRelicTitle === 'string'
+      ? storyMaker.equippedRelicTitle
+      : null;
+  });
   const seedReferenceSignature = useAppStore(state => state.stories
     .map(story => `${story.id}:${story.sourceSeedId || ''}`)
     .join('|'));
@@ -626,6 +633,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           <StorySeedSelector
             seed={seed}
             activeSection={activeSection}
+            equippedTitle={equippedRelicTitle}
             onSelect={setActiveSection}
           />
         </aside>
@@ -719,6 +727,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         onClose={() => setSelectorOpen(false)}
         aria-label="Story Seed sections"
         closeLabel="Close sections"
+        profile={storySeedDrawerProfile(equippedRelicTitle)}
         sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
           setActiveSection(id);
           setSelectorOpen(false);
