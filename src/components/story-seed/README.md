@@ -10,6 +10,22 @@
 
 ## Workshop history
 
+- **2026-08-04:** Origin page layout refinement. The field order is now
+  Story Title → Premise → Style → Genre → Story Tags — the optional Story
+  Title moved from the bottom of the page to the top, and Premise stays the
+  main creative field. The old #1–#11 premise shortcut row was replaced by
+  system premise examples shown as ghost text: while the premise field is
+  empty, one curated example from `CURATED_PREMISE_EXAMPLES`
+  (`development/constants.ts` — three short hooks, three full premises)
+  appears as the field's placeholder, pressing Tab in the empty field
+  accepts the shown example, and a circular dragon button in the field's
+  top-right corner (the new `LibraryDragonCycleIcon`, the Library's shared
+  "Re-do / Re-try / shuffle" glyph) cycles the list. User-typed text is
+  never overwritten, and the existing ghost-tag Tab path (premise filled)
+  is untouched. No AI call, no storage, no contract or generation changes;
+  Style, Genre, and Story Tags behavior is unchanged. (A future user-saved
+  premise bank is a separate feature, not part of this work.)
+
 - **2026-08-04:** Bottom navigation refinement pass. The bar is now a soft
   floating dock (rounded glass pill inset from the screen edges) instead of a
   full-bleed strip. The section drawer and desktop selector dropped the mock
@@ -459,8 +475,10 @@ development/                  — active Workshop version (Phase 2 creation work
   SeedLibraryPanel.tsx         — account seed library; toggled from the header
                                  "My Seeds" action instead of always rendered
   constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
-                                   CATEGORIZED_TAGS (no Fate Survival genre;
-                                   fate tags live in the Fate & Destiny category)
+                                   CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES
+                                   (static Origin example premises; no Fate
+                                   Survival genre; fate tags live in the Fate
+                                   & Destiny category)
   story-seed.css               — Story Seed-only workspace ambience; reusable
                                   field/header styles live in components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries

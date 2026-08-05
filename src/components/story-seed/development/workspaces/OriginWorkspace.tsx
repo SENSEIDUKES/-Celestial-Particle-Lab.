@@ -6,11 +6,11 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
-import { CATEGORIZED_TAGS, GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
+import { CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../../../library';
+import { LibraryDragonCycleIcon, LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface OriginWorkspaceProps {
@@ -69,7 +69,11 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const [tagSuggestions, setTagSuggestions] = useState<{ suggestedTags: string[]; reasoning: string } | null>(null);
   const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
+  const [exampleIndex, setExampleIndex] = useState(0);
   const routingConfig = useAppStore(state => state.routingConfig);
+
+  const premiseExample = CURATED_PREMISE_EXAMPLES[exampleIndex % CURATED_PREMISE_EXAMPLES.length];
+  const reshufflePremiseExample = () => setExampleIndex(index => (index + 1) % CURATED_PREMISE_EXAMPLES.length);
 
   useEffect(() => {
     if (!premise.trim() || storyTags.length >= TAG_LIMIT) {
@@ -149,6 +153,16 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
   return (
     <WorkspaceShell section={section} complete={originComplete}>
+      <LibraryTextBox
+        id="origin-story-title-input"
+        label="Story Title"
+        icon={BookOpen}
+        helpText="Optional — the Library will generate a title if you leave this blank."
+        value={identity.title || ''}
+        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
+        placeholder="e.g., Ashes of the Ninth Meridian"
+      />
+
       <LibraryTextArea
         id="core-premise-input"
         label="Core Premise / Secret Catalyst"
@@ -158,14 +172,33 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         value={premise}
         onChange={value => updateSeed(patchStoryRequired({ premise: value }))}
         onKeyDown={event => {
-          if (event.key === 'Tab' && ghostSuggestion) {
+          if (event.key !== 'Tab') return;
+          if (!premise.trim()) {
+            // Empty field: Tab accepts the system premise example shown as ghost text.
+            event.preventDefault();
+            updateSeed(patchStoryRequired({ premise: premiseExample.text }));
+            return;
+          }
+          if (ghostSuggestion) {
             event.preventDefault();
             addTag(ghostSuggestion);
             setGhostSuggestion(null);
           }
         }}
-        rows={5}
-        placeholder="The main hook or cheat..."
+        rows={6}
+        placeholder={premiseExample.text}
+        helpText={premise.trim() ? undefined : 'Example shown as ghost text — press Tab to use it, or the dragon for another.'}
+        rightElement={premise.trim() ? undefined : (
+          <button
+            type="button"
+            onClick={reshufflePremiseExample}
+            aria-label="Show another example premise"
+            title="Show another example premise"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-portal/35 bg-portal/10 text-portal transition-all hover:border-portal hover:bg-portal/15 hover:shadow-[0_0_12px_rgba(4,172,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-90"
+          >
+            <LibraryDragonCycleIcon size={17} />
+          </button>
+        )}
         className="pb-10 pr-10"
       >
         <AnimatePresence>
@@ -184,16 +217,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           )}
         </AnimatePresence>
       </LibraryTextArea>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 font-sc text-[10px] uppercase tracking-widest text-neutral-500">Premise sparks</span>
-        {PREMISE_SUGGESTIONS.map((suggestion, index) => (
-          <button key={suggestion} type="button" onClick={() => updateSeed(patchStoryRequired({ premise: suggestion }))} title={suggestion}
-            className="rounded border border-neutral-900 bg-neutral-950 px-2 py-1 font-mono text-[10px] text-neutral-400 transition-colors hover:border-portal/50 hover:text-portal">
-            #{index + 1}
-          </button>
-        ))}
-      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="glass-panel p-4" aria-labelledby="origin-style-title">
@@ -331,16 +354,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
       </section>
 
       <GuidanceNote title="One origin, four signals">Premise leads the way; Style and Genre set its lens; Story Tags sharpen the details the Library should protect.</GuidanceNote>
-
-      <LibraryTextBox
-        id="origin-story-title-input"
-        label="Story Title"
-        icon={BookOpen}
-        helpText="Optional — the Library will generate a title if you leave this blank."
-        value={identity.title || ''}
-        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
-        placeholder="e.g., Ashes of the Ninth Meridian"
-      />
     </WorkspaceShell>
   );
 };

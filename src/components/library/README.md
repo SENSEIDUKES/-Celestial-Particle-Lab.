@@ -13,6 +13,8 @@ Celestial Library UI system:
 - `LibraryBottomNavigation` — the mobile bottom navigation bar
 - `LibraryTextBox` and `LibraryTextArea`
 - `LibraryHeaderBadge` and its emblem/header spectrum treatments
+- `LibraryDragonCycleIcon` — the shared cycle glyph (Re-do / Re-try /
+  shuffle): a dragon chasing its own tail
 - `SEIButton`, `SEIBottomNavigation`, `cn`, shared glass-field styles, and the
   Library spectrum styles
 - the public `index.ts` exports used by feature consumers
@@ -29,6 +31,13 @@ Reusable visual names use the `library-*` namespace:
 
 ### Shared-component history
 
+- **2026-08-04:** Added `LibraryDragonCycleIcon` — a custom ouroboros glyph
+  (dragon chasing its own tail, spiked serpentine body, tail wisp rising into
+  the open jaws) that joins the ecosystem's icon language as the shared
+  "Re-do / Re-try / shuffle" mark. `fill: currentColor` with a `size` prop so
+  it tints like the Lucide icons it sits beside. First consumer: the Story
+  Seed Origin page's system-premise cycler. Reuse it wherever the Library
+  needs the cycle meaning; never redraw a one-off shuffle icon per page.
 - **2026-08-04:** Ported `SEIBottomNavigation` from the SEIHouse UI repo and
   added `LibraryBottomNavigation`, the Celestial Library mobile bottom
   navigation skin. Story Seed is the first consumer (Sections / Settings /

@@ -114,7 +114,7 @@ export const LibraryTextArea = forwardRef<HTMLTextAreaElement, LibraryTextAreaPr
     return (
       <div data-disabled={disabled || undefined}>
         {(label != null || rightElement || showCounter) && (
-          <div className={`flex justify-between items-end ${compact ? 'mb-1' : 'mb-2'}`}>
+          <div className={`flex flex-wrap justify-between items-end gap-x-3 gap-y-1 ${compact ? 'mb-1' : 'mb-2'}`}>
             <label
               className={`block flex gap-2 items-center font-sc text-xs ${compact ? 'sm:text-[10px]' : ''} text-neutral-400 uppercase tracking-widest ${disabled ? 'opacity-45' : ''}`}
               htmlFor={inputId}
@@ -127,9 +127,9 @@ export const LibraryTextArea = forwardRef<HTMLTextAreaElement, LibraryTextAreaPr
                 </>
               )}
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3 ml-auto">
               {showCounter && (
-                <span className="text-[10px] font-mono text-neutral-500">
+                <span className="whitespace-nowrap text-[10px] font-mono text-neutral-500">
                   {(value || '').length} / {maxLength}
                 </span>
               )}
