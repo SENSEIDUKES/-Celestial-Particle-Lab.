@@ -4,11 +4,71 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-04
+- **Last Workshop update:** 2026-08-05
 - **Last source comparison:** 2026-08-03
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-05:** Story Tags selection limit updated. The hard maximum is now
+  12 tags (was 20) — adding is blocked at 12 until one is removed, with the
+  existing limit error unchanged. The "Your tags" counter now carries static
+  helpful copy — "Recommended: 4–8 tags." — with no warnings for sitting at
+  9–12 (or below 4). The catalog, generation behavior (inference still caps
+  at its own 8), storage, and tag UI layout are unchanged; the same constant
+  was updated in the unwired `StoryTagsWorkspace.tsx` transfer source so the
+  two development forks do not drift.
+
+- **2026-08-05:** Story Tags smart catalog UI (Step 3). The Origin page's
+  Story Tags section now reads the Step 2 `STORY_TAG_CATALOG` metadata
+  directly: (1) a real search bar matches tag labels, aliases, and category
+  names across the whole catalog (replacing the per-family filter input) and
+  caps visible results at 24 with a "+N more" note; (2) a style-aware
+  "Suggested Tags" row leads with tradition-specific tags for the selected
+  Style (Chinese / Korean / Japanese) and fills the rest with strong general
+  (`styles` containing `all`) tags — an enhancement of the general pool, not
+  a takeover — picked deterministically with round-robin variety across
+  categories, no AI call; (3) tag chips and family pills carry their
+  category's color accent (dot + soft border tint) straight from
+  `CATEGORY_COLORS`, with Meta & Continuity rendered as a true black dot
+  ringed for visibility on dark glass. Selected tags still save as plain
+  string arrays; the 20-tag limit, custom tags, Clear All, family browsing,
+  and all DOM ids are unchanged. The canned `suggestTagsStub` button was
+  retired from the Origin page in favor of the always-on deterministic row
+  (the stub itself remains in `shared/stubs.ts` for the `StoryTagsWorkspace.tsx`
+  production-transfer path). No generation, storage, or contract changes.
+
+- **2026-08-05:** Story Tags catalog metadata & color coding (Step 2). Enriched
+  the Story Seed tag catalog in `development/constants.ts` with structured metadata.
+  Each entry in `STORY_TAG_CATALOG` now supports: `label`, `category`, `styles`
+  (`all` | `chinese` | `korean` | `japanese`), `aliases` (`string[]`), and `color`
+  (`gray`, `red`, `green`, `purple`, `pink`, `gold`, `blue`, `teal`, `orange`, `black`).
+  Simplified category names were established per product rules: `Fate Threats`
+  (from Fate & Destiny), `Society & Economy` (from Society & Economics), `Destiny & Karma`
+  (from Fate & Karmic Bonds), `Adventure` (from Exploration & Dungeons), and `Modern`
+  (from Urban & Modern). `CATEGORIZED_TAGS` and `TAG_PRESETS` remain fully backward-compatible
+  string mappings derived from `STORY_TAG_CATALOG`. Story Seed saved data contracts,
+  UI presentation, search, and generation behavior are completely unchanged.
+
+- **2026-08-05:** Story Tags catalog expansion (Step 1). Audited and expanded
+  `CATEGORIZED_TAGS` in `development/constants.ts` to dramatically improve tag
+  coverage for core universal themes (romance, revenge, betrayal, rivalry,
+  survival, chosen one, underdog, antihero, mentor, redemption, war, academy,
+  training arc, tournament, comedy, tragedy, mystery), Korean webnovel/hunter-system
+  tropes (regression, returner, hunter society, dungeon gates, tower climbing,
+  rank system, ranker, constellation sponsors, scenario system, streamed trials,
+  guild politics, raid team, awakening, status window, player system, revenge returner,
+  chaebol family, apocalypse survival, monopoly strategy), Japanese light novel
+  tropes (isekai, party banishment, hero party, demon king, adventurer guild,
+  slow life, monster companions, dungeon academy, school life, slice of life,
+  childhood friend, senpai-kouhai, summoned hero, reincarnated monster, villainess,
+  otome game, crafting skill, cooking skill, cheat skill, cozy fantasy), and
+  Chinese cultivation tropes (young master rivalry, face slapping, heavenly
+  tribulation, bloodline inheritance, ancient clan, immortal ascension,
+  forbidden manual, master-disciple bond, spirit beast, alchemy, artifact refining,
+  dual cultivation, karmic debt, heaven defiance, demonic path, righteous sect).
+  All tags remain concise, high-signal story engine terms with no added metadata,
+  color coding, UI redesign, search changes, or data contract mutations.
 
 - **2026-08-04:** Origin page reordered so Style leads: Story Title → Style →
   Premise → Genre → Story Tags. Style now sits above Premise because the
@@ -490,11 +550,13 @@ development/                  — active Workshop version (Phase 2 creation work
   ImportPanel.tsx              — seed/blueprint JSON import (unchanged)
   SeedLibraryPanel.tsx         — account seed library; toggled from the header
                                  "My Seeds" action instead of always rendered
-  constants.ts                  — GENRE_PRESETS, PREMISE_SUGGESTIONS, TAG_PRESETS,
-                                   CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES
-                                   (static Origin example premises; no Fate
-                                   Survival genre; fate tags live in the Fate
-                                   & Destiny category)
+  constants.ts                  — STORY_TAG_CATALOG (label, category, styles,
+                                   aliases, color per entry) plus derived
+                                   CATEGORIZED_TAGS, TAG_PRESETS,
+                                   CATEGORY_COLORS, and lookup helpers;
+                                   GENRE_PRESETS, PREMISE_SUGGESTIONS,
+                                   CURATED_PREMISE_EXAMPLES (static Origin
+                                   example premises; no Fate Survival genre)
   story-seed.css               — Story Seed-only workspace ambience; reusable
                                   field/header styles live in components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries
@@ -852,6 +914,10 @@ are unchanged; the development script walks the new selector).
 - **`routingConfig.storyMaker`** is read from the mock store in
   `StoryTagsWorkspace.tsx` exactly as production does, but is never actually
   sent anywhere (no `fetch` call exists to send it to).
+- **Origin Story Tags suggestions are deterministic** — the Origin page's
+  "Suggested Tags" row and tag search read `STORY_TAG_CATALOG` metadata
+  directly (Style filter, alias/category matching); no model call and no
+  `suggestTagsStub` involvement (Step 3, 2026-08-05).
 - **VERSA logo is a live public URL** (`images.seihouse.org`) — kept for
   visual fidelity; same precedent as reader-chamber's R2 backdrop URLs.
 - **Shared mock store/seed library is a module singleton** — in Compare
