@@ -4,9 +4,11 @@
  * `LibraryPanel` is the official Library glass panel — the section container
  * every Library surface shells its content in. `LibraryButton` is the
  * official button for every Library surface — Story Seed, Story Settings,
- * Fate Survival, Relics, Reader menus, admin pages. `SEIButton` is exported
- * only for building new Library-skinned controls on top of the shared base
- * behavior; pages should not use it directly.
+ * Fate Survival, Relics, Reader menus, admin pages. `LibraryBottomNavigation`
+ * is the official mobile bottom navigation bar. `SEIButton` and
+ * `SEIBottomNavigation` are exported only for building new Library-skinned
+ * controls on top of the shared base behavior; pages should not use them
+ * directly.
  */
 import './glass-field.css';
 import './library-spectrum.css';
@@ -25,6 +27,16 @@ export type {
 } from './LibraryButton';
 export { SEIButton } from './SEIButton';
 export type { SEIButtonProps } from './SEIButton';
+export { LibraryBottomNavigation } from './LibraryBottomNavigation';
+export type {
+  LibraryBottomNavigationItem,
+  LibraryBottomNavigationProps,
+} from './LibraryBottomNavigation';
+export { SEIBottomNavigation } from './SEIBottomNavigation';
+export type {
+  SEIBottomNavigationItem,
+  SEIBottomNavigationProps,
+} from './SEIBottomNavigation';
 export {
   LibraryNavigationDrawer,
   LibraryNavigationDrawerPanel,

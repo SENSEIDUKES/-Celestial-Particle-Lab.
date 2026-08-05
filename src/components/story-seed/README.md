@@ -10,6 +10,18 @@
 
 ## Workshop history
 
+- **2026-08-04:** Added the mobile bottom navigation through the new reusable
+  `LibraryBottomNavigation` (`src/components/library/`), ported from the
+  SEIHouse UI repo's `SEIBottomNavigation`. The bar carries three tabs —
+  Sections (opens the existing section drawer), Settings (opens a new mobile
+  utility sheet), and Profile (placeholder sheet, no account behavior). The
+  header utility actions moved into the Settings sheet on mobile: Save Draft
+  and Import reuse the exact existing handlers, joined by My Seeds and
+  Export All when signed in; the desktop header is unchanged. The Forge
+  action strip stays fully usable — on mobile it rests in flow at the panel
+  bottom so it never overlaps the bar. `index.html` gained
+  `viewport-fit=cover` so iPhone safe-area insets resolve.
+
 - **2026-08-04:** Consolidated the reusable Celestial Library UI into
   `src/components/library/`. Story Seed now imports `LibraryTextBox`,
   `LibraryTextArea`, `LibraryHeaderBadge`, `LibraryButton`, `LibraryPanel`, and

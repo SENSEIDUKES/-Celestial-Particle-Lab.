@@ -10,9 +10,11 @@ Relics, Reader surfaces) and transfer to production alongside them.
 Celestial Library UI system:
 
 - `LibraryButton`, `LibraryPanel`, and `LibraryNavigationDrawer`
+- `LibraryBottomNavigation` — the mobile bottom navigation bar
 - `LibraryTextBox` and `LibraryTextArea`
 - `LibraryHeaderBadge` and its emblem/header spectrum treatments
-- `SEIButton`, `cn`, shared glass-field styles, and the Library spectrum styles
+- `SEIButton`, `SEIBottomNavigation`, `cn`, shared glass-field styles, and the
+  Library spectrum styles
 - the public `index.ts` exports used by feature consumers
 
 Feature folders import these components from the Library barrel. They must not
@@ -27,6 +29,10 @@ Reusable visual names use the `library-*` namespace:
 
 ### Shared-component history
 
+- **2026-08-04:** Ported `SEIBottomNavigation` from the SEIHouse UI repo and
+  added `LibraryBottomNavigation`, the Celestial Library mobile bottom
+  navigation skin. Story Seed is the first consumer (Sections / Settings /
+  Profile); future Library pages import it from this barrel.
 - **2026-08-04:** Consolidated `LibraryTextBox`, `LibraryTextArea`,
   `LibraryHeaderBadge`, the glass-field skin, and the shared spectrum styles
   from Story Seed into this canonical folder. Updated the public barrel and
@@ -203,3 +209,69 @@ import {
 
 - **2026-08-04:** Ported `SEINavigationDrawer` from the UI repo and adopted it
   as the Story Seed section menu shell (desktop sidebar + mobile drawer).
+
+## LibraryBottomNavigation
+
+The official mobile bottom navigation bar — a sticky icon + label tab bar
+skinned in the Celestial Library glass, reusable by any Library page. Story
+Seed is the first consumer (Sections / Settings / Profile).
+
+- **Source repository:** SENSEIDUKES UI repo (`UI`)
+- **Source location:** `packages/seihouse-ui/src/layout/sei-bottom-navigation.tsx`
+  (exports `SEIBottomNavigation` + `SEIBottomNavigationProps`, inspected 2026-08-04)
+- **Workshop consumer:** `?preview=story-seed` (development fork — mobile
+  bottom bar; Sections opens the existing section drawer, Settings opens the
+  utility sheet, Profile is a placeholder)
+- **Replica created:** 2026-08-04
+- **Last Workshop update:** 2026-08-04
+- **Last source comparison:** 2026-08-04
+- **Replica status:** faithful port (re-skinned as the Celestial Library glass)
+
+### What was ported
+
+- The component shape: required `aria-label` landmark, `items` with stable
+  `id` / `label` / decorative `icon` / `active` / `onSelect(id)`, and the
+  presentational contract (the page owns routing/state).
+- Sticky bottom placement, safe-area bottom padding, the icon-over-label tab
+  layout, `max-w-40` tab cap with `flex-1` sharing below it, truncated labels,
+  and the `aria-current="page"` / `data-selected` state hooks.
+- 44px+ touch targets (`min-h-13` tab rows).
+
+### What was adapted (stack differences from the source)
+
+- Same split as `SEIButton` / `LibraryButton`: `SEIBottomNavigation.tsx`
+  keeps structure and behavior only; the SEIHouse `--sh-*` glass and
+  interactive colors stayed behind. `--sh-safe-bottom` became the standard
+  `env(safe-area-inset-bottom)` used across this app (enabled by
+  `viewport-fit=cover` in `index.html`).
+- The skin (`LibraryBottomNavigation.tsx`) reuses the `LibraryPanel` footer
+  glass language — crisp luminous top divider, soft upward portal glow,
+  translucent dark body, backdrop blur — and applies tab styling from the nav
+  down so the base stays unstyled: quiet cloud labels (Alegreya SC, small
+  caps) that wake on hover, settle on press, and light portal blue when
+  selected, with the standard portal focus ring.
+- Compose guidance: render the bar as the last element of the page flow below
+  the desktop breakpoint (`lg:hidden`) and keep any footer action strip in
+  flow above it (no sticky bottom offset on the strip) so the two never
+  overlap. The Story Seed Forge strip follows this.
+
+### Usage
+
+```tsx
+import { LibraryBottomNavigation } from '../library';
+
+<LibraryBottomNavigation
+  aria-label="Story Seed navigation"
+  className="lg:hidden"
+  items={[
+    { id: 'sections', label: 'Sections', icon: <List size={20} />, active: drawerOpen, onSelect: openDrawer },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, onSelect: openSettings },
+  ]}
+/>
+```
+
+### Workshop history
+
+- **2026-08-04:** Ported `SEIBottomNavigation` from the UI repo, re-skinned it
+  as the Celestial Library bottom navigation, and adopted it in Story Seed as
+  the first integration proof.
