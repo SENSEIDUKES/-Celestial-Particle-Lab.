@@ -10,6 +10,17 @@
 
 ## Workshop history
 
+- **2026-08-05:** Story Paths polish pass. The genre search field was removed
+  from the expanded picker (the preset list is still small enough to scan),
+  and the collapsed Genre section no longer shows an input-looking field: it
+  is now a real tappable **Choose Story Path** button ("Xianxia, System,
+  Mystery, or your own") built on the same `glass-choice` tile surface as the
+  picker, with a compass medallion and trailing chevron. Once a genre is set,
+  the button shows the chosen path (violet sigil for presets, gold sparkle
+  for custom) with a "tap to change" hint. The expanded structure is
+  unchanged: STORY PATHS header → preset grid → Define My Own Path tile,
+  with the custom input revealed only after that tile is tapped.
+
 - **2026-08-05:** Genre section on the Origin page redesigned as **Story
   Paths**. The preset grid is now a set of dark-glass path tiles (the shared
   `glass-choice` surface) with refined Lucide sigils in circular medallions

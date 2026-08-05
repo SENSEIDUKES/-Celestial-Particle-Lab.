@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  BookOpen, Building2, Castle, Check, ChevronDown, ChevronRight, Crown, Eye, Feather,
+  BookOpen, Building2, Castle, Check, ChevronDown, ChevronRight, Compass, Crown, Eye, Feather,
   FlaskConical, Flame, Flower2, Gem, GraduationCap, History, House, Layers, MoonStar,
   Orbit, PawPrint, Scroll, Search, Sparkle, Sparkles, Sword, Tag, Wand2, X, Zap,
   type LucideIcon,
@@ -211,7 +211,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const [customTagInput, setCustomTagInput] = useState('');
   const [tagSearch, setTagSearch] = useState('');
   const [isGenrePickerOpen, setIsGenrePickerOpen] = useState(false);
-  const [genreSearch, setGenreSearch] = useState('');
   const [isCustomPathOpen, setIsCustomPathOpen] = useState(false);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
   const [exampleIndex, setExampleIndex] = useState(0);
@@ -299,18 +298,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const trimmedGenre = genre.trim();
   const isCustomGenre = Boolean(trimmedGenre) && !GENRE_PRESETS.some(preset => preset.id === trimmedGenre);
   const isCustomPathActive = isCustomPathOpen || isCustomGenre;
-  const genreQuery = genreSearch.trim().toLowerCase();
-  const visibleGenrePresets = genreQuery
-    ? GENRE_PRESETS.filter(preset =>
-        preset.id.toLowerCase().includes(genreQuery) || preset.name.toLowerCase().includes(genreQuery))
-    : GENRE_PRESETS;
   const SelectedGenreSigil = GENRE_PATH_SIGILS[trimmedGenre];
-
-  const selectGenrePath = (presetId: string) => {
-    updateSeed(patchStoryRequired({ genre: presetId }));
-    // Clear any active search so the selected path's glow stays visible.
-    setGenreSearch('');
-  };
 
   return (
     <WorkspaceShell section={section} complete={originComplete}>
@@ -412,21 +400,34 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           </button>
         </div>
 
-        {/* Collapsed: the chosen path (or the invite to pick one) as a quiet
-            field-like summary that opens the Story Paths picker. */}
+        {/* Collapsed: a real tappable button — the invitation to open the
+            Story Paths menu, or the chosen path once one is set. */}
         {!isGenrePickerOpen && (
           <button type="button" onClick={() => setIsGenrePickerOpen(true)}
-            className="glass-field flex min-h-[2.75rem] w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left font-sans text-sm">
-            {trimmedGenre ? (
-              <>
-                {SelectedGenreSigil
-                  ? <SelectedGenreSigil size={15} aria-hidden="true" style={{ color: GENRE_PATH_ACCENT }} />
-                  : <Sparkles size={14} aria-hidden="true" style={{ color: CUSTOM_GENRE_PATH_ACCENT }} />}
-                <span className="truncate text-signal">{trimmedGenre}</span>
-              </>
-            ) : (
-              <span className="text-neutral-500">Choose or define a genre...</span>
-            )}
+            style={{ '--choice-accent': GENRE_PATH_ACCENT } as React.CSSProperties}
+            className="glass-choice flex w-full items-center gap-3 px-4 py-3 text-left">
+            <span aria-hidden="true" className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all ${
+              !trimmedGenre
+                ? 'border-[rgba(150,166,220,0.2)] bg-[rgba(11,14,30,0.6)]'
+                : isCustomGenre
+                  ? 'border-[rgba(212,175,55,0.55)] bg-[rgba(212,175,55,0.1)] shadow-[0_0_12px_rgba(212,175,55,0.28)]'
+                  : 'border-[rgba(167,139,250,0.55)] bg-[rgba(167,139,250,0.12)] shadow-[0_0_12px_rgba(167,139,250,0.3)]'
+            }`}>
+              {trimmedGenre
+                ? (SelectedGenreSigil
+                    ? <SelectedGenreSigil size={16} className="glass-choice-icon" />
+                    : <Sparkles size={15} style={{ color: CUSTOM_GENRE_PATH_ACCENT }} />)
+                : <Compass size={16} className="glass-choice-icon" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className={`block truncate font-sc text-[11px] font-bold uppercase tracking-[0.12em] ${trimmedGenre ? 'text-signal' : 'text-neutral-200'}`}>
+                {trimmedGenre || 'Choose Story Path'}
+              </span>
+              <span className="mt-0.5 block font-sans text-[11px] text-neutral-500">
+                {trimmedGenre ? 'Your story path — tap to change' : 'Xianxia, System, Mystery, or your own'}
+              </span>
+            </span>
+            <ChevronRight size={15} aria-hidden="true" className="shrink-0 text-neutral-500" />
           </button>
         )}
 
@@ -448,34 +449,24 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
                 <p className="mt-1.5 text-center font-sans text-xs text-neutral-400">Choose a path, or define your own.</p>
               </div>
 
-              <div className="mt-4">
-                <LibraryTextBox id="genre-path-search-input" size="compact" icon={Search} value={genreSearch} onChange={setGenreSearch} placeholder="Search genres..." aria-label="Search genres" />
+              <div role="radiogroup" aria-label="Story paths" className="mt-4 grid grid-cols-2 gap-2 min-[360px]:grid-cols-3">
+                {GENRE_PRESETS.map(preset => {
+                  const selected = trimmedGenre === preset.id;
+                  const Sigil = GENRE_PATH_SIGILS[preset.id] ?? Sparkles;
+                  return (
+                    <button key={preset.id} type="button" role="radio" aria-checked={selected} onClick={() => updateSeed(patchStoryRequired({ genre: preset.id }))}
+                      data-selected={selected} style={{ '--choice-accent': GENRE_PATH_ACCENT } as React.CSSProperties}
+                      className="glass-choice flex min-h-[5.5rem] flex-col items-center justify-center gap-2 px-1.5 py-3">
+                      <span aria-hidden="true" className={`flex h-9 w-9 items-center justify-center rounded-full border transition-all ${selected ? 'border-[rgba(167,139,250,0.55)] bg-[rgba(167,139,250,0.12)] shadow-[0_0_12px_rgba(167,139,250,0.3)]' : 'border-[rgba(150,166,220,0.2)] bg-[rgba(11,14,30,0.6)]'}`}>
+                        <Sigil size={16} className="glass-choice-icon" />
+                      </span>
+                      {/* Zero-width spaces after slashes give long compound
+                          names ("Crafting/Alchemy") a clean wrap point. */}
+                      <span className={`font-sc text-[10px] font-bold uppercase leading-tight tracking-[0.08em] ${selected ? 'text-signal' : 'text-neutral-300'}`}>{preset.name.replace(/\//g, '/\u200B')}</span>
+                    </button>
+                  );
+                })}
               </div>
-
-              {visibleGenrePresets.length > 0 ? (
-                <div role="radiogroup" aria-label="Story paths" className="mt-3 grid grid-cols-2 gap-2 min-[360px]:grid-cols-3">
-                  {visibleGenrePresets.map(preset => {
-                    const selected = trimmedGenre === preset.id;
-                    const Sigil = GENRE_PATH_SIGILS[preset.id] ?? Sparkles;
-                    return (
-                      <button key={preset.id} type="button" role="radio" aria-checked={selected} onClick={() => selectGenrePath(preset.id)}
-                        data-selected={selected} style={{ '--choice-accent': GENRE_PATH_ACCENT } as React.CSSProperties}
-                        className="glass-choice flex min-h-[5.5rem] flex-col items-center justify-center gap-2 px-1.5 py-3">
-                        <span aria-hidden="true" className={`flex h-9 w-9 items-center justify-center rounded-full border transition-all ${selected ? 'border-[rgba(167,139,250,0.55)] bg-[rgba(167,139,250,0.12)] shadow-[0_0_12px_rgba(167,139,250,0.3)]' : 'border-[rgba(150,166,220,0.2)] bg-[rgba(11,14,30,0.6)]'}`}>
-                          <Sigil size={16} className="glass-choice-icon" />
-                        </span>
-                        {/* Zero-width spaces after slashes give long compound
-                            names ("Crafting/Alchemy") a clean wrap point. */}
-                        <span className={`font-sc text-[10px] font-bold uppercase leading-tight tracking-[0.08em] ${selected ? 'text-signal' : 'text-neutral-300'}`}>{preset.name.replace(/\//g, '/\u200B')}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="mt-3 rounded-lg border border-dashed border-neutral-800 px-3 py-4 text-center font-sans text-xs italic text-neutral-500">
-                  No paths match this search — define your own below.
-                </p>
-              )}
 
               {/* Custom path — the official way to write a genre that is not on the list. */}
               <button type="button" onClick={() => setIsCustomPathOpen(open => !open)}
