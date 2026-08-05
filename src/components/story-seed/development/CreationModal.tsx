@@ -732,6 +732,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       <LibraryBottomNavigation
         aria-label="Story Seed navigation"
         items={bottomNavItems}
+        showLabels={false}
         className="lg:hidden"
       />
 

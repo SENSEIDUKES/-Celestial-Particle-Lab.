@@ -41,6 +41,8 @@ export interface SEIBottomNavigationProps extends HTMLAttributes<HTMLElement> {
   'aria-label': string;
   /** Destinations rendered as icon + label tab buttons (3–5 works best). */
   items: SEIBottomNavigationItem[];
+  /** Visually hide labels while keeping them available to screen readers. */
+  showLabels?: boolean;
 }
 
 /**
@@ -49,7 +51,7 @@ export interface SEIBottomNavigationProps extends HTMLAttributes<HTMLElement> {
  * strips above it should stay in flow (no sticky bottom offset) so the two
  * never overlap.
  */
-export function SEIBottomNavigation({ items, className, ...props }: SEIBottomNavigationProps) {
+export function SEIBottomNavigation({ items, className, showLabels = true, ...props }: SEIBottomNavigationProps) {
   return (
     <nav
       className={cn(
@@ -67,18 +69,20 @@ export function SEIBottomNavigation({ items, className, ...props }: SEIBottomNav
             type="button"
             aria-current={item.active ? 'page' : undefined}
             data-selected={item.active ? 'true' : undefined}
+            aria-label={item.label}
             onClick={() => item.onSelect?.(item.id)}
             className={cn(
               // `max-w-40` keeps tabs from stretching apart on tablet/desktop;
               // below the cap they still share the full width via `flex-1`.
               // `min-h-13` keeps every tab above the 44px touch-target floor.
-              'flex min-h-13 min-w-0 max-w-40 flex-1 touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5',
+              'flex min-h-13 min-w-0 max-w-40 flex-1 touch-manipulation flex-col items-center justify-center rounded-xl px-2 py-1.5',
+              showLabels ? 'gap-1' : 'gap-0',
             )}
           >
             <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center">
               {item.icon}
             </span>
-            <span className="max-w-full truncate">{item.label}</span>
+            <span className={showLabels ? 'max-w-full truncate' : 'sr-only'}>{item.label}</span>
           </button>
         ))}
       </div>

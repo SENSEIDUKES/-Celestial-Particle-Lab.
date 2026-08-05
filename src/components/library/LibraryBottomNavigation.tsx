@@ -9,7 +9,8 @@ import {
  * LibraryBottomNavigation — the official Celestial Library bottom navigation.
  *
  * Behavior comes from `SEIBottomNavigation` (the SEIHouse base: sticky bottom
- * placement, safe-area padding, icon + label tabs, 44px+ touch targets,
+ * placement, safe-area padding, icon + label tabs (or icon-only tabs when
+ * labels are visually hidden), 44px+ touch targets,
  * `aria-current` / `data-selected` hooks, presentational `onSelect`). This
  * file owns the Library skin: a soft floating dock rather than a full-bleed
  * bar — the tab row becomes a rounded glass pill, slightly inset from the
@@ -30,6 +31,7 @@ import {
  *   <LibraryBottomNavigation
  *     aria-label="Story Seed navigation"
  *     className="lg:hidden"
+ *     showLabels={false}
  *     items={[
  *       { id: 'sections', label: 'Sections', icon: <List size={20} />, onSelect: openSections },
  *       { id: 'settings', label: 'Settings', icon: <Settings size={20} />, onSelect: openSettings },
