@@ -4,7 +4,7 @@ import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';
 import { patchWorldIdentity, worldIdentity, type UpdateSeed } from '../seedState';
 import { LibraryTextArea, LibraryTextBox } from '../../../library';
-import { WorkspaceShell } from './WorkspaceShell';
+import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface WorldIdentityWorkspaceProps {
   seed: StorySeedInput;
@@ -18,6 +18,11 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
 
   return (
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
+      <GuidanceNote title="World is optional" tone="world">
+        Every World section can be left empty — the Library generates the complete world automatically
+        from your Story direction. Fill in only what you already have strong opinions about.
+      </GuidanceNote>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <LibraryTextBox
           id="a11y-control-v2xlbs8"
