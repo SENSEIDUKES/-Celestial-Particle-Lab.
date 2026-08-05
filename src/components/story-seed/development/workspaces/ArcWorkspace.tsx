@@ -15,7 +15,7 @@ import {
   type UpdateSeed,
 } from '../seedState';
 import { LibraryTextArea, LibraryTextBox } from '../../../library';
-import { WorkspaceShell } from './WorkspaceShell';
+import { GuidanceNote, WorkspaceShell } from './WorkspaceShell';
 
 interface ArcWorkspaceProps {
   seed: StorySeedInput;
@@ -230,6 +230,11 @@ export const ArcWorkspace = ({ seed, updateSeed }: ArcWorkspaceProps) => {
         rows={5}
         placeholder={MAKE_IT_WORK_PLACEHOLDER}
       />
+
+      <GuidanceNote title="Shape the journey and its destination">
+        ARC is optional. Use it when you already know what should drive the story, what should resist
+        the protagonist, or where the journey should ultimately lead. Empty fields are extrapolated.
+      </GuidanceNote>
     </WorkspaceShell>
   );
 };
