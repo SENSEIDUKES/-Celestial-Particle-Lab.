@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './story-seed.css';
-import { motion } from 'motion/react';
-import { Bookmark, Check, Copy, Database, Download, List } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Bookmark, Check, CircleUserRound, Copy, Database, Download, List, Settings, X } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -42,7 +42,6 @@ import {
 import type { SeedUpdate } from './seedState';
 import {
   buildStorySeedDrawerSections,
-  STORY_SEED_DRAWER_PROFILE,
   StorySeedSelector,
 } from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
@@ -55,6 +54,8 @@ import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
 import {
+  LibraryBottomNavigation,
+  type LibraryBottomNavigationItem,
   LibraryButton,
   LibraryHeaderBadge,
   LibraryNavigationDrawer,
@@ -107,6 +108,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
   const savedFeedbackTimer = useRef<number | null>(null);
+  // Mobile bottom-navigation sheets: Settings carries the seed utility
+  // actions moved out of the header; Profile is a placeholder sheet.
+  const [mobileSheet, setMobileSheet] = useState<'settings' | 'profile' | null>(null);
+  const reduceMotion = useReducedMotion();
 
   // The workspace edits the canonical Story Seed directly — there is no
   // separate flat view model between the form and the contract any more.
@@ -159,6 +164,22 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     const timer = setTimeout(() => setAuthDissolving(false), STORY_AUTH_DISSOLVE_MS);
     return () => clearTimeout(timer);
   }, [currentUser]);
+
+  // Mobile sheet behavior mirrors the navigation drawer: Escape closes and
+  // body scroll locks while the sheet is open.
+  useEffect(() => {
+    if (!mobileSheet) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileSheet(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previous;
+    };
+  }, [mobileSheet]);
 
   const rememberSeed = (record: StorySeedRecord) => {
     setCurrentSeed(record);
@@ -374,8 +395,41 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const accountSignedIn = !LOCAL_ONLY_MODE && Boolean(currentUser);
 
+  // Mobile bottom navigation — Sections opens the existing section drawer,
+  // Settings toggles the utility sheet (Save Draft / Import / library), and
+  // Profile is a placeholder for the future Library profile surface. The bar
+  // is presentational; it drives the same state as the existing controls.
+  const bottomNavItems: LibraryBottomNavigationItem[] = [
+    {
+      id: 'sections',
+      label: 'Sections',
+      icon: <List size={20} />,
+      active: selectorOpen,
+      onSelect: () => {
+        setMobileSheet(null);
+        setSelectorOpen(true);
+      },
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: <Settings size={20} />,
+      active: mobileSheet === 'settings',
+      onSelect: () => setMobileSheet(sheet => (sheet === 'settings' ? null : 'settings')),
+    },
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: <CircleUserRound size={20} />,
+      active: mobileSheet === 'profile',
+      onSelect: () => setMobileSheet(sheet => (sheet === 'profile' ? null : 'profile')),
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl pb-24" id="creation-portal-root">
+    // `pb-24` clears the sticky Forge strip at the end of scroll; on mobile
+    // the in-flow bottom navigation occupies that space instead.
+    <div className="mx-auto max-w-7xl pb-24 max-lg:pb-0" id="creation-portal-root">
       {/* Header — wraps on narrow screens so the action buttons drop to a
           second row instead of overflowing the viewport. */}
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
@@ -390,9 +444,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         />
 
         {/* Save Draft is never gated on creative completeness — a draft exists
-            to preserve progress. Seed import/library/export stay plain,
-            always-visible actions rather than a hidden overflow menu. */}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1">
+            to preserve progress. On mobile these utility actions move into
+            the bottom navigation's Settings sheet; the desktop header keeps
+            them as plain, always-visible actions. */}
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1 max-lg:hidden">
           <LibraryButton
             onClick={handleSaveDraft}
             disabled={isGenerating}
@@ -480,18 +535,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             </motion.div>
           </main>
 
-          {/* Action bar — required tracking + generation, rendered as the
-              panel's footer strip (luminous top divider, translucent blur). */}
-          <LibraryPanel variant="footer" padding="none" className="sticky bottom-0 z-30 px-4 py-3.5 sm:px-8">
+          {/* Action bar — required tracking + Forge as the single primary
+              action, rendered as the panel's footer strip (luminous top
+              divider, translucent blur). Section navigation lives in the
+              bottom navigation on mobile and the sidebar on desktop. On
+              mobile the strip rests in flow at the panel bottom (sticky is
+              off) so it always stays clear of the bottom navigation. */}
+          <LibraryPanel variant="footer" padding="none" className="sticky max-lg:static z-30 px-4 py-3.5 sm:px-8">
             <div className="flex items-center gap-3">
-              <LibraryButton
-                onClick={() => setSelectorOpen(true)}
-                icon={List}
-                className="lg:hidden"
-              >
-                Sections
-              </LibraryButton>
-
               <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
                 <div className="flex shrink-0 items-center gap-1.5" aria-label={`${requiredComplete} of ${REQUIRED_STORY_SECTIONS.length} required Story inputs complete`}>
                   {REQUIRED_STORY_SECTIONS.map(section => (
@@ -550,19 +601,143 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         onImport={handleImport}
       />
 
-      {/* Mobile section drawer — the Library navigation shell (mock profile
-          header + Story/World destinations) over the same section state. */}
+      {/* Mobile section drawer — the Library navigation shell focused purely
+          on Story/World section navigation (no profile header; profile
+          access lives in the bottom navigation's Profile tab). */}
       <LibraryNavigationDrawer
         open={selectorOpen}
         onClose={() => setSelectorOpen(false)}
         aria-label="Story Seed sections"
         closeLabel="Close sections"
-        profile={STORY_SEED_DRAWER_PROFILE}
         sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
           setActiveSection(id);
           setSelectorOpen(false);
         })}
       />
+
+      {/* Mobile bottom navigation — the reusable Library bar. Mobile-only:
+          the desktop layout already has the sidebar selector and the header
+          utility actions. Rendered last so it rests at the end of the page
+          and sticks to the viewport bottom while scrolling. */}
+      <LibraryBottomNavigation
+        aria-label="Story Seed navigation"
+        items={bottomNavItems}
+        className="lg:hidden"
+      />
+
+      {/* Mobile utility sheet — Settings holds the seed utility actions
+          (same handlers as the header buttons); Profile is a placeholder
+          sheet with no account behavior. */}
+      <AnimatePresence>
+        {mobileSheet && (
+          <div className="fixed inset-0 z-[240] lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              onClick={() => setMobileSheet(null)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.25, ease: 'easeOut' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={mobileSheet === 'settings' ? 'Story Seed settings' : 'Cultivator profile (placeholder)'}
+              className="absolute inset-x-0 bottom-0"
+            >
+              <LibraryPanel
+                padding="none"
+                className="rounded-b-none border-x-0 border-b-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+              >
+                <div className="flex items-center justify-between gap-3 px-4 pt-3">
+                  <p className="font-sc text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-500">
+                    {mobileSheet === 'settings' ? 'Settings' : 'Profile'}
+                  </p>
+                  <LibraryButton
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileSheet(null)}
+                    aria-label={mobileSheet === 'settings' ? 'Close settings' : 'Close profile'}
+                    icon={X}
+                  />
+                </div>
+
+                {mobileSheet === 'settings' ? (
+                  <div className="mt-2 space-y-2 px-4">
+                    <LibraryButton
+                      fullWidth
+                      onClick={handleSaveDraft}
+                      disabled={isGenerating}
+                      title="Save this Story Seed draft"
+                      icon={savedFeedback ? Check : Bookmark}
+                    >
+                      {savedFeedback ? 'Saved' : 'Save Draft'}
+                    </LibraryButton>
+                    <LibraryButton
+                      fullWidth
+                      variant="ghost"
+                      onClick={() => {
+                        setMobileSheet(null);
+                        setShowImportPanel(true);
+                      }}
+                      icon={Copy}
+                    >
+                      Import
+                    </LibraryButton>
+                    {accountSignedIn && (
+                      <LibraryButton
+                        fullWidth
+                        variant="ghost"
+                        onClick={() => {
+                          setMobileSheet(null);
+                          setShowLibrary(true);
+                        }}
+                        icon={Database}
+                      >
+                        My Seeds
+                      </LibraryButton>
+                    )}
+                    {accountSignedIn && savedSeeds.length > 0 && (
+                      <LibraryButton
+                        fullWidth
+                        variant="ghost"
+                        onClick={() => {
+                          setMobileSheet(null);
+                          handleExportAllSeeds();
+                        }}
+                        icon={Download}
+                      >
+                        Export All
+                      </LibraryButton>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-2 flex items-center gap-3 px-4 pb-2">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-10 shrink-0 place-items-center rounded-full border border-gold-accent/40 bg-gold-accent/10 font-sc text-sm font-bold text-gold-accent"
+                    >
+                      S
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-sc text-sm font-bold uppercase tracking-widest text-signal">
+                        SENSEI
+                      </span>
+                      <span className="block font-sans text-[11px] leading-relaxed text-neutral-500">
+                        Cultivator Profile is a placeholder — it arrives with a future Library update.
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </LibraryPanel>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

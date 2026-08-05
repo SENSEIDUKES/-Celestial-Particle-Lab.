@@ -5,7 +5,6 @@ import {
   LibraryNavigationDrawerPanel,
   type LibraryNavigationDrawerAccent,
   type LibraryNavigationDrawerItem,
-  type LibraryNavigationDrawerProfile,
   type LibraryNavigationDrawerSection,
 } from '../../library';
 import {
@@ -22,16 +21,6 @@ interface StorySeedSelectorProps {
   activeSection: SeedSectionId;
   onSelect: (id: SeedSectionId) => void;
 }
-
-/**
- * Mock profile block pinned to the top of the Story Seed navigation drawer.
- * Placeholder only — no account/auth behavior. It reserves the slot where the
- * future Library profile tab/menu entry will open from.
- */
-export const STORY_SEED_DRAWER_PROFILE: LibraryNavigationDrawerProfile = {
-  name: 'SENSEI',
-  detail: 'Cultivator Profile',
-};
 
 const familyAccent = (family: SeedFamily): LibraryNavigationDrawerAccent =>
   family === 'story' ? 'portal' : 'gold';
@@ -110,14 +99,14 @@ export function buildStorySeedDrawerSections(
 
 /**
  * The Story Seed navigation menu (Story → World) rendered through the Library
- * navigation drawer panel with the mock profile header. The desktop sidebar
- * renders it directly; the mobile drawer wraps the same sections in
- * `LibraryNavigationDrawer` (see CreationModal).
+ * navigation drawer panel. The desktop sidebar renders it directly; the
+ * mobile drawer wraps the same sections in `LibraryNavigationDrawer` (see
+ * CreationModal). Pure section navigation — profile access lives in the
+ * bottom navigation's Profile tab, not here.
  */
 export const StorySeedSelector = ({ seed, activeSection, onSelect }: StorySeedSelectorProps) => (
   <LibraryNavigationDrawerPanel
     aria-label="Story Seed sections"
-    profile={STORY_SEED_DRAWER_PROFILE}
     sections={buildStorySeedDrawerSections(seed, activeSection, onSelect)}
   />
 );

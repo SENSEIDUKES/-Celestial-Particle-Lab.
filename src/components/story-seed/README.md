@@ -10,6 +10,29 @@
 
 ## Workshop history
 
+- **2026-08-04:** Bottom navigation refinement pass. The bar is now a soft
+  floating dock (rounded glass pill inset from the screen edges) instead of a
+  full-bleed strip. The section drawer and desktop selector dropped the mock
+  `SENSEI / Cultivator Profile` header — they are pure Story/World section
+  navigation now, and profile access lives only in the bottom navigation's
+  Profile tab (`STORY_SEED_DRAWER_PROFILE` is removed). The Forge footer
+  strip lost its redundant mobile Sections button, leaving Forge as the
+  single primary action alongside the required-input status. Save Draft /
+  Import / My Seeds / Export All remain centralized in the Settings sheet
+  with unchanged handlers.
+
+- **2026-08-04:** Added the mobile bottom navigation through the new reusable
+  `LibraryBottomNavigation` (`src/components/library/`), ported from the
+  SEIHouse UI repo's `SEIBottomNavigation`. The bar carries three tabs —
+  Sections (opens the existing section drawer), Settings (opens a new mobile
+  utility sheet), and Profile (placeholder sheet, no account behavior). The
+  header utility actions moved into the Settings sheet on mobile: Save Draft
+  and Import reuse the exact existing handlers, joined by My Seeds and
+  Export All when signed in; the desktop header is unchanged. The Forge
+  action strip stays fully usable — on mobile it rests in flow at the panel
+  bottom so it never overlaps the bar. `index.html` gained
+  `viewport-fit=cover` so iPhone safe-area insets resolve.
+
 - **2026-08-04:** Consolidated the reusable Celestial Library UI into
   `src/components/library/`. Story Seed now imports `LibraryTextBox`,
   `LibraryTextArea`, `LibraryHeaderBadge`, `LibraryButton`, `LibraryPanel`, and
@@ -831,13 +854,13 @@ tree below and should be removed in the same transfer, with one caution
 - `development/CreationModal.tsx` → `src/components/CreationModal.tsx`
 - `development/seedSections.ts` → `src/features/creation/seedSections.ts`
 - `development/StorySeedSelector.tsx` → `src/features/creation/components/StorySeedSelector.tsx`
-  (now also exports `buildStorySeedDrawerSections` and
-  `STORY_SEED_DRAWER_PROFILE`; depends on the drawer below transferring too)
+  (also exports `buildStorySeedDrawerSections`; depends on the drawer below
+  transferring too)
 - `src/components/library/*` → `src/components/library/*` (shared Library
-  buttons, panels, drawer, fields, header badge, styles, helpers, and barrel;
-  self-contained ports — no `@seihouse/ui` dependency to install. Replace
-  `STORY_SEED_DRAWER_PROFILE` with the real profile menu entry when the
-  Library profile tab lands)
+  buttons, panels, drawer, bottom navigation, fields, header badge, styles,
+  helpers, and barrel; self-contained ports — no `@seihouse/ui` dependency to
+  install. The bottom navigation's Profile tab is a placeholder — wire it to
+  the real profile menu entry when the Library profile tab lands)
 - `development/StorySeedSummary.tsx` → `src/features/creation/components/StorySeedSummary.tsx`
 - `development/workspaces/*` → `src/features/creation/components/workspaces/*`
 - `development/StoryAuthGate.tsx` → `src/components/StoryAuthGate.tsx`

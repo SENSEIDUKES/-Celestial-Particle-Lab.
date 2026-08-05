@@ -10,9 +10,11 @@ Relics, Reader surfaces) and transfer to production alongside them.
 Celestial Library UI system:
 
 - `LibraryButton`, `LibraryPanel`, and `LibraryNavigationDrawer`
+- `LibraryBottomNavigation` — the mobile bottom navigation bar
 - `LibraryTextBox` and `LibraryTextArea`
 - `LibraryHeaderBadge` and its emblem/header spectrum treatments
-- `SEIButton`, `cn`, shared glass-field styles, and the Library spectrum styles
+- `SEIButton`, `SEIBottomNavigation`, `cn`, shared glass-field styles, and the
+  Library spectrum styles
 - the public `index.ts` exports used by feature consumers
 
 Feature folders import these components from the Library barrel. They must not
@@ -27,6 +29,10 @@ Reusable visual names use the `library-*` namespace:
 
 ### Shared-component history
 
+- **2026-08-04:** Ported `SEIBottomNavigation` from the SEIHouse UI repo and
+  added `LibraryBottomNavigation`, the Celestial Library mobile bottom
+  navigation skin. Story Seed is the first consumer (Sections / Settings /
+  Profile); future Library pages import it from this barrel.
 - **2026-08-04:** Consolidated `LibraryTextBox`, `LibraryTextArea`,
   `LibraryHeaderBadge`, the glass-field skin, and the shared spectrum styles
   from Story Seed into this canonical folder. Updated the public barrel and
@@ -143,7 +149,8 @@ by future Library pages.
 - **Source location:** `packages/seihouse-ui/src/layout/sei-navigation-drawer.tsx`
   (exports `SEINavigationDrawer` + `SEINavigationDrawerPanel`, inspected 2026-08-04)
 - **Workshop consumer:** `?preview=story-seed` (development fork — desktop
-  sidebar renders the panel; mobile opens the drawer from the Sections button)
+  sidebar renders the panel; mobile opens the drawer from the bottom
+  navigation's Sections tab)
 - **Replica created:** 2026-08-04
 - **Last Workshop update:** 2026-08-04
 - **Last source comparison:** 2026-08-04
@@ -173,10 +180,11 @@ by future Library pages.
 
 ### Mocked
 
-- The `profile` block is a persistent placeholder for the future Library
-  profile tab/menu access. It has no account/auth behavior; the Story Seed
-  consumer renders `SENSEI` / `Cultivator Profile` with a gold initial
-  medallion.
+- The drawer's optional `profile` block is a placeholder capability for the
+  future Library profile tab/menu access — it renders no account behavior.
+  Story Seed no longer uses it: profile access lives in the bottom
+  navigation's Profile tab, and the Story Seed drawer/sidebar render pure
+  Story/World section navigation.
 
 ### Usage
 
@@ -203,3 +211,77 @@ import {
 
 - **2026-08-04:** Ported `SEINavigationDrawer` from the UI repo and adopted it
   as the Story Seed section menu shell (desktop sidebar + mobile drawer).
+
+## LibraryBottomNavigation
+
+The official mobile bottom navigation — a soft floating dock of icon + label
+tabs skinned in the Celestial Library glass, reusable by any Library page.
+Story Seed is the first consumer (Sections / Settings / Profile).
+
+- **Source repository:** SENSEIDUKES UI repo (`UI`)
+- **Source location:** `packages/seihouse-ui/src/layout/sei-bottom-navigation.tsx`
+  (exports `SEIBottomNavigation` + `SEIBottomNavigationProps`, inspected 2026-08-04)
+- **Workshop consumer:** `?preview=story-seed` (development fork — mobile
+  bottom bar; Sections opens the existing section drawer, Settings opens the
+  utility sheet, Profile is a placeholder)
+- **Replica created:** 2026-08-04
+- **Last Workshop update:** 2026-08-04
+- **Last source comparison:** 2026-08-04
+- **Replica status:** faithful port (re-skinned as the Celestial Library glass)
+
+### What was ported
+
+- The component shape: required `aria-label` landmark, `items` with stable
+  `id` / `label` / decorative `icon` / `active` / `onSelect(id)`, and the
+  presentational contract (the page owns routing/state).
+- Sticky bottom placement, safe-area bottom padding, the icon-over-label tab
+  layout, `max-w-40` tab cap with `flex-1` sharing below it, truncated labels,
+  and the `aria-current="page"` / `data-selected` state hooks.
+- 44px+ touch targets (`min-h-13` tab rows).
+
+### What was adapted (stack differences from the source)
+
+- Same split as `SEIButton` / `LibraryButton`: `SEIBottomNavigation.tsx`
+  keeps structure and behavior only; the SEIHouse `--sh-*` glass and
+  interactive colors stayed behind. `--sh-safe-bottom` became the standard
+  `env(safe-area-inset-bottom)` used across this app (enabled by
+  `viewport-fit=cover` in `index.html`).
+- The skin (`LibraryBottomNavigation.tsx`) shapes the base's inner tab row
+  into a soft floating dock — a rounded glass pill (`rounded-[1.5rem]`)
+  inset 1rem from the screen edges, with a cool top sheen over translucent
+  dark depth, a soft luminous border, backdrop blur, and a deep drop shadow
+  with a faint portal tint. The outer `<nav>` stays a transparent sticky,
+  safe-area-aware container. Tab styling applies from the nav down so the
+  base stays unstyled: quiet cloud labels (Alegreya SC, small caps) in
+  rounded bubble tabs that wake on hover, settle on press, and light portal
+  blue with a soft inner glow when selected, with the standard portal focus
+  ring.
+- Compose guidance: render the dock as the last element of the page flow
+  below the desktop breakpoint (`lg:hidden`) and keep any footer action
+  strip in flow above it (no sticky bottom offset on the strip) so the two
+  never overlap. The Story Seed Forge strip follows this.
+
+### Usage
+
+```tsx
+import { LibraryBottomNavigation } from '../library';
+
+<LibraryBottomNavigation
+  aria-label="Story Seed navigation"
+  className="lg:hidden"
+  items={[
+    { id: 'sections', label: 'Sections', icon: <List size={20} />, active: drawerOpen, onSelect: openDrawer },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, onSelect: openSettings },
+  ]}
+/>
+```
+
+### Workshop history
+
+- **2026-08-04:** Restyled from a full-bleed bar into a soft floating dock:
+  rounded glass pill inset from the screen edges, bubble tab radius, softer
+  border, inner-glow portal active state. Same items contract and sticky,
+  safe-area-aware behavior.
+- **2026-08-04:** Ported `SEIBottomNavigation` from the UI repo, re-skinned it
+  as the Celestial Library bottom navigation, and adopted it in Story Seed as
+  the first integration proof.
