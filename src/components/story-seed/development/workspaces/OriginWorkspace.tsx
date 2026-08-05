@@ -72,8 +72,15 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const [exampleIndex, setExampleIndex] = useState(0);
   const routingConfig = useAppStore(state => state.routingConfig);
 
-  const premiseExample = CURATED_PREMISE_EXAMPLES[exampleIndex % CURATED_PREMISE_EXAMPLES.length];
-  const reshufflePremiseExample = () => setExampleIndex(index => (index + 1) % CURATED_PREMISE_EXAMPLES.length);
+  // Premise examples follow the chosen Style; until one is picked, the cycle
+  // draws from every tradition's bank.
+  const premiseBank = selectedStyle
+    ? CURATED_PREMISE_EXAMPLES[selectedStyle]
+    : Object.values(CURATED_PREMISE_EXAMPLES).flat();
+  const premiseExample = premiseBank[exampleIndex % premiseBank.length];
+  const reshufflePremiseExample = () => setExampleIndex(index => (index + 1) % premiseBank.length);
+
+  useEffect(() => setExampleIndex(0), [selectedStyle]);
 
   useEffect(() => {
     if (!premise.trim() || storyTags.length >= TAG_LIMIT) {
@@ -163,6 +170,30 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         placeholder="e.g., Ashes of the Ninth Meridian"
       />
 
+      <section className="glass-panel p-4" aria-labelledby="origin-style-title">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p id="origin-style-title" className={workspaceCompactLabelClass}>Style <span className="text-human">*</span></p>
+          <span className="font-sans text-[11px] text-neutral-500">Novel tradition</span>
+        </div>
+        <div role="radiogroup" aria-label="Novel tradition" id="story-style-options" className="grid grid-cols-3 gap-2">
+          {STORY_STYLE_OPTIONS.map(option => {
+            const selected = selectedStyle === option.value;
+            const { icon: Icon, accent } = STYLE_PRESENTATION[option.value];
+            return (
+              <button key={option.value} type="button" role="radio" aria-checked={selected} id={`story-style-${option.value}`}
+                onClick={() => updateSeed(patchStoryRequired({ style: option.value }))} data-selected={selected}
+                style={{ '--choice-accent': accent } as React.CSSProperties}
+                className="glass-choice flex min-h-[4.4rem] flex-col items-center justify-center gap-1.5 px-2 py-2">
+                <Icon size={16} aria-hidden="true" className="glass-choice-icon" />
+                <span className={`flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-[0.1em] ${selected ? 'text-signal' : 'text-neutral-300'}`}>
+                  {selected && <Check size={11} aria-hidden="true" style={{ color: accent }} />}{option.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       <LibraryTextArea
         id="core-premise-input"
         label="Core Premise / Secret Catalyst"
@@ -176,7 +207,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           if (!premise.trim()) {
             // Empty field: Tab accepts the system premise example shown as ghost text.
             event.preventDefault();
-            updateSeed(patchStoryRequired({ premise: premiseExample.text }));
+            updateSeed(patchStoryRequired({ premise: premiseExample }));
             return;
           }
           if (ghostSuggestion) {
@@ -186,7 +217,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           }
         }}
         rows={6}
-        placeholder={premiseExample.text}
+        placeholder={premiseExample}
         helpText={premise.trim() ? undefined : 'Example shown as ghost text — press Tab to use it, or the dragon for another.'}
         rightElement={premise.trim() ? undefined : (
           <button
@@ -218,60 +249,34 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         </AnimatePresence>
       </LibraryTextArea>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section className="glass-panel p-4" aria-labelledby="origin-style-title">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p id="origin-style-title" className={workspaceCompactLabelClass}>Style <span className="text-human">*</span></p>
-            <span className="font-sans text-[11px] text-neutral-500">Novel tradition</span>
-          </div>
-          <div role="radiogroup" aria-label="Novel tradition" id="story-style-options" className="grid grid-cols-3 gap-2">
-            {STORY_STYLE_OPTIONS.map(option => {
-              const selected = selectedStyle === option.value;
-              const { icon: Icon, accent } = STYLE_PRESENTATION[option.value];
-              return (
-                <button key={option.value} type="button" role="radio" aria-checked={selected} id={`story-style-${option.value}`}
-                  onClick={() => updateSeed(patchStoryRequired({ style: option.value }))} data-selected={selected}
-                  style={{ '--choice-accent': accent } as React.CSSProperties}
-                  className="glass-choice flex min-h-[4.4rem] flex-col items-center justify-center gap-1.5 px-2 py-2">
-                  <Icon size={16} aria-hidden="true" className="glass-choice-icon" />
-                  <span className={`flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-[0.1em] ${selected ? 'text-signal' : 'text-neutral-300'}`}>
-                    {selected && <Check size={11} aria-hidden="true" style={{ color: accent }} />}{option.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="glass-panel p-4" aria-labelledby="origin-genre-title">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p id="origin-genre-title" className={workspaceCompactLabelClass}>Genre <span className="text-human">*</span></p>
-            <button type="button" aria-expanded={isGenrePickerOpen} aria-controls="origin-genre-presets" onClick={() => setIsGenrePickerOpen(open => !open)}
-              className="inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:text-signal">
-              {isGenrePickerOpen ? 'Close paths' : 'Pick a path'}<ChevronDown size={13} className={isGenrePickerOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-            </button>
-          </div>
-          <LibraryTextBox id="genre-custom-input" size="compact" value={genre} onChange={value => updateSeed(patchStoryRequired({ genre: value }))}
-            placeholder="Choose or define a genre..." aria-label="Genre path" />
-          <AnimatePresence initial={false}>
-            {isGenrePickerOpen && (
-              <motion.div id="origin-genre-presets" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                  {GENRE_PRESETS.map(preset => {
-                    const selected = genre.trim() === preset.id;
-                    return (
-                      <button key={preset.id} type="button" onClick={() => updateSeed(patchStoryRequired({ genre: preset.id }))} aria-pressed={selected}
-                        className={`min-h-[2.75rem] rounded-lg border px-2 py-1.5 text-left font-sans text-xs transition-all ${selected ? 'border-portal bg-portal/10 font-semibold text-signal' : 'border-neutral-800/80 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'}`}>
-                        <span aria-hidden="true" className="mr-1">{preset.icon}</span>{preset.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
-      </div>
+      <section className="glass-panel p-4" aria-labelledby="origin-genre-title">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p id="origin-genre-title" className={workspaceCompactLabelClass}>Genre <span className="text-human">*</span></p>
+          <button type="button" aria-expanded={isGenrePickerOpen} aria-controls="origin-genre-presets" onClick={() => setIsGenrePickerOpen(open => !open)}
+            className="inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:text-signal">
+            {isGenrePickerOpen ? 'Close paths' : 'Pick a path'}<ChevronDown size={13} className={isGenrePickerOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+          </button>
+        </div>
+        <LibraryTextBox id="genre-custom-input" size="compact" value={genre} onChange={value => updateSeed(patchStoryRequired({ genre: value }))}
+          placeholder="Choose or define a genre..." aria-label="Genre path" />
+        <AnimatePresence initial={false}>
+          {isGenrePickerOpen && (
+            <motion.div id="origin-genre-presets" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {GENRE_PRESETS.map(preset => {
+                  const selected = genre.trim() === preset.id;
+                  return (
+                    <button key={preset.id} type="button" onClick={() => updateSeed(patchStoryRequired({ genre: preset.id }))} aria-pressed={selected}
+                      className={`min-h-[2.75rem] rounded-lg border px-2 py-1.5 text-left font-sans text-xs transition-all ${selected ? 'border-portal bg-portal/10 font-semibold text-signal' : 'border-neutral-800/80 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'}`}>
+                      <span aria-hidden="true" className="mr-1">{preset.icon}</span>{preset.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
       <section className="glass-panel space-y-4 p-4 sm:p-5" aria-labelledby="origin-tags-title">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -353,7 +358,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         </div>
       </section>
 
-      <GuidanceNote title="One origin, four signals">Premise leads the way; Style and Genre set its lens; Story Tags sharpen the details the Library should protect.</GuidanceNote>
+      <GuidanceNote title="One origin, four signals">Style leads the way; Premise turns it into a hook; Genre sets the shelf; Story Tags sharpen the details the Library should protect.</GuidanceNote>
     </WorkspaceShell>
   );
 };
