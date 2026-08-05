@@ -14,7 +14,7 @@ interface StoryTagsWorkspaceProps {
   updateSeed: UpdateSeed;
 }
 
-const TAG_LIMIT = 20;
+const TAG_LIMIT = 12;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 
 /**

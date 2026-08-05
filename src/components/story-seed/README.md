@@ -10,6 +10,15 @@
 
 ## Workshop history
 
+- **2026-08-05:** Story Tags selection limit updated. The hard maximum is now
+  12 tags (was 20) — adding is blocked at 12 until one is removed, with the
+  existing limit error unchanged. The "Your tags" counter now carries static
+  helpful copy — "Recommended: 4–8 tags." — with no warnings for sitting at
+  9–12 (or below 4). The catalog, generation behavior (inference still caps
+  at its own 8), storage, and tag UI layout are unchanged; the same constant
+  was updated in the unwired `StoryTagsWorkspace.tsx` transfer source so the
+  two development forks do not drift.
+
 - **2026-08-05:** Story Tags smart catalog UI (Step 3). The Origin page's
   Story Tags section now reads the Step 2 `STORY_TAG_CATALOG` metadata
   directly: (1) a real search bar matches tag labels, aliases, and category

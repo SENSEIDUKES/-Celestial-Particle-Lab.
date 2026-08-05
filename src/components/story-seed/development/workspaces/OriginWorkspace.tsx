@@ -21,8 +21,10 @@ interface OriginWorkspaceProps {
   updateSeed: UpdateSeed;
 }
 
-const TAG_LIMIT = 20;
+const TAG_LIMIT = 12;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
+/** Helpful copy only — 9–12 tags is allowed and never warned about. */
+const TAG_RECOMMENDED_COPY = 'Recommended: 4–8 tags.';
 
 const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; accent: string }> = {
   chinese: { icon: Scroll, accent: '#04ACFF' },
@@ -469,8 +471,9 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         {/* Selected tags — still plain strings in the seed; the dot only marks
             tags that exist in the catalog (custom tags keep the plain chip). */}
         <div className="border-t border-neutral-800/80 pt-3">
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className={workspaceCompactLabelClass}>Your tags ({storyTags.length} / {TAG_LIMIT})</p>
+            <span className="font-sans text-[11px] text-neutral-500">{TAG_RECOMMENDED_COPY}</span>
             {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
           </div>
           {storyTags.length > 0 ? (
