@@ -74,7 +74,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
   const premiseExample = CURATED_PREMISE_EXAMPLES[exampleIndex % CURATED_PREMISE_EXAMPLES.length];
   const reshufflePremiseExample = () => setExampleIndex(index => (index + 1) % CURATED_PREMISE_EXAMPLES.length);
-  const usePremiseExample = () => updateSeed(patchStoryRequired({ premise: premiseExample.text }));
 
   useEffect(() => {
     if (!premise.trim() || storyTags.length >= TAG_LIMIT) {
@@ -173,14 +172,22 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         value={premise}
         onChange={value => updateSeed(patchStoryRequired({ premise: value }))}
         onKeyDown={event => {
-          if (event.key === 'Tab' && ghostSuggestion) {
+          if (event.key !== 'Tab') return;
+          if (!premise.trim()) {
+            // Empty field: Tab accepts the system premise example shown as ghost text.
+            event.preventDefault();
+            updateSeed(patchStoryRequired({ premise: premiseExample.text }));
+            return;
+          }
+          if (ghostSuggestion) {
             event.preventDefault();
             addTag(ghostSuggestion);
             setGhostSuggestion(null);
           }
         }}
-        rows={5}
-        placeholder="The main hook or cheat..."
+        rows={6}
+        placeholder={premiseExample.text}
+        helpText={premise.trim() ? undefined : 'Example shown as ghost text — press Tab to use it, 🔂 for another.'}
         className="pb-10 pr-10"
       >
         <AnimatePresence>
@@ -198,45 +205,23 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
             </motion.button>
           )}
         </AnimatePresence>
+        <AnimatePresence>
+          {!premise.trim() && (
+            <motion.button
+              key="premise-example-reshuffle"
+              type="button"
+              initial={{ opacity: 0, scale: 0.95, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 2 }}
+              transition={{ duration: 0.2 }}
+              onClick={reshufflePremiseExample}
+              aria-label="Show another example premise"
+              title="Show another example premise"
+              className="absolute bottom-2.5 right-2.5 flex min-h-[2.25rem] min-w-[2.25rem] items-center justify-center rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2 text-sm text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal"
+            >
+              🔂
+            </motion.button>
+          )}
+        </AnimatePresence>
       </LibraryTextArea>
-
-      <AnimatePresence initial={false}>
-        {!premise.trim() && (
-          <motion.div
-            key="premise-example"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.2 }}
-            aria-live="polite"
-            className="rounded-xl border border-portal/20 bg-portal/5 p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-sc text-[10px] font-bold uppercase tracking-widest text-portal">Example premise</p>
-              <span className="rounded-full border border-gold-accent/30 bg-gold-accent/10 px-2 py-0.5 font-sc text-[9px] uppercase tracking-widest text-gold-accent">{premiseExample.label}</span>
-            </div>
-            <p className="mt-2 font-sans text-sm leading-relaxed text-neutral-300">{premiseExample.text}</p>
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={usePremiseExample}
-                className="min-h-[2.75rem] rounded border border-portal/50 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:border-portal hover:bg-portal/20"
-              >
-                Use this premise
-              </button>
-              <button
-                type="button"
-                onClick={reshufflePremiseExample}
-                aria-label="Show another example"
-                title="Show another example"
-                className="inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center rounded border border-neutral-800 text-base transition-colors hover:border-portal/50"
-              >
-                🔂
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="glass-panel p-4" aria-labelledby="origin-style-title">

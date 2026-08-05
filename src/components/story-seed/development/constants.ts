@@ -139,11 +139,14 @@ export const PREMISE_SUGGESTIONS = [
 ];
 
 /**
- * Curated premise examples for the Origin page. Shown only while the premise
- * field is empty, one at a time, to teach what a strong premise looks like —
- * short hooks for the punchy one-line shape, full premises for the richer
- * setup-and-stakes shape. Static list: no AI call, no storage. The example is
- * inserted only when the user explicitly taps "Use this premise".
+ * Curated system premise examples for the Origin page. While the premise
+ * field is empty, one example is shown as ghost text inside the field (the
+ * textarea placeholder) to teach what a strong premise looks like — short
+ * hooks for the punchy one-line shape, full premises for the richer
+ * setup-and-stakes shape. Static list: no AI call, no storage. The example
+ * becomes real text only when the user presses Tab in the empty field, so
+ * user-typed text is never overwritten. (A future user-saved premise bank is
+ * a separate feature and is not built from this list.)
  */
 export const CURATED_PREMISE_EXAMPLES: { label: string; text: string }[] = [
   { label: 'Short hook', text: 'I Raised a Nameless Beast in a Forgotten Valley, and It Became the Ancestor of All Divine Monsters.' },
