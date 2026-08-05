@@ -10,7 +10,7 @@ import { CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, TAG_PRESETS 
 import { getSeedSection } from '../seedSections';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
-import { LibraryTextArea, LibraryTextBox } from '../../../library';
+import { LibraryDragonCycleIcon, LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface OriginWorkspaceProps {
@@ -187,7 +187,18 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         }}
         rows={6}
         placeholder={premiseExample.text}
-        helpText={premise.trim() ? undefined : 'Example shown as ghost text — press Tab to use it, 🔂 for another.'}
+        helpText={premise.trim() ? undefined : 'Example shown as ghost text — press Tab to use it, or the dragon for another.'}
+        rightElement={premise.trim() ? undefined : (
+          <button
+            type="button"
+            onClick={reshufflePremiseExample}
+            aria-label="Show another example premise"
+            title="Show another example premise"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-portal/35 bg-portal/10 text-portal transition-all hover:border-portal hover:bg-portal/15 hover:shadow-[0_0_12px_rgba(4,172,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-90"
+          >
+            <LibraryDragonCycleIcon size={17} />
+          </button>
+        )}
         className="pb-10 pr-10"
       >
         <AnimatePresence>
@@ -202,22 +213,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
             >
               <Sparkles size={11} className="animate-pulse text-portal" />
               <span className="truncate">Tab: {ghostSuggestion}</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {!premise.trim() && (
-            <motion.button
-              key="premise-example-reshuffle"
-              type="button"
-              initial={{ opacity: 0, scale: 0.95, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 2 }}
-              transition={{ duration: 0.2 }}
-              onClick={reshufflePremiseExample}
-              aria-label="Show another example premise"
-              title="Show another example premise"
-              className="absolute bottom-2.5 right-2.5 flex min-h-[2.25rem] min-w-[2.25rem] items-center justify-center rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2 text-sm text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal"
-            >
-              🔂
             </motion.button>
           )}
         </AnimatePresence>

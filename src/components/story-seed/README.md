@@ -17,11 +17,12 @@
   system premise examples shown as ghost text: while the premise field is
   empty, one curated example from `CURATED_PREMISE_EXAMPLES`
   (`development/constants.ts` — three short hooks, three full premises)
-  appears as the field's placeholder, a 🔂 button inside the field's
-  bottom-right corner cycles the list, and pressing Tab in the empty field
-  accepts the shown example into the field. User-typed text is never
-  overwritten, and the existing ghost-tag Tab path (premise filled) is
-  untouched. No AI call, no storage, no contract or generation changes;
+  appears as the field's placeholder, pressing Tab in the empty field
+  accepts the shown example, and a circular dragon button in the field's
+  top-right corner (the new `LibraryDragonCycleIcon`, the Library's shared
+  "Re-do / Re-try / shuffle" glyph) cycles the list. User-typed text is
+  never overwritten, and the existing ghost-tag Tab path (premise filled)
+  is untouched. No AI call, no storage, no contract or generation changes;
   Style, Genre, and Story Tags behavior is unchanged. (A future user-saved
   premise bank is a separate feature, not part of this work.)
 
