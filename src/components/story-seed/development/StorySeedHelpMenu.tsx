@@ -106,7 +106,11 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
     if (!translation) return null;
     const playing = playingId === item.id;
     return (
-      <div className="rounded-xl border border-[rgba(205,178,113,0.22)] bg-[#0b0e1e]/70 p-4 shadow-[inset_0_0_24px_-14px_rgba(205,178,113,0.35)]">
+      <div className={cn(
+        'rounded-xl border border-[rgba(205,178,113,0.22)] bg-[#0b0e1e]/70 p-4 shadow-[inset_0_0_24px_-14px_rgba(205,178,113,0.35)] transition-[border-color,box-shadow] duration-500 motion-reduce:transition-none',
+        // While the system speaks, the card breathes with a soft portal aura.
+        playing && 'seed-help-speaking',
+      )}>
         <p className="font-serif text-[15px] leading-relaxed text-[#C9C2B2]">{translation.line}</p>
         <button
           type="button"
@@ -116,6 +120,17 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
         >
           {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
           {playing ? 'Pause' : 'Listen'} · English
+          {playing && (
+            <span aria-hidden="true" className="flex h-3 items-center gap-[2.5px]">
+              {[0, 1, 2].map(bar => (
+                <span
+                  key={bar}
+                  className="seed-help-voice-bar block h-3 w-[2px] rounded-full bg-portal"
+                  style={{ animationDelay: `${bar * 160}ms` }}
+                />
+              ))}
+            </span>
+          )}
         </button>
       </div>
     );
@@ -204,6 +219,8 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
                                 active
                                   ? 'border-[rgba(205,178,113,0.5)] bg-[rgba(205,178,113,0.12)] text-[#DDC58A]'
                                   : 'border-[rgba(205,178,113,0.25)] bg-[rgba(11,14,30,0.6)] text-[#CDB271]/80',
+                                // The speaking topic's sigil breathes too.
+                                playingId === item.id && 'seed-help-speaking',
                               )}
                             >
                               <Icon size={14} />

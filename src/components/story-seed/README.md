@@ -10,6 +10,10 @@
 
 ## Workshop history
 
+- **2026-08-05:** The Help menu now shows when the system is speaking — while
+  a guidance line plays, its info card and topic sigil breathe with a soft
+  portal aura and the Listen button carries a live voice-bar indicator.
+  Reduced-motion users keep the halo without the animation.
 - **2026-08-05:** Added the Story Seed Help menu — a `?` destination in the
   mobile bottom navigation (with a matching Help button in the desktop
   header) that gathers guidance for Story Seed, Origin, Premise, Genre,
