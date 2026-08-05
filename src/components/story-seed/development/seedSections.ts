@@ -25,6 +25,7 @@ import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } 
  * ```text
  * story.required   Story Tags · Premise · Genre · Style
  * story.optional   ARC → plotAndTropeSettings + additionalStoryDirection
+ *                         + makeItWorkInstruction
  * world.required   (none)
  * world.optional   World Identity → worldIdentity
  *                  Characters / Factions / Abilities / Power System /
@@ -147,6 +148,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     isFilled: seed => {
       const settings = plotAndTropeSettings(seed);
       return hasText(seed.story.optional.additionalStoryDirection)
+        || hasText(seed.story.optional.makeItWorkInstruction)
         || hasText(settings.longTermGoal)
         || hasText(settings.firstMajorConflict)
         || hasText(settings.mainAntagonistPressure)

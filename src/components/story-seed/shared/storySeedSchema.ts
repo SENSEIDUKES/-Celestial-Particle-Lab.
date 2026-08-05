@@ -6,7 +6,7 @@
  * ├── creator
  * ├── story
  * │   ├── required   storyTags · premise · genre · style
- * │   └── optional   plotAndTropeSettings · additionalStoryDirection
+ * │   └── optional   plotAndTropeSettings · additionalStoryDirection · makeItWorkInstruction
  * └── world
  *     ├── required   (intentionally empty — World has no required inputs)
  *     └── optional   worldIdentity · worldFoundations
@@ -72,12 +72,16 @@ export interface StorySeedPlotAndTropeSettings {
 export interface StorySeedStoryOptional {
   plotAndTropeSettings: StorySeedPlotAndTropeSettings;
   /**
-   * One freeform channel for everything the creator wants to say about the
-   * story's direction. The Phase-1 seed spread the same intent across
-   * `desiredPlotDirection`, `makeItWorkInstruction`, `mustIncludeElements`,
-   * and `thingsToAvoid`; they are consolidated here.
+   * General freeform direction for the story. Legacy `desiredPlotDirection`,
+   * `mustIncludeElements`, and `thingsToAvoid` values consolidate here.
    */
   additionalStoryDirection?: string;
+  /**
+   * High-priority creative intent for strange, difficult, contradictory, or
+   * highly specific ideas. Generation should preserve and make the idea
+   * believable unless safety or a required Story Seed field prevents it.
+   */
+  makeItWorkInstruction?: string;
 }
 
 export interface StorySeedStory {
@@ -266,6 +270,8 @@ const normalizeStoryOptional = (value: unknown): StorySeedStoryOptional => {
   };
   const additionalStoryDirection = text(source.additionalStoryDirection);
   if (additionalStoryDirection) normalized.additionalStoryDirection = additionalStoryDirection;
+  const makeItWorkInstruction = text(source.makeItWorkInstruction);
+  if (makeItWorkInstruction) normalized.makeItWorkInstruction = makeItWorkInstruction;
   return normalized;
 };
 

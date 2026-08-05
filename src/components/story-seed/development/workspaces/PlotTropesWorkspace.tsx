@@ -22,9 +22,10 @@ interface PlotTropesWorkspaceProps {
  * story is headed, what it opens against, and who pushes back.
  *
  * Mapping: the structured answers are `story.optional.plotAndTropeSettings`;
- * the freeform textarea is `story.optional.additionalStoryDirection`, the single
- * consolidated channel that replaced Phase 1's overlapping `desiredPlotDirection`,
- * `makeItWorkInstruction`, `mustIncludeElements`, and `thingsToAvoid`.
+ * the freeform textarea is `story.optional.additionalStoryDirection`, which
+ * consolidates Phase 1's overlapping `desiredPlotDirection`,
+ * `mustIncludeElements`, and `thingsToAvoid`. Make It Work has its own field
+ * in the combined ARC workspace.
  *
  * Everything that answers "how do I want to experience this novel?" — pacing,
  * tone, romance/harem, comedy, betrayal, Fate Survival — deliberately does not

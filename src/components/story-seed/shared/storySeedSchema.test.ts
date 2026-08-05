@@ -64,6 +64,7 @@ const completeSeed = (): StorySeedInput => ({
         mainAntagonistPressure: 'The celestial court',
       },
       additionalStoryDirection: 'Escalating court intrigue.',
+      makeItWorkInstruction: 'The weakest bloodline is secretly the only one heaven fears.',
     },
   },
   world: {
@@ -104,7 +105,11 @@ describe('Story Seed creator/story/world contract', () => {
     expect(Object.keys(seed.story).sort()).toEqual(['optional', 'required']);
     expect(Object.keys(seed.world).sort()).toEqual(['optional', 'required']);
     expect(Object.keys(seed.story.required).sort()).toEqual(['genre', 'premise', 'storyTags', 'style']);
-    expect(Object.keys(seed.story.optional).sort()).toEqual(['additionalStoryDirection', 'plotAndTropeSettings']);
+    expect(Object.keys(seed.story.optional).sort()).toEqual([
+      'additionalStoryDirection',
+      'makeItWorkInstruction',
+      'plotAndTropeSettings',
+    ]);
     expect(seed.story.optional.plotAndTropeSettings).toMatchObject({
       faceSlap: 'low',
       plotArmor: 'high',
@@ -124,6 +129,7 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'medium',
       recognition: 'medium',
     });
+    expect(empty.story.optional.makeItWorkInstruction).toBeUndefined();
     expect(empty.world).toEqual({ required: {}, optional: { worldIdentity: {}, worldFoundations: {} } });
 
     // A generation-ready Story with a completely empty World is valid.
@@ -205,6 +211,31 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'medium',
       recognition: 'medium',
     });
+  });
+
+  it('keeps Make It Work optional and normalizes missing or blank values to empty', () => {
+    const missing = normalizeStorySeedInput({
+      ...completeSeed(),
+      story: {
+        ...completeSeed().story,
+        optional: { plotAndTropeSettings: {} },
+      },
+    });
+    expect(missing.story.optional.makeItWorkInstruction).toBeUndefined();
+    expect(validateStorySeedInput(missing)).toEqual({ valid: true, errors: [] });
+
+    const blank = normalizeStorySeedInput({
+      ...completeSeed(),
+      story: {
+        ...completeSeed().story,
+        optional: {
+          ...completeSeed().story.optional,
+          makeItWorkInstruction: '   ',
+        },
+      },
+    });
+    expect(blank.story.optional.makeItWorkInstruction).toBeUndefined();
+    expect(validateStorySeedInput(blank)).toEqual({ valid: true, errors: [] });
   });
 
   it('infers Story Tags from Premise, Genre, and Style so they never block generation', () => {
@@ -296,6 +327,8 @@ describe('Story Seed creator/story/world contract', () => {
     expect(roundTripped.story.required).toEqual(seed.story.required);
     expect(roundTripped.story.optional.plotAndTropeSettings)
       .toEqual(seed.story.optional.plotAndTropeSettings);
+    expect(roundTripped.story.optional.makeItWorkInstruction)
+      .toBe('The weakest bloodline is secretly the only one heaven fears.');
     expect(roundTripped.world.optional.worldIdentity).toEqual(seed.world.optional.worldIdentity);
     expect(createStorySeedCollectionExport([seed]).seeds).toHaveLength(1);
   });
@@ -333,9 +366,11 @@ describe('Story Seed creator/story/world contract', () => {
       genre: 'Xianxia',
       style: 'chinese',
     });
-    // The overlapping direction fields consolidate into one channel.
+    // General direction consolidates, while Make It Work keeps its own path.
     expect(migrated.story.optional.additionalStoryDirection)
-      .toBe('Escalating court intrigue.\n\nNever erase the cost of changing fate.');
+      .toBe('Escalating court intrigue.');
+    expect(migrated.story.optional.makeItWorkInstruction)
+      .toBe('Never erase the cost of changing fate.');
     expect(migrated.story.optional.plotAndTropeSettings).toEqual({
       longTermGoal: 'Break the assassination cycle',
       faceSlap: 'medium',
@@ -381,6 +416,8 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'high',
       recognition: 'medium',
     });
+    expect(created.seed.story.optional.makeItWorkInstruction)
+      .toBe('The weakest bloodline is secretly the only one heaven fears.');
     expect(await listStorySeeds('creator-2')).toEqual([]);
 
     // Account metadata lives on the record, never inside creator/story/world.
@@ -440,6 +477,8 @@ describe('Story Seed creator/story/world contract', () => {
         plotArmor: 'high',
         recognition: 'medium',
       });
+      expect(request.storySeed.story.optional.makeItWorkInstruction)
+        .toBe('The weakest bloodline is secretly the only one heaven fears.');
       expect(request.storySeed).not.toHaveProperty('intake');
       expect(request.storySeed).not.toHaveProperty('administrative');
     }

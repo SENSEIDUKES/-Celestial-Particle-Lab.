@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Hourglass, ShieldAlert, Swords, Target } from 'lucide-react';
+import { Compass, Hourglass, ShieldAlert, Sparkles, Swords, Target } from 'lucide-react';
 import type {
   StorySeedInput,
   StorySeedStorySauceLevel,
@@ -10,6 +10,7 @@ import {
   patchWorldFoundations,
   plotAndTropeSettings,
   setAdditionalStoryDirection,
+  setMakeItWorkInstruction,
   worldFoundations,
   type UpdateSeed,
 } from '../seedState';
@@ -31,6 +32,14 @@ const STORY_SAUCE_LEVELS: ReadonlyArray<{
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
 ];
+
+const MAKE_IT_WORK_PLACEHOLDER = [
+  'The main character cultivates immortality through toe kung fu. Make it work.',
+  'Every major fighter in this world uses a wheelchair. Make it work.',
+  'The weakest bloodline is secretly the only one heaven fears.',
+  'The villain is correct, but still has to be stopped.',
+  'The protagonist can only grow stronger by losing public fights.',
+].join('\n');
 
 const STORY_SAUCE_SETTINGS: ReadonlyArray<{
   key: StorySauceKey;
@@ -76,8 +85,8 @@ const STORY_SAUCE_SETTINGS: ReadonlyArray<{
 
 /**
  * Optional ARC workspace. Story sauce extends the existing
- * `story.optional.plotAndTropeSettings` branch; plot direction and Destined
- * Ending keep their established paths.
+ * `story.optional.plotAndTropeSettings` branch; plot direction, Make It Work,
+ * and Destined Ending keep their own canonical paths.
  */
 export const ArcWorkspace = ({ seed, updateSeed }: ArcWorkspaceProps) => {
   const section = getSeedSection('arc');
@@ -161,7 +170,7 @@ export const ArcWorkspace = ({ seed, updateSeed }: ArcWorkspaceProps) => {
         label="Story Direction"
         icon={Compass}
         maxLength={1500}
-        helpText="Anything else the Library should follow — must-have elements, things to avoid, or a rule the story has to honor."
+        helpText="Extra direction for the journey — must-have elements, things to avoid, pacing, or plot emphasis."
         value={seed.story.optional.additionalStoryDirection || ''}
         onChange={(value) => updateSeed(setAdditionalStoryDirection(value))}
         rows={3}
@@ -208,6 +217,18 @@ export const ArcWorkspace = ({ seed, updateSeed }: ArcWorkspaceProps) => {
         onChange={(value) => updateSeed(patchWorldFoundations({ destinedEnding: value }))}
         rows={3}
         placeholder="e.g. The kingdom falls, the MC ascends, or the lovers are separated..."
+      />
+
+      <LibraryTextArea
+        id="make-it-work-instruction-input"
+        label="Make It Work"
+        icon={Sparkles}
+        maxLength={1500}
+        helpText="Use this for strange, difficult, contradictory, or highly specific ideas the Library must preserve and make believable inside the story."
+        value={seed.story.optional.makeItWorkInstruction || ''}
+        onChange={(value) => updateSeed(setMakeItWorkInstruction(value))}
+        rows={5}
+        placeholder={MAKE_IT_WORK_PLACEHOLDER}
       />
 
       <GuidanceNote title="Shape the journey and its destination">

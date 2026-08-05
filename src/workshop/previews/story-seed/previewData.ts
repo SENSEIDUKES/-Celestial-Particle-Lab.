@@ -187,6 +187,7 @@ export const createFilledStorySeedInput = (): StorySeedInput => ({
         mainAntagonistPressure: "The celestial court's fate auditors",
       },
       additionalStoryDirection: 'Slow sect building with escalating court intrigue.',
+      makeItWorkInstruction: 'The weakest bloodline is secretly the only one heaven fears.',
     },
   },
   world: {
