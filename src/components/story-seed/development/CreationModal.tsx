@@ -42,7 +42,6 @@ import {
 import type { SeedUpdate } from './seedState';
 import {
   buildStorySeedDrawerSections,
-  STORY_SEED_DRAWER_PROFILE,
   StorySeedSelector,
 } from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
@@ -536,20 +535,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             </motion.div>
           </main>
 
-          {/* Action bar — required tracking + generation, rendered as the
-              panel's footer strip (luminous top divider, translucent blur).
-              On mobile it rests in flow at the panel bottom (sticky is off)
-              so it always stays clear of the bottom navigation below it. */}
+          {/* Action bar — required tracking + Forge as the single primary
+              action, rendered as the panel's footer strip (luminous top
+              divider, translucent blur). Section navigation lives in the
+              bottom navigation on mobile and the sidebar on desktop. On
+              mobile the strip rests in flow at the panel bottom (sticky is
+              off) so it always stays clear of the bottom navigation. */}
           <LibraryPanel variant="footer" padding="none" className="sticky max-lg:static z-30 px-4 py-3.5 sm:px-8">
             <div className="flex items-center gap-3">
-              <LibraryButton
-                onClick={() => setSelectorOpen(true)}
-                icon={List}
-                className="lg:hidden"
-              >
-                Sections
-              </LibraryButton>
-
               <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
                 <div className="flex shrink-0 items-center gap-1.5" aria-label={`${requiredComplete} of ${REQUIRED_STORY_SECTIONS.length} required Story inputs complete`}>
                   {REQUIRED_STORY_SECTIONS.map(section => (
@@ -608,14 +601,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         onImport={handleImport}
       />
 
-      {/* Mobile section drawer — the Library navigation shell (mock profile
-          header + Story/World destinations) over the same section state. */}
+      {/* Mobile section drawer — the Library navigation shell focused purely
+          on Story/World section navigation (no profile header; profile
+          access lives in the bottom navigation's Profile tab). */}
       <LibraryNavigationDrawer
         open={selectorOpen}
         onClose={() => setSelectorOpen(false)}
         aria-label="Story Seed sections"
         closeLabel="Close sections"
-        profile={STORY_SEED_DRAWER_PROFILE}
         sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
           setActiveSection(id);
           setSelectorOpen(false);

@@ -11,9 +11,11 @@ import {
  * Behavior comes from `SEIBottomNavigation` (the SEIHouse base: sticky bottom
  * placement, safe-area padding, icon + label tabs, 44px+ touch targets,
  * `aria-current` / `data-selected` hooks, presentational `onSelect`). This
- * file owns the Library skin: the footer-strip glass (crisp luminous top
- * divider, translucent dark body, backdrop blur, soft upward portal glow)
- * and quiet cloud tabs that light portal blue when selected.
+ * file owns the Library skin: a soft floating dock rather than a full-bleed
+ * bar — the tab row becomes a rounded glass pill, slightly inset from the
+ * screen edges and lifted off the device bezel, with a whisper of portal
+ * light underneath. Quiet cloud tabs settle on press and light portal blue
+ * when selected.
  *
  * Pages should import `LibraryBottomNavigation`, never the raw
  * `SEIBottomNavigation`. It is presentational: the page owns selection state
@@ -38,36 +40,42 @@ import {
 export type LibraryBottomNavigationItem = SEIBottomNavigationItem;
 export type LibraryBottomNavigationProps = SEIBottomNavigationProps;
 
-// Surface — the same glass language as LibraryPanel's `footer` strip: crisp
-// luminous top divider, a soft portal glow rising above it, translucent dark
-// body with its own top sheen, and backdrop blur (lighter on small screens).
-const SURFACE = [
-  'border-t border-t-[rgba(190,216,255,0.22)]',
-  '[background-image:linear-gradient(180deg,rgba(190,214,255,0.05),transparent_60%)]',
-  'bg-[rgba(5,8,14,0.88)] supports-[backdrop-filter]:bg-[rgba(5,8,14,0.55)]',
-  'backdrop-blur-md backdrop-saturate-150 sm:backdrop-blur-lg',
-  'shadow-[0_-14px_32px_-18px_rgba(4,172,255,0.14)]',
+// Dock — applied to the base's inner tab row so the outer <nav> stays a
+// transparent sticky container. The pill floats 1rem off the screen edges
+// (base `px-2` + this `mx-2`) and clears the home indicator via the base's
+// safe-area padding. Glass: a cool top sheen over translucent dark depth,
+// a soft luminous border, backdrop blur, and a deep drop shadow with a
+// faint portal tint separating the pill from the page.
+const DOCK = [
+  '[&>div]:mx-2 [&>div]:rounded-[1.5rem] [&>div]:p-1.5',
+  '[&>div]:border [&>div]:border-[rgba(190,216,255,0.16)]',
+  '[&>div]:[background-image:linear-gradient(180deg,rgba(205,225,255,0.06),transparent_55%)]',
+  '[&>div]:bg-[rgba(8,12,20,0.82)] [&>div]:supports-[backdrop-filter]:bg-[rgba(8,12,20,0.58)]',
+  '[&>div]:backdrop-blur-xl [&>div]:backdrop-saturate-150',
+  '[&>div]:shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75),0_0_28px_-10px_rgba(4,172,255,0.18),inset_0_1px_0_rgba(255,255,255,0.09)]',
 ].join(' ');
 
 // Tabs — applied from the nav down so the base stays unstyled (the SEIButton
-// port precedent). Quiet cloud labels that wake to ivory on hover, settle on
-// press, and light portal blue when selected; one clean portal focus ring.
+// port precedent). Rounded bubbles inside the dock: quiet cloud labels that
+// wake to ivory on hover, settle on press, and light portal blue with a
+// soft inner glow when selected; one clean portal focus ring.
 const TABS = [
-  '[&_button]:cursor-pointer [&_button]:select-none',
+  '[&_button]:cursor-pointer [&_button]:select-none [&_button]:rounded-2xl',
   '[&_button]:font-sc [&_button]:text-[10px] [&_button]:font-bold [&_button]:uppercase [&_button]:leading-none [&_button]:tracking-[0.16em]',
   '[&_button]:text-neutral-400',
   '[&_button]:transition-[background,color,box-shadow] [&_button]:duration-150 [&_button]:motion-reduce:transition-none',
   '[&_button]:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-portal/70 [&_button]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-offset-black',
   '[&_button:hover]:bg-white/5 [&_button:hover]:text-neutral-200',
   '[&_button:active]:bg-white/[0.07]',
-  '[&_button[data-selected=true]]:bg-portal/10 [&_button[data-selected=true]]:text-portal [&_button[data-selected=true]]:shadow-[0_0_14px_rgba(4,172,255,0.08)]',
+  '[&_button[data-selected=true]]:bg-portal/12 [&_button[data-selected=true]]:text-portal',
+  '[&_button[data-selected=true]]:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_16px_-6px_rgba(4,172,255,0.45)]',
 ].join(' ');
 
 export function LibraryBottomNavigation({ className, ...props }: LibraryBottomNavigationProps) {
   return (
     <SEIBottomNavigation
       {...props}
-      className={cn(SURFACE, TABS, className)}
+      className={cn(DOCK, TABS, className)}
     />
   );
 }
