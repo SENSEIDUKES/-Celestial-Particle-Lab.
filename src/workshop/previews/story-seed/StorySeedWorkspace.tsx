@@ -216,9 +216,13 @@ async function runDevelopmentFillScenario() {
   // ARC combines plot direction with the story's intended destination.
   await selectSection(/^ARC$/);
   getRoots('development').forEach(root => {
+    (root.querySelector('[id="arc-face-slap-high"]') as HTMLElement | null)?.click();
+    (root.querySelector('[id="arc-plot-armor-low"]') as HTMLElement | null)?.click();
+    (root.querySelector('[id="arc-recognition-high"]') as HTMLElement | null)?.click();
     setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
     setFieldValue(root, 'destined-ending-input', 'The prince survives and severs the celestial court from fate.');
+    setFieldValue(root, 'make-it-work-instruction-input', 'The weakest bloodline is secretly the only one heaven fears.');
   });
 
   // Land back on Origin.

@@ -54,6 +54,12 @@ export const setAdditionalStoryDirection = (value: string): SeedUpdate =>
     story: { ...seed.story, optional: { ...seed.story.optional, additionalStoryDirection: value } },
   });
 
+export const setMakeItWorkInstruction = (value: string): SeedUpdate =>
+  seed => ({
+    ...seed,
+    story: { ...seed.story, optional: { ...seed.story.optional, makeItWorkInstruction: value } },
+  });
+
 export const patchWorldIdentity = (patch: Partial<StorySeedWorldIdentity>): SeedUpdate =>
   seed => ({
     ...seed,

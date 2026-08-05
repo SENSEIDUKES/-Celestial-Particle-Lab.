@@ -37,7 +37,7 @@ const pick = (source: Record<string, unknown>, fields: readonly string[]): Recor
 
 const list = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 
-/** Old fields that all expressed "extra direction for the story", merged into one. */
+/** Old general-direction fields that expressed overlapping intent, merged into one. */
 const mergeDirection = (...values: unknown[]): string => {
   const parts = Array.from(new Set(values.map(text).filter(Boolean)));
   return parts.join('\n\n');
@@ -127,10 +127,12 @@ export const importLegacyStorySeed = (value: unknown): StorySeedInput => {
           storyOptional.desiredPlotDirection,
           storyOptional.mustIncludeElements,
           storyOptional.thingsToAvoid,
-          storyOptional.makeItWorkInstruction,
           intake.desiredPlotDirection,
           intake.mustIncludeElements,
           intake.thingsToAvoid,
+        ),
+        makeItWorkInstruction: first(
+          storyOptional.makeItWorkInstruction,
           intake.makeItWorkInstruction,
         ),
       },

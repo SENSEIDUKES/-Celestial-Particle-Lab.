@@ -5,10 +5,32 @@
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-05
-- **Last source comparison:** 2026-08-03
+- **Last source comparison:** 2026-08-05
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-05:** Restored **Make It Work** as its own optional ARC textarea
+  immediately before the guidance note. Its high-priority creative instruction
+  now lives at `story.optional.makeItWorkInstruction`, stays empty when missing,
+  round-trips through save and portable import/export, and reaches Blueprint
+  and initial-story generation through the existing canonical Story Seed
+  payload. The legacy importer now maps the old production field into this
+  path instead of folding it into Story Direction. The ARC story-sauce
+  controls, required Origin behavior, Story Settings, Fate Survival, and the
+  locked Reference replica remain unchanged.
+- **2026-08-05:** Added a compact Story Sauce group at the top of ARC with
+  Face Slap, Plot Armor, and Recognition controls. Each uses stable
+  `low | medium | high` values under
+  `story.optional.plotAndTropeSettings`; missing or invalid values normalize
+  to `medium`, including older saved/imported seeds. Save, portable
+  export/import, Blueprint generation, and initial-story generation all keep
+  the values through the existing canonical contract. Cleaned up the
+  requested Story, World, Abilities, Power System, and Blueprint-review labels
+  without changing their stored paths. Story Settings, Fate Survival, the
+  locked Reference replica, and the existing workspace/page structure are
+  unchanged. Reverified production source path and default export on
+  `Light-Novels/main`.
 
 - **2026-08-05:** Origin form-level polish pass (continues the header pass
   from the same day). The shared glass fields inside Story Seed workspaces
@@ -342,7 +364,8 @@
   no Postgres, no new administrative metadata.
   - **One canonical shape** (`shared/storySeedSchema.ts`):
     `creator` · `story.required` (Story Tags, Premise, Genre, Style) ·
-    `story.optional` (`plotAndTropeSettings`, `additionalStoryDirection`) ·
+    `story.optional` (`plotAndTropeSettings`, `additionalStoryDirection`,
+    `makeItWorkInstruction`) ·
     `world.required` (intentionally empty) ·
     `world.optional` (`worldIdentity`, `worldFoundations`). It is what the
     workspace edits, what is saved, what is exported, and what enters every
@@ -361,10 +384,11 @@
     (`logline`, `firstArcPromise`, `tropeRules`, `unresolvedPlotThreads`,
     `estimatedArcs`, `universe`, `majorMysteries`, `mainCharacter.profile`,
     `powerSystem.outline`).
-  - **Consolidated:** `desiredPlotDirection`, `makeItWorkInstruction`,
-    `mustIncludeElements`, and `thingsToAvoid` became the single
-    `story.optional.additionalStoryDirection`. World Identity and World
-    Foundations are the only two World optional groups.
+  - **Consolidated at this phase:** `desiredPlotDirection`,
+    `makeItWorkInstruction`, `mustIncludeElements`, and `thingsToAvoid`
+    initially became the single `story.optional.additionalStoryDirection`.
+    Make It Work was restored to its own canonical optional path on 2026-08-05;
+    legacy general-direction fields remain consolidated.
   - **Story Tags stay required** in the contract and are still never a manual
     requirement: an empty set is inferred from Premise, Genre, and Style
     before the generation payload builders validate.
@@ -467,7 +491,9 @@
     workspace (plot, pacing, tone, romance, harem, comedy, Fate Pressure,
     conflict, antagonist pressure, Make It Work) is gone, not renamed. Only a
     curated **Plot & Tropes** branch remains: plot direction, long-term goal,
-    first major conflict, antagonist pressure.
+    first major conflict, antagonist pressure. Make It Work returned as its
+    own optional ARC instruction on 2026-08-05 without restoring the removed
+    catch-all settings workspace.
   - **Fate Survival removed from Story Seed** — Fate Pressure, the
     Relaxed/Balanced/Hardcore/Dao Master control, and `hardcoreFateMode`
     interaction logic no longer appear here. The underlying fields are
@@ -668,7 +694,7 @@ shared/                        — shared infrastructure plus fork-specific data
                                   backed by Workshop local storage
   storySeedSchema.test.ts       — focused validation, empty-World,
                                   classification, serialization, persistence,
-                                  and generation-payload checks (8 tests;
+                                  and generation-payload checks (15 tests;
                                   `npm run test:story-seed`)
   storyAdministrativeMetadata.ts — minimal internal story identity, lifecycle,
                                    language, version, and durable-reference spine
@@ -701,14 +727,17 @@ save, export, or generation, so the flat prototype shape is never durable data.
 - **Story:** the required Premise / Style / Genre inputs, optional Story Tags,
   and optional Story Title share the compact Origin workspace. Story Title
   continues to use the canonical `world.optional.worldIdentity.title` path so
-  the World Identity input stays synchronized. The optional ARC workspace combines
-  plot direction, long-term goal, first conflict, antagonist pressure, and
-  Destined Ending while preserving their existing stored paths. The remaining
-  `story.optional` fields — atmosphere,
-  danger, pacing, romance/comedy/trope levels, Fate settings, custom rules —
-  stay in the schema and still round-trip through import/export, but they are
-  **not presented in Story Seed**: they are experience settings owned by the
-  separate [Story Settings](../story-settings/README.md) feature.
+  the World Identity input stays synchronized. The optional ARC workspace
+  combines Face Slap, Plot Armor, Recognition, story direction, long-term
+  goal, first conflict, main opposition, Destined Ending, and a separate
+  Make It Work instruction while preserving the established stored paths.
+  Make It Work lives at `story.optional.makeItWorkInstruction` and is treated
+  as high-priority creative intent by downstream generation. The three
+  story-sauce values live under
+  `story.optional.plotAndTropeSettings`, default to `medium`, and round-trip
+  through save, export/import, and both generation payloads. Pacing, tone,
+  romance, comedy, Fate Survival, and other experience settings remain owned
+  by the separate [Story Settings](../story-settings/README.md) feature.
 - **World:** title, world type, location, society, main character, additional
   characters, factions, abilities, and power-system definition — all optional;
   empty World stays valid. `universe` and

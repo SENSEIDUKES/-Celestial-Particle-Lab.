@@ -21,10 +21,11 @@ interface PlotTropesWorkspaceProps {
  * kept in Story Seed. Each field answers "what novel is this?" — where the
  * story is headed, what it opens against, and who pushes back.
  *
- * Mapping: the three structured answers are `story.optional.plotAndTropeSettings`;
- * the freeform textarea is `story.optional.additionalStoryDirection`, the single
- * consolidated channel that replaced Phase 1's overlapping `desiredPlotDirection`,
- * `makeItWorkInstruction`, `mustIncludeElements`, and `thingsToAvoid`.
+ * Mapping: the structured answers are `story.optional.plotAndTropeSettings`;
+ * the freeform textarea is `story.optional.additionalStoryDirection`, which
+ * consolidates Phase 1's overlapping `desiredPlotDirection`,
+ * `mustIncludeElements`, and `thingsToAvoid`. Make It Work has its own field
+ * in the combined ARC workspace.
  *
  * Everything that answers "how do I want to experience this novel?" — pacing,
  * tone, romance/harem, comedy, betrayal, Fate Survival — deliberately does not
@@ -39,7 +40,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
     <WorkspaceShell section={section} complete={section.isFilled(seed)}>
       <LibraryTextArea
         id="desired-plot-direction-input"
-        label="Desired Plot Direction"
+        label="Story Direction"
         icon={Compass}
         maxLength={1500}
         helpText="Anything else the Library should follow — must-have elements, things to avoid, or a rule the story has to honor."
@@ -68,7 +69,7 @@ export const PlotTropesWorkspace = ({ seed, updateSeed }: PlotTropesWorkspacePro
         />
         <LibraryTextBox
           id="main-antagonist-pressure-input"
-          label="Main Antagonist Pressure"
+          label="Main Opposition"
           icon={ShieldAlert}
           helpText="Who or what pushes back against the main character the hardest."
           value={settings.mainAntagonistPressure || ''}

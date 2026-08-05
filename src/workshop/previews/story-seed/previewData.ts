@@ -179,11 +179,15 @@ export const createFilledStorySeedInput = (): StorySeedInput => ({
     },
     optional: {
       plotAndTropeSettings: {
+        faceSlap: 'high',
+        plotArmor: 'low',
+        recognition: 'high',
         longTermGoal: 'Shatter the fated assassination timeline',
         firstMajorConflict: 'Sect tournament that reveals the first assassination attempt',
         mainAntagonistPressure: "The celestial court's fate auditors",
       },
       additionalStoryDirection: 'Slow sect building with escalating court intrigue.',
+      makeItWorkInstruction: 'The weakest bloodline is secretly the only one heaven fears.',
     },
   },
   world: {

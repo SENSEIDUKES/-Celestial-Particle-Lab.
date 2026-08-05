@@ -77,7 +77,7 @@ ${blueprint.firstArcPromise || ''}
 
       <div className="bg-neutral-950/80 border border-portal/30 p-6 sm:p-10 rounded-lg shadow-[0_0_30px_rgba(4,172,255,0.05)] relative space-y-8">
 
-        {/* Section 1: Overview & Starting Location */}
+        {/* Section 1: Overview & Opening Location */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <div className="flex justify-between items-center mb-2">
@@ -97,7 +97,7 @@ ${blueprint.firstArcPromise || ''}
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-1.5">
                 <MapPin size={14} className="text-portal"/>
-                <span>Starting Location</span>
+                <span>Opening Location</span>
               </h3>
               <span className="text-[10px] text-portal font-mono">Editable</span>
             </div>
@@ -111,14 +111,14 @@ ${blueprint.firstArcPromise || ''}
           </div>
         </div>
 
-        {/* Section 2: Society Structure & Major Factions */}
+        {/* Section 2: World Order & Major Factions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
                   <Layers size={14} className="text-portal"/>
-                  <span>Society Structure</span>
+                  <span>World Order</span>
                 </h3>
                 <span className="text-[9px] text-portal font-mono">Editable</span>
               </div>

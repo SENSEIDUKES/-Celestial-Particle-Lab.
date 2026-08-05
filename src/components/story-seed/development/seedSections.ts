@@ -25,6 +25,7 @@ import { plotAndTropeSettings, storyRequired, worldFoundations, worldIdentity } 
  * ```text
  * story.required   Story Tags · Premise · Genre · Style
  * story.optional   ARC → plotAndTropeSettings + additionalStoryDirection
+ *                         + makeItWorkInstruction
  * world.required   (none)
  * world.optional   World Identity → worldIdentity
  *                  Characters / Factions / Abilities / Power System /
@@ -147,6 +148,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     isFilled: seed => {
       const settings = plotAndTropeSettings(seed);
       return hasText(seed.story.optional.additionalStoryDirection)
+        || hasText(seed.story.optional.makeItWorkInstruction)
         || hasText(settings.longTermGoal)
         || hasText(settings.firstMajorConflict)
         || hasText(settings.mainAntagonistPressure)
@@ -218,7 +220,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'world',
     label: 'Power System',
     icon: Zap,
-    tagline: "The flavor and known ranks of the world's power ladder.",
+    tagline: "The style and rank ladder of the world's power system.",
     isFilled: seed => {
       const powerSystem = worldFoundations(seed).powerSystem || {};
       return hasText(powerSystem.flavor) || hasText(powerSystem.knownRanks);

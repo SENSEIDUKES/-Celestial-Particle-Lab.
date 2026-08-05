@@ -21,7 +21,7 @@ export const PowerSystemWorkspace = ({ seed, updateSeed }: PowerSystemWorkspaceP
       <div className="grid grid-cols-1 gap-4">
         <LibraryTextBox
           id="a11y-control-kytc0oh"
-          label="Power Flavor"
+          label="Power Style"
           icon={Flame}
           value={powerSystem.flavor || ''}
           onChange={(val) => updateSeed(patchPowerSystem({ flavor: val }))}
@@ -29,7 +29,7 @@ export const PowerSystemWorkspace = ({ seed, updateSeed }: PowerSystemWorkspaceP
         />
         <LibraryTextArea
           id="a11y-control-6rmg4xp"
-          label="Known Ranks"
+          label="Rank Ladder"
           icon={Layers}
           value={powerSystem.knownRanks || ''}
           onChange={(val) => updateSeed(patchPowerSystem({ knownRanks: val }))}
