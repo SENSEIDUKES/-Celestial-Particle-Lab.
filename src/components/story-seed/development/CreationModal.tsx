@@ -998,7 +998,12 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
       {/* Story Seed Help — the `?` guidance menu shared by the mobile bottom
           navigation and the desktop header button. */}
-      <StorySeedHelpMenu open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <StorySeedHelpMenu
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        page="story-seed"
+        title="Story Seed Help"
+      />
     </div>
   );
 }

@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ChevronRight, CircleHelp, Pause, Play, X } from 'lucide-react';
+import { ChevronRight, CircleHelp, Pause, Play, Search, X } from 'lucide-react';
 import { LibraryButton, LibraryPanel, cn } from '../../library';
 import {
   DEFAULT_HELP_LANGUAGE,
   STORY_SEED_HELP_ITEMS,
   getHelpTranslation,
+  getLibraryHelpItems,
   type StorySeedHelpItem,
   type StorySeedHelpLanguage,
   type StorySeedHelpTranslation,
 } from './storySeedHelp';
 
-interface StorySeedHelpMenuProps {
+interface LibraryHelpMenuProps {
   open: boolean;
   onClose: () => void;
   /**
@@ -19,6 +20,12 @@ interface StorySeedHelpMenuProps {
    * language; more slot in through `storySeedHelp.ts` without UI changes.
    */
   language?: StorySeedHelpLanguage;
+  /** Current Library surface. Matching topics remain first in the list. */
+  page?: string;
+  /** Contextual heading shown to the reader. */
+  title?: string;
+  /** Allows other Library pages to supply their guidance without a new menu. */
+  topics?: StorySeedHelpItem[];
 }
 
 /**
@@ -31,10 +38,18 @@ interface StorySeedHelpMenuProps {
  * spoken line; one line plays at a time and playback stops when the revealed
  * topic changes or the menu closes.
  */
-export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGUAGE }: StorySeedHelpMenuProps) => {
+export const LibraryHelpMenu = ({
+  open,
+  onClose,
+  language = DEFAULT_HELP_LANGUAGE,
+  page = 'library',
+  title = 'Library Help',
+  topics = STORY_SEED_HELP_ITEMS,
+}: LibraryHelpMenuProps) => {
   const reduceMotion = useReducedMotion();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const stopAudio = () => {
@@ -98,7 +113,8 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
     };
   }, [open, onClose]);
 
-  const activeItem = STORY_SEED_HELP_ITEMS.find(item => item.id === activeId) ?? null;
+  const visibleItems = getLibraryHelpItems(topics, language, page, query);
+  const activeItem = visibleItems.find(item => item.id === activeId) ?? null;
   const activeTranslation = activeItem ? getHelpTranslation(activeItem, language) : undefined;
 
   const renderCard = (item: StorySeedHelpItem) => {
@@ -112,6 +128,11 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
         playing && 'seed-help-speaking',
       )}>
         <p className="font-serif text-[15px] leading-relaxed text-[#C9C2B2]">{translation.line}</p>
+        {translation.detail && (
+          <p className="mt-3 border-t border-[rgba(205,178,113,0.14)] pt-3 font-sans text-xs leading-relaxed text-[#918B80]">
+            {translation.detail}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => toggleAudio(item, translation)}
@@ -155,7 +176,7 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
             transition={{ duration: reduceMotion ? 0 : 0.25, ease: 'easeOut' }}
             role="dialog"
             aria-modal="true"
-            aria-label="Story Seed help"
+            aria-label={title}
             className="relative w-full max-w-xl lg:max-w-3xl"
           >
             <LibraryPanel
@@ -170,12 +191,12 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
                     <span className="text-neutral-400">Guidance</span>
                   </p>
                   <h2 className="mt-2 font-display text-xl font-bold uppercase tracking-[0.14em] text-[#F3EDE0] sm:text-2xl">
-                    Story Seed Help
+                    {title}
                   </h2>
                   <p className="mt-1.5 max-w-md font-serif text-[13px] leading-relaxed text-[#B0A99B]">
                     <span className="lg:hidden">Tap a topic for its guidance.</span>
                     <span className="hidden lg:inline">Hover or select a topic for its guidance.</span>
-                    {' '}Every line can be listened to in English.
+                    {' '}Each main tip can be listened to in English.
                   </p>
                 </div>
                 <LibraryButton
@@ -187,10 +208,26 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
                 />
               </div>
 
+              <div className="relative mx-4 mt-4 sm:mx-6">
+                <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#CDB271]/65" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={event => {
+                    stopAudio();
+                    setActiveId(null);
+                    setQuery(event.target.value);
+                  }}
+                  placeholder="Search Library guidance…"
+                  aria-label="Search Library guidance"
+                  className="min-h-11 w-full rounded-xl border border-neutral-800/80 bg-[#0d1126]/65 py-2.5 pl-10 pr-3 font-sans text-sm text-[#F3EDE0] outline-none placeholder:text-neutral-600 focus:border-[rgba(205,178,113,0.5)] focus:ring-2 focus:ring-portal/30"
+                />
+              </div>
+
               <div className="mt-4 overflow-y-auto px-4 pb-5 sm:px-6 sm:pb-6">
                 <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-5">
                   <ul className="space-y-2">
-                    {STORY_SEED_HELP_ITEMS.map(item => {
+                    {visibleItems.map(item => {
                       const active = item.id === activeId;
                       const Icon = item.icon;
                       return (
@@ -259,6 +296,11 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
                         </li>
                       );
                     })}
+                    {visibleItems.length === 0 && (
+                      <li className="rounded-xl border border-dashed border-neutral-800/90 px-4 py-6 text-center font-sans text-xs text-neutral-500">
+                        No Library guidance matches your search.
+                      </li>
+                    )}
                   </ul>
 
                   {/* Desktop: the hovered/selected topic's card rests beside
@@ -284,3 +326,6 @@ export const StorySeedHelpMenu = ({ open, onClose, language = DEFAULT_HELP_LANGU
     </AnimatePresence>
   );
 };
+
+/** Story Seed compatibility export while callers migrate to Library naming. */
+export const StorySeedHelpMenu = LibraryHelpMenu;
