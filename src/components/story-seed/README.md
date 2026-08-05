@@ -10,6 +10,32 @@
 
 ## Workshop history
 
+- **2026-08-05:** Story Paths polish pass. The genre search field was removed
+  from the expanded picker (the preset list is still small enough to scan),
+  and the collapsed Genre section no longer shows an input-looking field: it
+  is now a real tappable **Choose Story Path** button ("Xianxia, System,
+  Mystery, or your own") built on the same `glass-choice` tile surface as the
+  picker, with a compass medallion and trailing chevron. Once a genre is set,
+  the button shows the chosen path (violet sigil for presets, gold sparkle
+  for custom) with a "tap to change" hint. The expanded structure is
+  unchanged: STORY PATHS header → preset grid → Define My Own Path tile,
+  with the custom input revealed only after that tile is tapped.
+
+- **2026-08-05:** Genre section on the Origin page redesigned as **Story
+  Paths**. The preset grid is now a set of dark-glass path tiles (the shared
+  `glass-choice` surface) with refined Lucide sigils in circular medallions
+  replacing the raw emojis, a soft violet glow on the selected path, and a
+  "Search genres..." field that filters the presets. Custom genres moved out
+  of the always-visible top input into an official gold-accented **Define My
+  Own Path** tile ("Craft a genre that's uniquely yours.") that reveals the
+  custom input (placeholder "Example: urban xianxia mystery"); with the
+  picker closed, the section shows the chosen path as a quiet field-like
+  summary that reopens it. Section language is now "STORY PATHS — Choose a
+  path, or define your own." The genre value, storage path
+  (`story.required.genre`), preset ids, and `GENRE_PRESETS` are unchanged;
+  the isolated legacy `GenreWorkspace.tsx` transfer fork keeps its previous
+  layout, and `constants.ts` keeps the emoji icons it still uses.
+
 - **2026-08-05:** Story Tags selection limit updated. The hard maximum is now
   12 tags (was 20) — adding is blocked at 12 until one is removed, with the
   existing limit error unchanged. The "Your tags" counter now carries static
