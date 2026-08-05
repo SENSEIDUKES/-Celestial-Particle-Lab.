@@ -16,7 +16,7 @@ import {
 import { getSeedSection } from '../seedSections';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
 import { LibraryDragonCycleIcon, LibraryTextArea, LibraryTextBox } from '../../../library';
-import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
+import { WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
 
 interface OriginWorkspaceProps {
   seed: StorySeedInput;
@@ -632,8 +632,6 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           ) : <p className="font-sans text-xs italic leading-relaxed text-neutral-600">No manual tags yet. Your origin will provide them when you forge the blueprint.</p>}
         </div>
       </section>
-
-      <GuidanceNote title="One origin, four signals">Style leads the way; Premise turns it into a hook; Genre sets the shelf; Story Tags sharpen the details the Library should protect.</GuidanceNote>
     </WorkspaceShell>
   );
 };

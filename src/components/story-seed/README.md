@@ -21,6 +21,21 @@
   existing generation payload as story metadata only; no explicit-content or
   moderation behavior was added. The locked Reference replica is unchanged.
 
+- **2026-08-05:** The Help menu now shows when the system is speaking — while
+  a guidance line plays, its info card and topic sigil breathe with a soft
+  portal aura and the Listen button carries a live voice-bar indicator.
+  Reduced-motion users keep the halo without the animation.
+- **2026-08-05:** Added the Story Seed Help menu — a `?` destination in the
+  mobile bottom navigation (with a matching Help button in the desktop
+  header) that gathers guidance for Story Seed, Origin, Premise, Genre,
+  Style, Story Tags, World, and ARC in one place. Each topic reveals its
+  written line on hover (desktop) or tap (mobile), and every card can play
+  the matching English Library line streamed from the SEIHouse lines CDN.
+  Content lives in `storySeedHelp.ts`, keyed by language, so more languages
+  and topics slot in without UI changes. The loose guidance notes formerly
+  at the bottom of the Origin, ARC, and World Identity workspaces moved into
+  the menu, so those surfaces stay cleaner; the Abilities vs. Power System
+  note stays in place because no Help topic covers it yet.
 - **2026-08-05:** Restored **Make It Work** as its own optional ARC textarea
   immediately before the guidance note. Its high-priority creative instruction
   now lives at `story.optional.makeItWorkInstruction`, stays empty when missing,
