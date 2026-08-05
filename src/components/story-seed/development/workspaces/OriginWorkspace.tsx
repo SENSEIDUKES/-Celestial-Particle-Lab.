@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  BookOpen, Check, ChevronDown, Feather, Flower2, Gem, RefreshCw, Scroll,
-  Search, Sparkles, Tag, X, type LucideIcon,
+  BookOpen, Check, ChevronDown, Feather, Flower2, Gem, Scroll,
+  Search, Sparkles, Tag, Wand2, X, type LucideIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
-import { normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
-import { CATEGORIZED_TAGS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, TAG_PRESETS } from '../constants';
+import { getStoryStyleLabel, normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
+import {
+  CATEGORIZED_TAGS, CATEGORY_COLORS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, getTagMetadata,
+  STORY_TAG_CATALOG, TAG_PRESETS,
+  type StoryTagCategory, type StoryTagCategoryColor, type StoryTagMetadata,
+} from '../constants';
 import { getSeedSection } from '../seedSections';
-import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { patchStoryRequired, patchWorldIdentity, storyRequired, updateStoryTags, worldIdentity, type UpdateSeed } from '../seedState';
 import { LibraryDragonCycleIcon, LibraryTextArea, LibraryTextBox } from '../../../library';
 import { GuidanceNote, WorkspaceShell, workspaceCompactLabelClass } from './WorkspaceShell';
@@ -54,6 +57,115 @@ const SEMANTIC_TAGS = [
   { keywords: ['slow burn', 'slow-burn'], tag: 'slow-burn romance' },
 ];
 
+/**
+ * Category color accents (Step 3). Hex values for the catalog's named
+ * category colors so tag chips and family pills can carry their category's
+ * accent. The mapping comes straight from `STORY_TAG_CATALOG`/`CATEGORY_COLORS`
+ * — including `black` for Meta & Continuity, which is rendered as a true
+ * black dot with a faint light ring so it stays visible on dark glass.
+ */
+const TAG_COLOR_ACCENTS: Record<StoryTagCategoryColor, string> = {
+  gray: '#9CA3AF',
+  red: '#F87171',
+  green: '#34D399',
+  purple: '#A78BFA',
+  pink: '#F472B6',
+  gold: '#D4AF37',
+  blue: '#60A5FA',
+  teal: '#2DD4BF',
+  orange: '#FB923C',
+  black: '#000000',
+};
+
+const CategoryColorDot = ({ color }: { color: StoryTagCategoryColor }) => (
+  <span
+    aria-hidden="true"
+    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+    style={
+      color === 'black'
+        ? { backgroundColor: '#000000', boxShadow: '0 0 0 1px rgba(226, 232, 240, 0.45)' }
+        : { backgroundColor: TAG_COLOR_ACCENTS[color] }
+    }
+  />
+);
+
+/** Subtle border tint for a category color; skipped for `black` (invisible on dark). */
+const categoryBorderStyle = (color: StoryTagCategoryColor): React.CSSProperties | undefined =>
+  color === 'black' ? undefined : { borderColor: `${TAG_COLOR_ACCENTS[color]}4D` };
+
+const tagChipClass = (selected: boolean) =>
+  selected
+    ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]'
+    : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal';
+
+/** One catalog tag as a toggle chip, carrying its category color accent. */
+const CatalogTagChip = ({ entry, selected, onToggle, className = '' }: {
+  entry: StoryTagMetadata;
+  selected: boolean;
+  onToggle: (tag: string) => void;
+  className?: string;
+}) => (
+  <button
+    type="button"
+    onClick={() => onToggle(entry.label)}
+    title={entry.category}
+    style={selected ? undefined : categoryBorderStyle(entry.color)}
+    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-all ${tagChipClass(selected)} ${className}`}
+  >
+    <CategoryColorDot color={entry.color} />
+    {selected ? '✓' : '+'} {entry.label}
+  </button>
+);
+
+/** Catalog search: a query matches the tag label, every alias, and the category name. */
+const searchStoryTagCatalog = (query: string): StoryTagMetadata[] => {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+  return STORY_TAG_CATALOG.filter(entry =>
+    entry.label.toLowerCase().includes(normalized) ||
+    entry.category.toLowerCase().includes(normalized) ||
+    entry.aliases.some(alias => alias.toLowerCase().includes(normalized)));
+};
+
+const SEARCH_RESULT_LIMIT = 24;
+
+/**
+ * Round-robin across categories (catalog order within each) so suggestion
+ * rows stay varied instead of filling up with a single family.
+ */
+const pickVariedTags = (entries: StoryTagMetadata[], limit: number): StoryTagMetadata[] => {
+  const buckets = new Map<StoryTagCategory, StoryTagMetadata[]>();
+  entries.forEach(entry => {
+    const bucket = buckets.get(entry.category);
+    if (bucket) bucket.push(entry);
+    else buckets.set(entry.category, [entry]);
+  });
+  const queues = Array.from(buckets.values());
+  const picked: StoryTagMetadata[] = [];
+  for (let index = 0; picked.length < limit && queues.some(queue => queue.length > 0); index += 1) {
+    const next = queues[index % queues.length]?.shift();
+    if (next) picked.push(next);
+  }
+  return picked;
+};
+
+const STYLE_SUGGESTION_LIMIT = 10;
+const STYLE_SPECIFIC_SHARE = 6;
+
+/**
+ * Style-aware suggestions: tradition-specific tags lead and strong general
+ * tags (`styles` containing `all`) fill the rest — an enhancement of the
+ * general pool, not a takeover. Deterministic catalog lookup; no AI call.
+ */
+const buildStyleSuggestions = (style: StoryStyle | undefined): StoryTagMetadata[] => {
+  const general = STORY_TAG_CATALOG.filter(entry => entry.styles.includes('all'));
+  if (!style) return pickVariedTags(general, STYLE_SUGGESTION_LIMIT);
+  const specific = STORY_TAG_CATALOG.filter(entry => entry.styles.includes(style) && !entry.styles.includes('all'));
+  const specificPicks = pickVariedTags(specific, STYLE_SPECIFIC_SHARE);
+  const generalPicks = pickVariedTags(general, STYLE_SUGGESTION_LIMIT - specificPicks.length);
+  return [...specificPicks, ...generalPicks];
+};
+
 /** Keeps all four Story essentials in one mobile-first creation flow. */
 export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const section = getSeedSection('origin');
@@ -65,12 +177,14 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const [customTagInput, setCustomTagInput] = useState('');
   const [tagSearch, setTagSearch] = useState('');
   const [isGenrePickerOpen, setIsGenrePickerOpen] = useState(false);
-  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
-  const [tagSuggestions, setTagSuggestions] = useState<{ suggestedTags: string[]; reasoning: string } | null>(null);
-  const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
   const [exampleIndex, setExampleIndex] = useState(0);
-  const routingConfig = useAppStore(state => state.routingConfig);
+
+  // Suggestions and search both read the Step 2 catalog metadata directly —
+  // deterministic lookups, no AI call in this pass.
+  const styleSuggestions = useMemo(() => buildStyleSuggestions(selectedStyle), [selectedStyle]);
+  const tagSearchResults = useMemo(() => searchStoryTagCatalog(tagSearch), [tagSearch]);
+  const isTagSearchActive = tagSearch.trim().length > 0;
 
   // Premise examples follow the chosen Style; until one is picked, the cycle
   // draws from every tradition's bank.
@@ -136,25 +250,10 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
     setCustomTagInput('');
   };
 
-  const handleSuggestTags = async () => {
-    setIsSuggestingTags(true);
-    setTagSuggestionError(null);
-    try {
-      const suggestions = await suggestTagsStub({ premise, genrePath: genre } as any);
-      void routingConfig;
-      setTagSuggestions(suggestions);
-    } catch (suggestionError: any) {
-      console.error('Error fetching recommended tags:', suggestionError);
-      setTagSuggestionError(suggestionError.message || 'Failed to contact the celestial scribe. Please try again.');
-    } finally {
-      setIsSuggestingTags(false);
-    }
-  };
-
-  const familyTags = activeTagFamily
-    ? Array.from(new Set(CATEGORIZED_TAGS[activeTagFamily] || [])).filter(tag =>
-      tag.toLowerCase().includes(tagSearch.toLowerCase()),
-    )
+  const familyEntries = activeTagFamily
+    ? Array.from(new Set(CATEGORIZED_TAGS[activeTagFamily] || []))
+        .map(tag => getTagMetadata(tag))
+        .filter((entry): entry is StoryTagMetadata => Boolean(entry))
     : [];
   const originComplete = Boolean(selectedStyle && genre.trim() && premise.trim());
 
@@ -279,15 +378,9 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
       </section>
 
       <section className="glass-panel space-y-4 p-4 sm:p-5" aria-labelledby="origin-tags-title">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p id="origin-tags-title" className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal"><Tag size={13} className="text-portal" aria-hidden="true" />Story Tags</p>
-            <p className="mt-1 font-sans text-xs text-neutral-500">Optional — inferred from your origin if left empty.</p>
-          </div>
-          <button type="button" onClick={handleSuggestTags} disabled={isSuggestingTags}
-            className="inline-flex min-h-[2.25rem] items-center gap-1.5 rounded border border-neutral-800 px-2.5 py-1 font-sc text-[10px] uppercase tracking-widest text-neutral-300 transition-colors hover:border-portal/50 hover:text-portal disabled:pointer-events-none disabled:opacity-50">
-            <RefreshCw size={11} className={isSuggestingTags ? 'animate-spin' : ''} />{isSuggestingTags ? 'Channeling...' : tagSuggestions ? 'Refresh ideas' : 'Suggest tags'}
-          </button>
+        <div>
+          <p id="origin-tags-title" className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal"><Tag size={13} className="text-portal" aria-hidden="true" />Story Tags</p>
+          <p className="mt-1 font-sans text-xs text-neutral-500">Optional — inferred from your origin if left empty.</p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -302,59 +395,98 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
           {tagLimitError && <motion.p id="tag-limit-error" role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="rounded border border-[#8B0000]/30 bg-[#8B0000]/10 px-3 py-2 font-sans text-xs text-red-400">{tagLimitError}</motion.p>}
         </AnimatePresence>
 
+        {/* Suggested Tags — deterministic catalog picks tuned to the selected
+            Style, with strong general tags mixed in (no AI call). One focused
+            scrollable row, so suggestions never become a wall of chips. */}
         <div>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 font-sc text-[10px] font-bold uppercase tracking-widest text-neutral-300"><Wand2 size={12} className="text-portal" aria-hidden="true" />Suggested Tags</p>
+            <span className="font-sans text-[11px] text-neutral-500">{selectedStyle ? `Tuned to ${getStoryStyleLabel(selectedStyle)} tradition` : 'Pick a Style above to tune these'}</span>
+          </div>
+          <div className="scrollbar-thin flex gap-1.5 overflow-x-auto pb-1" id="style-suggested-tags">
+            {styleSuggestions.map(entry => (
+              <CatalogTagChip key={entry.label} entry={entry} selected={storyTags.includes(entry.label)} onToggle={toggleTag} className="shrink-0 whitespace-nowrap" />
+            ))}
+          </div>
+        </div>
+
+        {/* Search Tags — one bar across the whole catalog: labels, aliases,
+            and category names. While a query is active, its results replace
+            the family browser below. */}
+        <div className="border-t border-neutral-800/80 pt-4">
+          <div className="mb-3 w-full sm:max-w-xs">
+            <LibraryTextBox id="celestial-tag-search-input" size="compact" icon={Search} value={tagSearch} onChange={setTagSearch} placeholder="Search tags, aliases, families..." aria-label="Search story tags" />
+          </div>
+          {isTagSearchActive ? (
+            <>
+              <p className="mb-2 font-sans text-[11px] text-neutral-500">
+                {tagSearchResults.length} {tagSearchResults.length === 1 ? 'match' : 'matches'} across all families
+              </p>
+              <div className="glass-panel scrollbar-thin flex max-h-52 flex-wrap content-start gap-1.5 overflow-y-auto p-3" id="filtered-tags-list">
+                {tagSearchResults.length === 0 ? (
+                  <p className="w-full py-3 text-center font-sans text-xs italic text-neutral-600">No tags, aliases, or families match this search.</p>
+                ) : (
+                  tagSearchResults.slice(0, SEARCH_RESULT_LIMIT).map(entry => (
+                    <CatalogTagChip key={entry.label} entry={entry} selected={storyTags.includes(entry.label)} onToggle={toggleTag} />
+                  ))
+                )}
+                {tagSearchResults.length > SEARCH_RESULT_LIMIT && (
+                  <p className="w-full pt-1 text-center font-sans text-[11px] italic text-neutral-600">
+                    +{tagSearchResults.length - SEARCH_RESULT_LIMIT} more — keep typing to narrow the search.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={workspaceCompactLabelClass}>Tag families</p>
+              <div className="mt-2 flex flex-wrap gap-1.5" id="tag-categories">
+                {Object.keys(CATEGORIZED_TAGS).map(family => {
+                  const isOpen = activeTagFamily === family;
+                  return (
+                    <button key={family} type="button" aria-expanded={isOpen} aria-controls="origin-family-tags" onClick={() => { setActiveTagFamily(current => current === family ? null : family); setTagSearch(''); }}
+                      className={`inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-full border px-3 py-1 font-sc text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${isOpen ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]' : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'}`}>
+                      <CategoryColorDot color={CATEGORY_COLORS[family as StoryTagCategory]} />{family}<ChevronDown size={12} className={isOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                    </button>
+                  );
+                })}
+              </div>
+              <AnimatePresence initial={false}>
+                {activeTagFamily ? (
+                  <motion.div id="origin-family-tags" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
+                    <div className="glass-panel scrollbar-thin flex max-h-52 flex-wrap content-start gap-1.5 overflow-y-auto p-3" id="filtered-tags-list">
+                      {familyEntries.map(entry => (
+                        <CatalogTagChip key={entry.label} entry={entry} selected={storyTags.includes(entry.label)} onToggle={toggleTag} />
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 font-sans text-xs italic text-neutral-600">Choose a family to reveal its tags.</motion.p>}
+              </AnimatePresence>
+            </>
+          )}
+        </div>
+
+        {/* Selected tags — still plain strings in the seed; the dot only marks
+            tags that exist in the catalog (custom tags keep the plain chip). */}
+        <div className="border-t border-neutral-800/80 pt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className={workspaceCompactLabelClass}>Your tags ({storyTags.length} / {TAG_LIMIT})</p>
             {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
           </div>
           {storyTags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {storyTags.map(tag => <span key={tag} className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs"><span className="font-semibold">{tag}</span><button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button></span>)}
+              {storyTags.map(tag => {
+                const metadata = getTagMetadata(tag);
+                return (
+                  <span key={tag} className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs">
+                    {metadata && <CategoryColorDot color={metadata.color} />}
+                    <span className="font-semibold">{tag}</span>
+                    <button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button>
+                  </span>
+                );
+              })}
             </div>
           ) : <p className="font-sans text-xs italic leading-relaxed text-neutral-600">No manual tags yet. Your origin will provide them when you forge the blueprint.</p>}
-        </div>
-
-        <AnimatePresence initial={false}>
-          {tagSuggestions && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="border-t border-neutral-800/80 pt-3">
-              {tagSuggestions.reasoning && <p className="mb-2 border-l border-neutral-700 pl-2 font-sans text-xs italic text-neutral-400">&ldquo;{tagSuggestions.reasoning}&rdquo;</p>}
-              <div className="flex flex-wrap gap-1.5">
-                {tagSuggestions.suggestedTags.map(tag => {
-                  const selected = storyTags.includes(tag);
-                  return <button key={tag} type="button" onClick={() => toggleTag(tag)} className={`rounded-lg border px-2.5 py-1 font-sans text-xs transition-all ${selected ? 'border-portal bg-neutral-900 font-semibold text-portal' : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'}`}>{selected ? '✓' : '+'} {tag}</button>;
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {tagSuggestionError && <p role="alert" className="font-sans text-xs text-red-400">{tagSuggestionError}</p>}
-
-        <div className="border-t border-neutral-800/80 pt-4">
-          <p className={workspaceCompactLabelClass}>Tag families</p>
-          <div className="flex flex-wrap gap-1.5" id="tag-categories">
-            {Object.keys(CATEGORIZED_TAGS).map(family => {
-              const isOpen = activeTagFamily === family;
-              return (
-                <button key={family} type="button" aria-expanded={isOpen} aria-controls="origin-family-tags" onClick={() => { setActiveTagFamily(current => current === family ? null : family); setTagSearch(''); }}
-                  className={`inline-flex min-h-[2.25rem] items-center gap-1 rounded-full border px-3 py-1 font-sc text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${isOpen ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]' : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'}`}>
-                  {family}<ChevronDown size={12} className={isOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                </button>
-              );
-            })}
-          </div>
-          <AnimatePresence initial={false}>
-            {activeTagFamily ? (
-              <motion.div id="origin-family-tags" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                <div className="mb-2 w-full sm:max-w-xs"><LibraryTextBox id="celestial-tag-search-input" size="compact" icon={Search} value={tagSearch} onChange={setTagSearch} placeholder={`Search ${activeTagFamily}...`} aria-label={`Search ${activeTagFamily} tags`} /></div>
-                <div className="glass-panel scrollbar-thin flex max-h-52 flex-wrap content-start gap-1.5 overflow-y-auto p-3" id="filtered-tags-list">
-                  {familyTags.length === 0 ? <p className="w-full py-3 text-center font-sans text-xs italic text-neutral-600">No tags match this family.</p> : familyTags.map(tag => {
-                    const selected = storyTags.includes(tag);
-                    return <button key={tag} type="button" onClick={() => toggleTag(tag)} className={`rounded-lg border px-2.5 py-1 text-xs transition-all ${selected ? 'border-portal bg-neutral-900 font-semibold text-portal shadow-[0_0_8px_rgba(4,172,255,0.15)]' : 'border-neutral-800/70 bg-[#0b0e1e]/50 text-neutral-400 hover:border-neutral-700 hover:text-signal'}`}>{selected ? '✓' : '+'} {tag}</button>;
-                  })}
-                </div>
-              </motion.div>
-            ) : <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 font-sans text-xs italic text-neutral-600">Choose a family to reveal its tags.</motion.p>}
-          </AnimatePresence>
         </div>
       </section>
 
