@@ -10,6 +10,8 @@
 
 ## Workshop history
 
+- **2026-08-05:** Added a dedicated Fate Survival card to the current Story Seed Settings menu in `development/CreationModal.tsx`. The card keeps the requested UI/state shell only: an Enable Fate Survival switch plus Fate Visibility and Survival Pressure choices when enabled. The selected values live in the canonical Story Seed optional settings so drafts, exports, and generation payloads can carry the creator's preference without adding Fate Events, Mind Palace, or deeper survival logic.
+
 - **2026-08-05:** Polished the shared Story Seed sidebar/mobile section drawer into a Celestial Library glass drawer: darker blue-violet panel wash, luminous grouped dividers, medallion-framed navigation sigils, clearer active-row glow for Origin, refined section spacing, and a lightweight equipped-relic title bar. The title bar reads an optional `routingConfig.storyMaker.equippedRelicTitle` value and falls back to **Wandering Disciple** in Workshop/local states, keeping the surface reward-ready without adding profile behavior.
 
 - **2026-08-05:** Hid the visible labels in Story Seed's mobile bottom navigation so the bar is icon-only on phones while keeping each tab's accessible label and existing active icon styling. Desktop/sidebar labels are unchanged.
@@ -766,8 +768,8 @@ save, export, or generation, so the flat prototype shape is never durable data.
   story-sauce values live under
   `story.optional.plotAndTropeSettings`, default to `medium`, and round-trip
   through save, export/import, and both generation payloads. Pacing, tone,
-  romance, comedy, Fate Survival, and other experience settings remain owned
-  by the separate [Story Settings](../story-settings/README.md) feature.
+  romance, comedy, and other experience settings remain outside Story Seed; Fate Survival
+  now has a UI/state shell in the current Story Seed Settings menu.
 - **World:** title, world type, location, society, main character, additional
   characters, factions, abilities, and power-system definition — all optional;
   empty World stays valid. `universe` and

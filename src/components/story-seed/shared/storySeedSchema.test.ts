@@ -56,6 +56,7 @@ const completeSeed = (): StorySeedInput => ({
     },
     optional: {
       intendedForMatureAudiences: true,
+      fateSurvival: { enabled: true, visibility: 'partial', pressure: 'immortal' },
       plotAndTropeSettings: {
         faceSlap: 'low',
         plotArmor: 'high',
@@ -108,6 +109,7 @@ describe('Story Seed creator/story/world contract', () => {
     expect(Object.keys(seed.story.required).sort()).toEqual(['genre', 'premise', 'storyTags', 'style']);
     expect(Object.keys(seed.story.optional).sort()).toEqual([
       'additionalStoryDirection',
+      'fateSurvival',
       'intendedForMatureAudiences',
       'makeItWorkInstruction',
       'plotAndTropeSettings',
@@ -126,6 +128,11 @@ describe('Story Seed creator/story/world contract', () => {
     const empty = createEmptyStorySeedInput();
     expect(validateStorySeedDraft(empty)).toEqual({ valid: true, errors: [] });
     expect(empty.story.required).toEqual({ storyTags: [], premise: '', genre: '', style: '' });
+    expect(empty.story.optional.fateSurvival).toEqual({
+      enabled: false,
+      visibility: 'partial',
+      pressure: 'immortal',
+    });
     expect(empty.story.optional.plotAndTropeSettings).toEqual({
       faceSlap: 'medium',
       plotArmor: 'medium',
@@ -145,7 +152,7 @@ describe('Story Seed creator/story/world contract', () => {
           genre: 'Xianxia',
           style: 'korean',
         },
-        optional: { intendedForMatureAudiences: false, plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: false, fateSurvival: { enabled: false, visibility: 'partial', pressure: 'immortal' }, plotAndTropeSettings: {} },
       },
     };
     expect(validateStorySeedInput(worldless)).toEqual({ valid: true, errors: [] });
@@ -187,7 +194,7 @@ describe('Story Seed creator/story/world contract', () => {
       ...completeSeed(),
       story: {
         ...completeSeed().story,
-        optional: { intendedForMatureAudiences: false, plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: false, fateSurvival: { enabled: false, visibility: 'partial', pressure: 'immortal' }, plotAndTropeSettings: {} },
       },
     });
     expect(missing.story.optional.plotAndTropeSettings).toEqual({
@@ -270,13 +277,14 @@ describe('Story Seed creator/story/world contract', () => {
       .toEqual(['death flags', 'foreknowledge']);
   });
 
-  it('drops Fate Survival controls, experience dials, and Blueprint output', () => {
+  it('keeps current Fate Survival settings while dropping legacy experience dials and Blueprint output', () => {
     const seed = normalizeStorySeedInput({
       ...completeSeed(),
       story: {
         required: { ...completeSeed().story.required, hardcoreFateMode: true, fatePressure: 'Hardcore' },
         optional: {
           ...completeSeed().story.optional,
+          fateSurvival: { enabled: true, visibility: 'full', pressure: 'heaven' },
           hardcoreFateMode: true,
           fatePressure: 'Hardcore',
           romanceLevel: 'Single heroine',
@@ -307,6 +315,8 @@ describe('Story Seed creator/story/world contract', () => {
     });
 
     const serialized = JSON.stringify(seed);
+    expect(seed.story.optional.fateSurvival).toEqual({ enabled: true, visibility: 'full', pressure: 'heaven' });
+
     for (const removed of [
       'hardcoreFateMode', 'fatePressure', 'romanceLevel', 'faceSlappingLevel', 'comedyLevel',
       'haremPreference', 'betrayalLevel', 'dangerLevel', 'generalAtmosphere', 'powerPace',
@@ -330,6 +340,8 @@ describe('Story Seed creator/story/world contract', () => {
     const [roundTripped] = parseStorySeedJson(JSON.stringify(exported));
     expect(roundTripped.story.required).toEqual(seed.story.required);
     expect(roundTripped.story.optional.intendedForMatureAudiences).toBe(true);
+    expect(roundTripped.story.optional.fateSurvival)
+      .toEqual({ enabled: true, visibility: 'partial', pressure: 'immortal' });
     expect(roundTripped.story.optional.plotAndTropeSettings)
       .toEqual(seed.story.optional.plotAndTropeSettings);
     expect(roundTripped.story.optional.makeItWorkInstruction)
@@ -394,7 +406,7 @@ describe('Story Seed creator/story/world contract', () => {
       ...createEmptyStorySeedInput(),
       story: {
         required: { storyTags: [], premise: 'Only the premise so far.', genre: '', style: '' },
-        optional: { intendedForMatureAudiences: true, plotAndTropeSettings: {} },
+        optional: { intendedForMatureAudiences: true, fateSurvival: { enabled: false, visibility: 'partial', pressure: 'immortal' }, plotAndTropeSettings: {} },
       },
     };
     const saved = await createStorySeed('creator-1', draft);
@@ -405,6 +417,8 @@ describe('Story Seed creator/story/world contract', () => {
     const [reloaded] = await listStorySeeds('creator-1');
     expect(reloaded.seed.story.required.premise).toBe('Only the premise so far.');
     expect(reloaded.seed.story.optional.intendedForMatureAudiences).toBe(true);
+    expect(reloaded.seed.story.optional.fateSurvival)
+      .toEqual({ enabled: false, visibility: 'partial', pressure: 'immortal' });
     expect(reloaded.seed.story.optional.plotAndTropeSettings).toEqual({
       faceSlap: 'medium',
       plotArmor: 'medium',

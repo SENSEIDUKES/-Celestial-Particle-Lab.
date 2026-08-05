@@ -14,6 +14,7 @@ import type {
   StorySeedAbilities,
   StorySeedCharacter,
   StorySeedFaction,
+  StorySeedFateSurvivalSettings,
   StorySeedInput,
   StorySeedMainCharacter,
   StorySeedPlotAndTropeSettings,
@@ -66,6 +67,18 @@ export const setIntendedForMatureAudiences = (value: boolean): SeedUpdate =>
     story: {
       ...seed.story,
       optional: { ...seed.story.optional, intendedForMatureAudiences: value },
+    },
+  });
+
+export const patchFateSurvival = (patch: Partial<StorySeedFateSurvivalSettings>): SeedUpdate =>
+  seed => ({
+    ...seed,
+    story: {
+      ...seed.story,
+      optional: {
+        ...seed.story.optional,
+        fateSurvival: { ...seed.story.optional.fateSurvival, ...patch },
+      },
     },
   });
 
