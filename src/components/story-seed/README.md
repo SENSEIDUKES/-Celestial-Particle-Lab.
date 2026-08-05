@@ -10,6 +10,22 @@
 
 ## Workshop history
 
+- **2026-08-04:** Origin page reordered so Style leads: Story Title → Style →
+  Premise → Genre → Story Tags. Style now sits above Premise because the
+  chosen novel tradition decides what kind of premise the creator should
+  write and which system example the field shows. Style and Genre each
+  render as their own full-width section instead of sharing a two-column row.
+  `CURATED_PREMISE_EXAMPLES` became a per-Style bank
+  (`development/constants.ts` — 7 Chinese / cultivation, 7 Korean /
+  hunter-system, 6 Japanese / light-novel hooks), replacing the old mixed
+  short-hook / full-premise list. Every example teaches the SEN premise
+  style: short, sharp, high-concept, one strange story engine and one
+  escalation promise — never a synopsis, paragraph, or lore dump. The
+  ghost-text example, Tab-to-accept, and dragon cycle button now draw from
+  the selected Style's bank (all traditions mixed until a Style is chosen,
+  and the cycle restarts when the Style changes). No contract, generation,
+  or storage changes.
+
 - **2026-08-04:** Origin page layout refinement. The field order is now
   Story Title → Premise → Style → Genre → Story Tags — the optional Story
   Title moved from the bottom of the page to the top, and Premise stays the
