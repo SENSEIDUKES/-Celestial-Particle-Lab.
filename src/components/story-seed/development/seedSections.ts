@@ -88,7 +88,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     id: 'origin',
     family: 'story',
     label: 'Origin',
-    icon: PenLine,
+    icon: Feather,
     required: true,
     tagline: 'The premise, tradition, genre, and story details that give this novel its first shape.',
     isFilled: seed => Boolean(

@@ -10,6 +10,40 @@
 
 ## Workshop history
 
+- **2026-08-05:** Origin form-level polish pass (continues the header pass
+  from the same day). The shared glass fields inside Story Seed workspaces
+  now follow the header's parchment-gold / soft-purple direction via scoped
+  overrides in `story-seed.css` (`.seed-workspace-shell .glass-field`):
+  warmer rest edge, ghost-lavender placeholder, gilded focus ring with a
+  violet halo, quiet violet completed accent, and leading field glyphs that
+  rest muted and warm to gold on focus (invalid states keep their warning
+  red on purpose). Required asterisks on field labels are gilded marks
+  instead of warning red. The Style section's three tradition options are
+  now one family of "tradition tablets": a shared soft-violet tablet accent
+  (same family as the Story Path tiles) with each tradition keeping its
+  personality through a muted sigil tint — silver-blue scroll (Chinese),
+  dusty-rose mugunghwa bloom (Korean, replacing the generic gem), sage
+  snow-peak (Japanese) — each set in a circular medallion. The "Novel
+  tradition" caption is now small-caps with a gold sparkle so it reads as
+  part of the card header. Leftover bright-cyan label icons (Story Tags,
+  Suggested Tags, Pick a path) softened to the parchment-gold accent.
+
+- **2026-08-05:** Origin header celestial polish pass. The workspace header
+  (`WorkspaceShell`, shared by every seed section) now reads as sacred
+  Library chrome instead of generic app UI: the family/section breadcrumb
+  switched from mono type to small-caps serif with a muted parchment-gold
+  family label, the section icon sits inside a soft gold ring medallion
+  (Origin's pencil became a quill), the title keeps its size but gains
+  parchment tone and wider tracking, the red error-style **Required** pill
+  became a muted-gold badge with a four-point sparkle (Complete softened to
+  silver-blue), the tagline moved to a softer serif with warmer color, and a
+  thin sparkle-centered hairline now separates the header from the form.
+  Workspace `.glass-panel` cards gained a scoped polish layer in
+  `story-seed.css` (`.seed-workspace-shell .glass-panel`): warmer
+  parchment-tinted border, faint inner gold glow, and a whisper of
+  starlight in the upper corner — layered over the shared Library glass,
+  not replacing it.
+
 - **2026-08-05:** Story Paths polish pass. The genre search field was removed
   from the expanded picker (the preset list is still small enough to scan),
   and the collapsed Genre section no longer shows an input-looking field: it

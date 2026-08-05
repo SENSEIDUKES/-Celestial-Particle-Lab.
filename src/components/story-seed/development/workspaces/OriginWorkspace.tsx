@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen, Building2, Castle, Check, ChevronDown, ChevronRight, Compass, Crown, Eye, Feather,
-  FlaskConical, Flame, Flower2, Gem, GraduationCap, History, House, Layers, MoonStar,
-  Orbit, PawPrint, Scroll, Search, Sparkle, Sparkles, Sword, Tag, Wand2, X, Zap,
+  FlaskConical, Flame, Flower2, GraduationCap, History, House, Layers, MoonStar,
+  MountainSnow, Orbit, PawPrint, Scroll, Search, Sparkle, Sparkles, Sword, Tag, Wand2, X, Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -28,10 +28,19 @@ const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestia
 /** Helpful copy only — 9–12 tags is allowed and never warned about. */
 const TAG_RECOMMENDED_COPY = 'Recommended: 4–8 tags.';
 
-const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; accent: string }> = {
-  chinese: { icon: Scroll, accent: '#04ACFF' },
-  korean: { icon: Gem, accent: '#FF4545' },
-  japanese: { icon: Flower2, accent: '#34D399' },
+/**
+ * Tradition tablets. The three Style options share one soft-violet tablet
+ * accent (the same family as the Story Path tiles below) so they read as a
+ * single set; each tradition keeps its personality only through a muted tint
+ * on its sigil medallion. Sigils are tradition marks, not generic glyphs:
+ * a scroll for Chinese, a mugunghwa bloom for Korean, a snow-capped peak
+ * for Japanese.
+ */
+const TRADITION_TABLET_ACCENT = '#A78BFA'; // same soft violet as GENRE_PATH_ACCENT
+const STYLE_PRESENTATION: Record<StoryStyle, { icon: LucideIcon; tint: string }> = {
+  chinese: { icon: Scroll, tint: '#8FA8D8' },
+  korean: { icon: Flower2, tint: '#D49BA0' },
+  japanese: { icon: MountainSnow, tint: '#9FBEA9' },
 };
 
 /**
@@ -314,21 +323,31 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
       <section className="glass-panel p-4" aria-labelledby="origin-style-title">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p id="origin-style-title" className={workspaceCompactLabelClass}>Style <span className="text-human">*</span></p>
-          <span className="font-sans text-[11px] text-neutral-500">Novel tradition</span>
+          <p id="origin-style-title" className={workspaceCompactLabelClass}>Style <span className="text-[#D9B36C]">*</span></p>
+          <span className="flex items-center gap-1.5 font-sc text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+            Novel tradition<Sparkle size={9} aria-hidden="true" className="text-[#CDB271]/70" />
+          </span>
         </div>
         <div role="radiogroup" aria-label="Novel tradition" id="story-style-options" className="grid grid-cols-3 gap-2">
           {STORY_STYLE_OPTIONS.map(option => {
             const selected = selectedStyle === option.value;
-            const { icon: Icon, accent } = STYLE_PRESENTATION[option.value];
+            const { icon: Icon, tint } = STYLE_PRESENTATION[option.value];
             return (
               <button key={option.value} type="button" role="radio" aria-checked={selected} id={`story-style-${option.value}`}
                 onClick={() => updateSeed(patchStoryRequired({ style: option.value }))} data-selected={selected}
-                style={{ '--choice-accent': accent } as React.CSSProperties}
+                style={{ '--choice-accent': TRADITION_TABLET_ACCENT } as React.CSSProperties}
                 className="glass-choice flex min-h-[4.4rem] flex-col items-center justify-center gap-1.5 px-2 py-2">
-                <Icon size={16} aria-hidden="true" className="glass-choice-icon" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border transition-all"
+                  style={selected
+                    ? { borderColor: `${tint}8C`, backgroundColor: `${tint}1F`, boxShadow: `0 0 12px ${tint}47` }
+                    : { borderColor: `${tint}40`, backgroundColor: 'rgba(11, 14, 30, 0.6)' }}
+                >
+                  <Icon size={15} style={{ color: tint }} />
+                </span>
                 <span className={`flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-[0.1em] ${selected ? 'text-signal' : 'text-neutral-300'}`}>
-                  {selected && <Check size={11} aria-hidden="true" style={{ color: accent }} />}{option.label}
+                  {selected && <Check size={11} aria-hidden="true" style={{ color: tint }} />}{option.label}
                 </span>
               </button>
             );
@@ -393,9 +412,9 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
       <section className="glass-panel p-4 sm:p-5" aria-labelledby="origin-genre-title">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p id="origin-genre-title" className={workspaceCompactLabelClass}>Genre <span className="text-human">*</span></p>
+          <p id="origin-genre-title" className={workspaceCompactLabelClass}>Genre <span className="text-[#D9B36C]">*</span></p>
           <button type="button" aria-expanded={isGenrePickerOpen} aria-controls="origin-genre-presets" onClick={() => setIsGenrePickerOpen(open => !open)}
-            className="inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:text-signal">
+            className="inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-[#CDB271] transition-colors hover:text-[#E3C878]">
             {isGenrePickerOpen ? 'Close paths' : 'Pick a path'}<ChevronDown size={13} className={isGenrePickerOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
           </button>
         </div>
@@ -502,7 +521,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
 
       <section className="glass-panel space-y-4 p-4 sm:p-5" aria-labelledby="origin-tags-title">
         <div>
-          <p id="origin-tags-title" className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal"><Tag size={13} className="text-portal" aria-hidden="true" />Story Tags</p>
+          <p id="origin-tags-title" className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal"><Tag size={13} className="text-[#CDB271]" aria-hidden="true" />Story Tags</p>
           <p className="mt-1 font-sans text-xs text-neutral-500">Optional — inferred from your origin if left empty.</p>
         </div>
 
@@ -523,7 +542,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
             scrollable row, so suggestions never become a wall of chips. */}
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="flex items-center gap-1.5 font-sc text-[10px] font-bold uppercase tracking-widest text-neutral-300"><Wand2 size={12} className="text-portal" aria-hidden="true" />Suggested Tags</p>
+            <p className="flex items-center gap-1.5 font-sc text-[10px] font-bold uppercase tracking-widest text-neutral-300"><Wand2 size={12} className="text-[#CDB271]" aria-hidden="true" />Suggested Tags</p>
             <span className="font-sans text-[11px] text-neutral-500">{selectedStyle ? `Tuned to ${getStoryStyleLabel(selectedStyle)} tradition` : 'Pick a Style above to tune these'}</span>
           </div>
           <div className="scrollbar-thin flex gap-1.5 overflow-x-auto pb-1" id="style-suggested-tags">
