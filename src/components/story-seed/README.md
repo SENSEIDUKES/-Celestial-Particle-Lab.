@@ -10,6 +10,8 @@
 
 ## Workshop history
 
+- **2026-08-05:** Refined the Fate Survival mobile settings card after device review: the switch now reads **Fate Survival** instead of **Enable Fate Survival**, the card header stacks on narrow screens so the description no longer squeezes into a thin column, and the mobile Settings sheet scrolls within the viewport with extra bottom safe-area room for Survival Pressure and utility actions.
+
 - **2026-08-05:** Added a dedicated Fate Survival card to the current Story Seed Settings menu in `development/CreationModal.tsx`. The card keeps the requested UI/state shell only: an Enable Fate Survival switch plus Fate Visibility and Survival Pressure choices when enabled. The selected values live in the canonical Story Seed optional settings so drafts, exports, and generation payloads can carry the creator's preference without adding Fate Events, Mind Palace, or deeper survival logic.
 
 - **2026-08-05:** Polished the shared Story Seed sidebar/mobile section drawer into a Celestial Library glass drawer: darker blue-violet panel wash, luminous grouped dividers, medallion-framed navigation sigils, clearer active-row glow for Origin, refined section spacing, and a lightweight equipped-relic title bar. The title bar reads an optional `routingConfig.storyMaker.equippedRelicTitle` value and falls back to **Wandering Disciple** in Workshop/local states, keeping the surface reward-ready without adding profile behavior.

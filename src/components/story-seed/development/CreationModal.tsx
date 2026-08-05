@@ -178,7 +178,7 @@ const FateSurvivalSetting = ({ settings, onChange }: FateSurvivalSettingProps) =
 
   return (
     <section className="space-y-4 rounded-xl border border-neutral-800/80 bg-[#080b17]/80 p-3">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <span className="min-w-0">
           <span className="block font-sc text-xs font-semibold tracking-wide text-signal">Fate Survival</span>
           <span className="mt-1 block font-sans text-[11px] leading-relaxed text-neutral-500">
@@ -189,14 +189,14 @@ const FateSurvivalSetting = ({ settings, onChange }: FateSurvivalSettingProps) =
           type="button"
           role="switch"
           aria-checked={settings.enabled}
-          aria-label="Enable Fate Survival"
+          aria-label="Fate Survival"
           onClick={() => onChange({ enabled: !settings.enabled })}
-          className={`flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors ${settings.enabled
+          className={`flex w-full shrink-0 items-center justify-between gap-2 rounded-full border px-3 py-2 transition-colors sm:w-auto sm:px-2.5 sm:py-1.5 ${settings.enabled
             ? 'border-portal/60 bg-portal/10 text-portal'
             : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
           }`}
         >
-          <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Enable Fate Survival</span>
+          <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Fate Survival</span>
           <span aria-hidden="true" className={`relative h-4 w-7 rounded-full transition-colors ${settings.enabled ? 'bg-portal/70' : 'bg-neutral-700'}`}>
             <span className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${settings.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
           </span>
@@ -898,7 +898,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             >
               <LibraryPanel
                 padding="none"
-                className="rounded-b-none border-x-0 border-b-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+                className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-b-none border-x-0 border-b-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
               >
                 <div className="flex items-center justify-between gap-3 px-4 pt-3">
                   <p className="font-sc text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-500">
