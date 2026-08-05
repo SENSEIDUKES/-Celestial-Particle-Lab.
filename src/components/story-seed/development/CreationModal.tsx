@@ -39,7 +39,7 @@ import {
   REQUIRED_STORY_SECTIONS,
   type SeedSectionId,
 } from './seedSections';
-import type { SeedUpdate } from './seedState';
+import { setIntendedForMatureAudiences, type SeedUpdate } from './seedState';
 import {
   buildStorySeedDrawerSections,
   StorySeedSelector,
@@ -83,6 +83,45 @@ const CELESTIAL_LIBRARY_EMBLEM_URL =
  */
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
 
+interface MatureAudienceSettingProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+const MatureAudienceSetting = ({ checked, onChange }: MatureAudienceSettingProps) => (
+  <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-800/80 bg-[#080b17]/80 p-3">
+    <span className="min-w-0">
+      <span className="block font-sc text-xs font-semibold tracking-wide text-signal">
+        Intended for mature audiences
+      </span>
+      <span className="mt-1 block font-sans text-[11px] leading-relaxed text-neutral-500">
+        Story metadata for mature themes. This does not request explicit content.
+      </span>
+    </span>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label="Rated 18+"
+      onClick={() => onChange(!checked)}
+      className={`flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors ${checked
+        ? 'border-gold-accent/60 bg-gold-accent/10 text-gold-accent'
+        : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
+      }`}
+    >
+      <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Rated 18+</span>
+      <span
+        aria-hidden="true"
+        className={`relative h-4 w-7 rounded-full transition-colors ${checked ? 'bg-gold-accent/70' : 'bg-neutral-700'}`}
+      >
+        <span
+          className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+        />
+      </span>
+    </button>
+  </div>
+);
+
 export default function CreationModal({ onStartStory, onGenerateBlueprint, isGenerating: isGeneratingProp, error }: CreationModalProps) {
   const storeIsGenerating = useAppStore(selectIsGenerating);
     const activeAgentId = useAppStore(state => state.activeAgentId);
@@ -107,6 +146,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
+  const [desktopSettingsOpen, setDesktopSettingsOpen] = useState(false);
+  const desktopSettingsRef = useRef<HTMLDivElement>(null);
   const savedFeedbackTimer = useRef<number | null>(null);
   // Mobile bottom-navigation sheets: Settings carries the seed utility
   // actions moved out of the header; Profile is a placeholder sheet.
@@ -180,6 +221,22 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       document.body.style.overflow = previous;
     };
   }, [mobileSheet]);
+
+  useEffect(() => {
+    if (!desktopSettingsOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDesktopSettingsOpen(false);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (!desktopSettingsRef.current?.contains(event.target as Node)) setDesktopSettingsOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [desktopSettingsOpen]);
 
   const rememberSeed = (record: StorySeedRecord) => {
     setCurrentSeed(record);
@@ -432,7 +489,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     <div className="mx-auto max-w-7xl pb-24 max-lg:pb-0" id="creation-portal-root">
       {/* Header — wraps on narrow screens so the action buttons drop to a
           second row instead of overflowing the viewport. */}
-      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <header className="relative z-40 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         {/* S emblem doubles as the home button — back to the main page. */}
         <LibraryHeaderBadge
           title="Story Seed"
@@ -459,6 +516,32 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           </LibraryButton>
 
           <div className="flex items-center gap-1">
+            <div className="relative" ref={desktopSettingsRef}>
+              <LibraryButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setDesktopSettingsOpen(open => !open)}
+                icon={Settings}
+                aria-expanded={desktopSettingsOpen}
+                aria-haspopup="true"
+              >
+                Settings
+              </LibraryButton>
+              {desktopSettingsOpen && (
+                <div
+                  className="absolute right-0 top-[calc(100%+0.5rem)] w-[22rem] max-w-[calc(100vw-2rem)]"
+                  role="region"
+                  aria-label="Story Seed settings"
+                >
+                  <LibraryPanel padding="sm">
+                    <MatureAudienceSetting
+                      checked={seed.story.optional.intendedForMatureAudiences}
+                      onChange={checked => updateSeed(setIntendedForMatureAudiences(checked))}
+                    />
+                  </LibraryPanel>
+                </div>
+              )}
+            </div>
             <LibraryButton
               variant="ghost"
               size="sm"
@@ -667,53 +750,59 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 </div>
 
                 {mobileSheet === 'settings' ? (
-                  <div className="mt-2 space-y-2 px-4">
-                    <LibraryButton
-                      fullWidth
-                      onClick={handleSaveDraft}
-                      disabled={isGenerating}
-                      title="Save this Story Seed draft"
-                      icon={savedFeedback ? Check : Bookmark}
-                    >
-                      {savedFeedback ? 'Saved' : 'Save Draft'}
-                    </LibraryButton>
-                    <LibraryButton
-                      fullWidth
-                      variant="ghost"
-                      onClick={() => {
-                        setMobileSheet(null);
-                        setShowImportPanel(true);
-                      }}
-                      icon={Copy}
-                    >
-                      Import
-                    </LibraryButton>
-                    {accountSignedIn && (
+                  <div className="mt-2 space-y-3 px-4">
+                    <MatureAudienceSetting
+                      checked={seed.story.optional.intendedForMatureAudiences}
+                      onChange={checked => updateSeed(setIntendedForMatureAudiences(checked))}
+                    />
+                    <div className="space-y-2">
+                      <LibraryButton
+                        fullWidth
+                        onClick={handleSaveDraft}
+                        disabled={isGenerating}
+                        title="Save this Story Seed draft"
+                        icon={savedFeedback ? Check : Bookmark}
+                      >
+                        {savedFeedback ? 'Saved' : 'Save Draft'}
+                      </LibraryButton>
                       <LibraryButton
                         fullWidth
                         variant="ghost"
                         onClick={() => {
                           setMobileSheet(null);
-                          setShowLibrary(true);
+                          setShowImportPanel(true);
                         }}
-                        icon={Database}
+                        icon={Copy}
                       >
-                        My Seeds
+                        Import
                       </LibraryButton>
-                    )}
-                    {accountSignedIn && savedSeeds.length > 0 && (
-                      <LibraryButton
-                        fullWidth
-                        variant="ghost"
-                        onClick={() => {
-                          setMobileSheet(null);
-                          handleExportAllSeeds();
-                        }}
-                        icon={Download}
-                      >
-                        Export All
-                      </LibraryButton>
-                    )}
+                      {accountSignedIn && (
+                        <LibraryButton
+                          fullWidth
+                          variant="ghost"
+                          onClick={() => {
+                            setMobileSheet(null);
+                            setShowLibrary(true);
+                          }}
+                          icon={Database}
+                        >
+                          My Seeds
+                        </LibraryButton>
+                      )}
+                      {accountSignedIn && savedSeeds.length > 0 && (
+                        <LibraryButton
+                          fullWidth
+                          variant="ghost"
+                          onClick={() => {
+                            setMobileSheet(null);
+                            handleExportAllSeeds();
+                          }}
+                          icon={Download}
+                        >
+                          Export All
+                        </LibraryButton>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-2 flex items-center gap-3 px-4 pb-2">

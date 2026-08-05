@@ -175,11 +175,10 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'world',
     label: 'World Identity',
     icon: Landmark,
-    tagline: 'Name, world type, society, and the place the story opens in.',
+    tagline: 'World type, society, and the place the story opens in.',
     isFilled: seed => {
       const identity = worldIdentity(seed);
-      return hasText(identity.title)
-        || hasText(identity.worldType)
+      return hasText(identity.worldType)
         || hasText(identity.startingLocation)
         || hasText(identity.societyStructure);
     },
