@@ -10,6 +10,8 @@
 
 ## Workshop history
 
+- **2026-08-05:** Polished the shared Story Seed sidebar/mobile section drawer into a Celestial Library glass drawer: darker blue-violet panel wash, luminous grouped dividers, medallion-framed navigation sigils, clearer active-row glow for Origin, refined section spacing, and a lightweight equipped-relic title bar. The title bar reads an optional `routingConfig.storyMaker.equippedRelicTitle` value and falls back to **Wandering Disciple** in Workshop/local states, keeping the surface reward-ready without adding profile behavior.
+
 - **2026-08-05:** Hid the visible labels in Story Seed's mobile bottom navigation so the bar is icon-only on phones while keeping each tab's accessible label and existing active icon styling. Desktop/sidebar labels are unchanged.
 
 - **2026-08-05:** Removed the duplicate Story Title control from World Identity;
