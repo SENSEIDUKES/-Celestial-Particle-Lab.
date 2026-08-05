@@ -218,7 +218,7 @@ export const SEED_SECTIONS: SeedSection[] = [
     family: 'world',
     label: 'Power System',
     icon: Zap,
-    tagline: "The flavor and known ranks of the world's power ladder.",
+    tagline: "The style and rank ladder of the world's power system.",
     isFilled: seed => {
       const powerSystem = worldFoundations(seed).powerSystem || {};
       return hasText(powerSystem.flavor) || hasText(powerSystem.knownRanks);

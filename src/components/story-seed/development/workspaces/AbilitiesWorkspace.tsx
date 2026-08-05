@@ -21,7 +21,7 @@ export const AbilitiesWorkspace = ({ seed, updateSeed }: AbilitiesWorkspaceProps
       <div className="grid grid-cols-1 gap-4">
         <LibraryTextBox
           id="a11y-control-itgsjgw"
-          label="Starting Power Concept"
+          label="Starting Ability"
           icon={Zap}
           value={abilities.startingPowerConcept || ''}
           onChange={(val) => updateSeed(patchAbilities({ startingPowerConcept: val }))}
@@ -29,7 +29,7 @@ export const AbilitiesWorkspace = ({ seed, updateSeed }: AbilitiesWorkspaceProps
         />
         <LibraryTextArea
           id="unique-path-input"
-          label="Unique Path"
+          label="Unique Growth Path"
           icon={Route}
           maxLength={1200}
           helpText="What makes the main character's way of growing power unlike anyone else's — a forbidden method, a twisted bloodline, a borrowed system."

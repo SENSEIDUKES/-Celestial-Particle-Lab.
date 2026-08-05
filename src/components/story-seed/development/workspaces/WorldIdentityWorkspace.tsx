@@ -42,7 +42,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
         />
         <LibraryTextBox
           id="society-structure-input"
-          label="Society Structure"
+          label="World Order"
           icon={Landmark}
           value={identity.societyStructure || ''}
           onChange={(val) => updateSeed(patchWorldIdentity({ societyStructure: val }))}
@@ -52,7 +52,7 @@ export const WorldIdentityWorkspace = ({ seed, updateSeed }: WorldIdentityWorksp
 
       <LibraryTextArea
         id="starting-location-input"
-        label="Starting Location (Detailed regional atmosphere)"
+        label="Opening Location"
         icon={MapPin}
         maxLength={1200}
         helpText="Describe the geography, climate, and immediate atmosphere of the starting zone (e.g. outer sect labor quarry, freezing mortal mountain village)."

@@ -179,6 +179,9 @@ export const createFilledStorySeedInput = (): StorySeedInput => ({
     },
     optional: {
       plotAndTropeSettings: {
+        faceSlap: 'high',
+        plotArmor: 'low',
+        recognition: 'high',
         longTermGoal: 'Shatter the fated assassination timeline',
         firstMajorConflict: 'Sect tournament that reveals the first assassination attempt',
         mainAntagonistPressure: "The celestial court's fate auditors",

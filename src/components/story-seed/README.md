@@ -5,10 +5,23 @@
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-05
-- **Last source comparison:** 2026-08-03
+- **Last source comparison:** 2026-08-05
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-05:** Added a compact Story Sauce group at the top of ARC with
+  Face Slap, Plot Armor, and Recognition controls. Each uses stable
+  `low | medium | high` values under
+  `story.optional.plotAndTropeSettings`; missing or invalid values normalize
+  to `medium`, including older saved/imported seeds. Save, portable
+  export/import, Blueprint generation, and initial-story generation all keep
+  the values through the existing canonical contract. Cleaned up the
+  requested Story, World, Abilities, Power System, and Blueprint-review labels
+  without changing their stored paths. Story Settings, Fate Survival, the
+  locked Reference replica, and the existing workspace/page structure are
+  unchanged. Reverified production source path and default export on
+  `Light-Novels/main`.
 
 - **2026-08-05:** Origin form-level polish pass (continues the header pass
   from the same day). The shared glass fields inside Story Seed workspaces
@@ -668,7 +681,7 @@ shared/                        — shared infrastructure plus fork-specific data
                                   backed by Workshop local storage
   storySeedSchema.test.ts       — focused validation, empty-World,
                                   classification, serialization, persistence,
-                                  and generation-payload checks (8 tests;
+                                  and generation-payload checks (14 tests;
                                   `npm run test:story-seed`)
   storyAdministrativeMetadata.ts — minimal internal story identity, lifecycle,
                                    language, version, and durable-reference spine
@@ -701,14 +714,14 @@ save, export, or generation, so the flat prototype shape is never durable data.
 - **Story:** the required Premise / Style / Genre inputs, optional Story Tags,
   and optional Story Title share the compact Origin workspace. Story Title
   continues to use the canonical `world.optional.worldIdentity.title` path so
-  the World Identity input stays synchronized. The optional ARC workspace combines
-  plot direction, long-term goal, first conflict, antagonist pressure, and
-  Destined Ending while preserving their existing stored paths. The remaining
-  `story.optional` fields — atmosphere,
-  danger, pacing, romance/comedy/trope levels, Fate settings, custom rules —
-  stay in the schema and still round-trip through import/export, but they are
-  **not presented in Story Seed**: they are experience settings owned by the
-  separate [Story Settings](../story-settings/README.md) feature.
+  the World Identity input stays synchronized. The optional ARC workspace
+  combines Face Slap, Plot Armor, Recognition, story direction, long-term
+  goal, first conflict, main opposition, and Destined Ending while preserving
+  the established stored paths. The three story-sauce values live under
+  `story.optional.plotAndTropeSettings`, default to `medium`, and round-trip
+  through save, export/import, and both generation payloads. Pacing, tone,
+  romance, comedy, Fate Survival, and other experience settings remain owned
+  by the separate [Story Settings](../story-settings/README.md) feature.
 - **World:** title, world type, location, society, main character, additional
   characters, factions, abilities, and power-system definition — all optional;
   empty World stays valid. `universe` and

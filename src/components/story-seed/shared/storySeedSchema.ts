@@ -58,7 +58,12 @@ export interface StorySeedStoryRequired {
 }
 
 /** The narrative shape of the novel — where it is headed and what pushes back. */
+export type StorySeedStorySauceLevel = 'low' | 'medium' | 'high';
+
 export interface StorySeedPlotAndTropeSettings {
+  faceSlap?: StorySeedStorySauceLevel;
+  plotArmor?: StorySeedStorySauceLevel;
+  recognition?: StorySeedStorySauceLevel;
   longTermGoal?: string;
   firstMajorConflict?: string;
   mainAntagonistPressure?: string;
@@ -208,6 +213,11 @@ const optionalTextFields = <T extends object>(
   }),
 ) as T;
 
+const normalizeStorySauceLevel = (value: unknown): StorySeedStorySauceLevel => {
+  const normalized = text(value)?.toLowerCase();
+  return normalized === 'low' || normalized === 'high' ? normalized : 'medium';
+};
+
 const PLOT_AND_TROPE_FIELDS = ['longTermGoal', 'firstMajorConflict', 'mainAntagonistPressure'] as const;
 const WORLD_IDENTITY_FIELDS = ['title', 'worldType', 'societyStructure', 'startingLocation'] as const;
 const MAIN_CHARACTER_FIELDS = [
@@ -245,11 +255,14 @@ const normalizeFaction = (value: unknown, index: number): StorySeedFaction | nul
 
 const normalizeStoryOptional = (value: unknown): StorySeedStoryOptional => {
   const source = isRecord(value) ? value : {};
+  const plotAndTropeSettings = isRecord(source.plotAndTropeSettings) ? source.plotAndTropeSettings : {};
   const normalized: StorySeedStoryOptional = {
-    plotAndTropeSettings: optionalTextFields<StorySeedPlotAndTropeSettings>(
-      isRecord(source.plotAndTropeSettings) ? source.plotAndTropeSettings : {},
-      PLOT_AND_TROPE_FIELDS,
-    ),
+    plotAndTropeSettings: {
+      ...optionalTextFields<StorySeedPlotAndTropeSettings>(plotAndTropeSettings, PLOT_AND_TROPE_FIELDS),
+      faceSlap: normalizeStorySauceLevel(plotAndTropeSettings.faceSlap),
+      plotArmor: normalizeStorySauceLevel(plotAndTropeSettings.plotArmor),
+      recognition: normalizeStorySauceLevel(plotAndTropeSettings.recognition),
+    },
   };
   const additionalStoryDirection = text(source.additionalStoryDirection);
   if (additionalStoryDirection) normalized.additionalStoryDirection = additionalStoryDirection;
@@ -319,7 +332,13 @@ export const createEmptyStorySeedInput = (): StorySeedInput => ({
       // incomplete rather than as a choice the creator never made.
       style: '',
     },
-    optional: { plotAndTropeSettings: {} },
+    optional: {
+      plotAndTropeSettings: {
+        faceSlap: 'medium',
+        plotArmor: 'medium',
+        recognition: 'medium',
+      },
+    },
   },
   world: {
     required: {},
