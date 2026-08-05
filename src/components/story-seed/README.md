@@ -10,6 +10,21 @@
 
 ## Workshop history
 
+- **2026-08-05:** Genre section on the Origin page redesigned as **Story
+  Paths**. The preset grid is now a set of dark-glass path tiles (the shared
+  `glass-choice` surface) with refined Lucide sigils in circular medallions
+  replacing the raw emojis, a soft violet glow on the selected path, and a
+  "Search genres..." field that filters the presets. Custom genres moved out
+  of the always-visible top input into an official gold-accented **Define My
+  Own Path** tile ("Craft a genre that's uniquely yours.") that reveals the
+  custom input (placeholder "Example: urban xianxia mystery"); with the
+  picker closed, the section shows the chosen path as a quiet field-like
+  summary that reopens it. Section language is now "STORY PATHS — Choose a
+  path, or define your own." The genre value, storage path
+  (`story.required.genre`), preset ids, and `GENRE_PRESETS` are unchanged;
+  the isolated legacy `GenreWorkspace.tsx` transfer fork keeps its previous
+  layout, and `constants.ts` keeps the emoji icons it still uses.
+
 - **2026-08-05:** Story Tags selection limit updated. The hard maximum is now
   12 tags (was 20) — adding is blocked at 12 until one is removed, with the
   existing limit error unchanged. The "Your tags" counter now carries static
