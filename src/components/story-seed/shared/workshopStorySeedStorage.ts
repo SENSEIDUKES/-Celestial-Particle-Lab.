@@ -151,7 +151,14 @@ export const workshopStorySeedStorage: StorySeedRepository = {
       undefined,
       artifact.blueprint,
     ));
-    writeRecords([...imported, ...readRecords()]);
+    const existing = readRecords();
+    const previousMemoryRecords = [...memoryRecords];
+    try {
+      writeRecords([...imported, ...existing]);
+    } catch {
+      memoryRecords = previousMemoryRecords;
+      throw new Error('The Story Seed import could not be saved. Free browser storage space and try again.');
+    }
     return imported;
   },
 

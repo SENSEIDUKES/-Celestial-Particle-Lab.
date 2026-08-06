@@ -28,7 +28,7 @@ import { patchStoryRequired, patchWorldIdentity, type UpdateSeed } from './seedS
 
 interface BlueprintReviewProps {
   blueprint: WorldBlueprint;
-  setBlueprint: (blueprint: WorldBlueprint) => void;
+  setBlueprint: React.Dispatch<React.SetStateAction<WorldBlueprint>>;
   seed: StorySeedInput;
   updateSeed: UpdateSeed;
   onBack: () => void;
@@ -102,35 +102,44 @@ export const BlueprintReview = ({
   };
 
   const updateOrigin = (patch: Partial<StorySeedStoryRequired>) => {
-    const nextOrigin = { ...origin, ...patch };
     updateSeed(patchStoryRequired(patch));
-    setBlueprint({ ...blueprint, originSnapshot: nextOrigin });
+    setBlueprint(current => ({
+      ...current,
+      originSnapshot: { ...origin, ...current.originSnapshot, ...patch },
+    }));
   };
 
   const updateTitle = (title: string) => {
     updateSeed(patchWorldIdentity({ title }));
-    setBlueprint({ ...blueprint, title });
+    setBlueprint(current => ({ ...current, title }));
   };
 
   const updateStoryTags = (value: string) => {
     const storyTags = value.split(/\r?\n|,/);
     const uniqueTagCount = new Set(storyTags.map(tag => tag.trim()).filter(Boolean)).size;
-    if (uniqueTagCount > STORY_TAG_LIMIT) {
-      setTagLimitError(`Story Tags cannot exceed ${STORY_TAG_LIMIT}.`);
-      return;
-    }
-    setTagLimitError(null);
+    setTagLimitError(uniqueTagCount > STORY_TAG_LIMIT
+      ? `Story Tags cannot exceed ${STORY_TAG_LIMIT}.`
+      : null);
     updateOrigin({ storyTags });
   };
 
   const updateMainCharacter = (patch: Partial<WorldBlueprintMainCharacter>) => {
-    const nextMainCharacter = { ...mainCharacter, ...patch };
-    setBlueprint({
-      ...blueprint,
-      mainCharacter: nextMainCharacter,
-      // Keep the established combined field synchronized for existing
-      // initial-story generation consumers.
-      mcProfile: nextMainCharacter.backgroundProfile,
+    setBlueprint(current => {
+      const currentMainCharacter: WorldBlueprintMainCharacter = {
+        name: current.mainCharacter?.name || '',
+        age: current.mainCharacter?.age || '',
+        personality: current.mainCharacter?.personality || '',
+        appearance: current.mainCharacter?.appearance || '',
+        backgroundProfile: current.mainCharacter?.backgroundProfile || current.mcProfile || '',
+      };
+      const nextMainCharacter = { ...currentMainCharacter, ...patch };
+      return {
+        ...current,
+        mainCharacter: nextMainCharacter,
+        // Keep the established combined field synchronized for existing
+        // initial-story generation consumers.
+        mcProfile: nextMainCharacter.backgroundProfile,
+      };
     });
   };
 
@@ -398,7 +407,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-world-overview"
                 value={blueprint.worldOverview || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, worldOverview: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, worldOverview: event.target.value }))}
                 rows={6}
                 className={`${fieldClassName} resize-y font-serif leading-relaxed text-[#dfd8cf]`}
                 placeholder="The setting, lore, and physical characteristics of this universe..."
@@ -409,7 +418,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-opening-location"
                 value={blueprint.startingLocation || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, startingLocation: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, startingLocation: event.target.value }))}
                 rows={6}
                 className={`${compactFieldClassName} resize-y leading-relaxed`}
                 placeholder="Where the story begins..."
@@ -422,7 +431,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-world-order"
                 value={blueprint.societyStructure || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, societyStructure: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, societyStructure: event.target.value }))}
                 rows={6}
                 className={compactFieldClassName}
                 placeholder="Feudal, corporate, sect-based, military rule..."
@@ -433,7 +442,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-power-outline"
                 value={blueprint.powerSystemOutline || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, powerSystemOutline: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, powerSystemOutline: event.target.value }))}
                 rows={6}
                 className={`${compactFieldClassName} font-mono leading-relaxed`}
                 placeholder="Power scaling, ranks, costs, limits, magical energy..."
@@ -449,7 +458,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
             <textarea
               id="blueprint-core-direction"
               value={blueprint.logline || ''}
-              onChange={(event) => setBlueprint({ ...blueprint, logline: event.target.value })}
+              onChange={(event) => setBlueprint(current => ({ ...current, logline: event.target.value }))}
               rows={4}
               className={`${fieldClassName} leading-relaxed`}
               placeholder="The generated high-level direction for the complete story..."
@@ -461,7 +470,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-first-arc"
                 value={blueprint.firstArcPromise || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, firstArcPromise: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, firstArcPromise: event.target.value }))}
                 rows={5}
                 className={`${fieldClassName} leading-relaxed`}
                 placeholder="The opening conflict, stakes, and payoff promised by Arc One..."
@@ -472,7 +481,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-destined-ending"
                 value={blueprint.destinedEnding || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, destinedEnding: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, destinedEnding: event.target.value }))}
                 rows={5}
                 className={`${fieldClassName} leading-relaxed`}
                 placeholder="The intended fated destination of the story..."
@@ -483,7 +492,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-trope-guidance"
                 value={blueprint.tropeRules || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, tropeRules: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, tropeRules: event.target.value }))}
                 rows={5}
                 className={compactFieldClassName}
                 placeholder="Tropes to use or subvert, tone rules, and directional guardrails..."
@@ -494,7 +503,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-style-bible"
                 value={blueprint.styleBible || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, styleBible: event.target.value })}
+                onChange={(event) => setBlueprint(current => ({ ...current, styleBible: event.target.value }))}
                 rows={5}
                 className={`${compactFieldClassName} font-mono`}
                 placeholder="Generated prose rules, forbidden phrasing, and tone requirements..."
@@ -507,7 +516,16 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               id="blueprint-estimated-arcs"
               type="number"
               value={blueprint.estimatedArcs || ''}
-              onChange={(event) => setBlueprint({ ...blueprint, estimatedArcs: Number.parseInt(event.target.value, 10) || 5 })}
+              onChange={(event) => {
+                const rawValue = event.target.value.trim();
+                const parsedValue = Number.parseInt(rawValue, 10);
+                setBlueprint(current => ({
+                  ...current,
+                  estimatedArcs: rawValue === '' || Number.isNaN(parsedValue)
+                    ? 0
+                    : Math.min(100, Math.max(1, parsedValue)),
+                }));
+              }}
               className={`${compactFieldClassName} text-center font-mono`}
               placeholder="e.g. 5"
               min="1"
@@ -522,7 +540,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
           <textarea
             id="blueprint-side-characters"
             value={blueprint.initialCharacters?.join('\n') || ''}
-            onChange={(event) => setBlueprint({ ...blueprint, initialCharacters: event.target.value.split('\n') })}
+            onChange={(event) => setBlueprint(current => ({ ...current, initialCharacters: event.target.value.split('\n') }))}
             rows={6}
             className={`${compactFieldClassName} font-mono`}
             placeholder="Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
@@ -535,7 +553,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
           <textarea
             id="blueprint-factions"
             value={blueprint.majorFactions?.join('\n') || ''}
-            onChange={(event) => setBlueprint({ ...blueprint, majorFactions: event.target.value.split('\n') })}
+            onChange={(event) => setBlueprint(current => ({ ...current, majorFactions: event.target.value.split('\n') }))}
             rows={6}
             className={`${compactFieldClassName} font-mono`}
             placeholder="Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
@@ -550,7 +568,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-major-mysteries"
                 value={blueprint.majorMysteries?.join('\n') || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, majorMysteries: event.target.value.split('\n') })}
+                onChange={(event) => setBlueprint(current => ({ ...current, majorMysteries: event.target.value.split('\n') }))}
                 rows={6}
                 className={`${compactFieldClassName} font-mono`}
                 placeholder="True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?"
@@ -561,7 +579,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               <textarea
                 id="blueprint-unresolved-threads"
                 value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
-                onChange={(event) => setBlueprint({ ...blueprint, unresolvedPlotThreads: event.target.value.split('\n') })}
+                onChange={(event) => setBlueprint(current => ({ ...current, unresolvedPlotThreads: event.target.value.split('\n') }))}
                 rows={6}
                 className={`${compactFieldClassName} font-mono`}
                 placeholder="Sever the engagement with Chu family&#10;Win the Inner Sect tournament"

@@ -9,6 +9,7 @@ import {
   createEmptyStorySeedInput,
   normalizeStorySeedInput,
   normalizeWorldBlueprint,
+  STORY_PREMISE_MAX_LENGTH,
   validateStorySeedDraft,
   validateStorySeedInput,
   type StorySeedInput,
@@ -298,7 +299,7 @@ describe('Story Seed creator/story/world contract', () => {
     oversized.story.required.storyTags = Array.from({ length: 13 }, (_, index) => `tag ${index + 1}`);
 
     expect(validateStorySeedInput(oversized).errors).toEqual([
-      'Premise cannot exceed 3,000 characters.',
+      `Premise cannot exceed ${STORY_PREMISE_MAX_LENGTH.toLocaleString('en-US')} characters.`,
       'Story Tags cannot exceed 12.',
     ]);
   });
@@ -646,6 +647,12 @@ describe('Story Seed creator/story/world contract', () => {
       },
     };
     const updated = await updateStorySeed('creator-1', created, seed, edited);
+    expect((await listStorySeeds('creator-1'))[0].blueprint).toMatchObject({
+      logline: 'The creator-approved overall direction.',
+      mainCharacter: { age: '19', appearance: 'Silver eyes, weathered sect robes, and a broken jade ring.' },
+    });
+
+    await updateStorySeed('creator-1', updated, seed);
     expect((await listStorySeeds('creator-1'))[0].blueprint).toMatchObject({
       logline: 'The creator-approved overall direction.',
       mainCharacter: { age: '19', appearance: 'Silver eyes, weathered sect robes, and a broken jade ring.' },

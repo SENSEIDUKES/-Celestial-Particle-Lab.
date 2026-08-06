@@ -438,7 +438,7 @@ export const validateStorySeedInput = (value: unknown): StorySeedValidationResul
     if (!text(required.genre)) errors.push('Genre is required.');
     if (!text(required.premise)) errors.push('Premise is required.');
     if (typeof required.premise === 'string' && required.premise.length > STORY_PREMISE_MAX_LENGTH) {
-      errors.push('Premise cannot exceed 3,000 characters.');
+      errors.push(`Premise cannot exceed ${STORY_PREMISE_MAX_LENGTH.toLocaleString('en-US')} characters.`);
     }
     const storyTags = stringList(required.storyTags);
     if (storyTags.length === 0) errors.push('Story Tags are required.');

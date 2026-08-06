@@ -77,18 +77,17 @@ const reconcileArtifact = (seed: StorySeedInput, blueprintValue?: unknown): Stor
   };
 };
 
-export const createStorySeedExport = (
-  seed: StorySeedInput,
-  blueprint?: WorldBlueprint,
-) => {
-  const artifact = reconcileArtifact(seed, blueprint);
-  return {
+const createReconciledStorySeedExport = (artifact: StorySeedArtifact) => ({
     format: STORY_SEED_FORMAT,
     version: STORY_SEED_FORMAT_VERSION,
     seed: portableSeed(artifact.seed),
     ...(artifact.blueprint ? { blueprint: artifact.blueprint } : {}),
-  };
-};
+  });
+
+export const createStorySeedExport = (
+  seed: StorySeedInput,
+  blueprint?: WorldBlueprint,
+) => createReconciledStorySeedExport(reconcileArtifact(seed, blueprint));
 
 type StorySeedExportArtifact = StorySeedInput | StorySeedArtifact;
 
@@ -107,9 +106,7 @@ export const createStorySeedCollectionExport = (values: StorySeedExportArtifact[
     // Parallel entries keep the established `seeds` array backward-compatible
     // for seed-only readers while preserving reviewed Blueprint artifacts.
     ...(hasBlueprints ? {
-      blueprints: artifacts.map(artifact => artifact.blueprint
-        ? normalizeWorldBlueprint(artifact.blueprint, artifact.seed)
-        : null),
+      blueprints: artifacts.map(artifact => artifact.blueprint ?? null),
     } : {}),
   };
 };
@@ -215,7 +212,7 @@ export const downloadStorySeed = (
 ): Promise<void> => {
   const artifact = reconcileArtifact(seed, blueprint);
   return downloadJsonFile(
-    createStorySeedExport(artifact.seed, artifact.blueprint),
+    createReconciledStorySeedExport(artifact),
     `seihouse_story_seed_${safeFilenamePart(artifact.seed.world.optional.worldIdentity.title || 'untitled')}.json`,
   );
 };

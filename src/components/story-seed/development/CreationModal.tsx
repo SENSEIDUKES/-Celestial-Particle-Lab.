@@ -274,6 +274,11 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [chapterCount] = useState(10);
   const [authDissolving, setAuthDissolving] = useState(false);
   const wasAuthRef = useRef(false);
+  const previousSeedOwnerIdRef = useRef<string | null>(seedOwnerId);
+  const seedOwnerIdRef = useRef<string | null>(seedOwnerId);
+  const currentSeedRef = useRef<StorySeedRecord | null>(null);
+  const persistRequestIdRef = useRef(0);
+  seedOwnerIdRef.current = seedOwnerId;
 
   // Creation workspace state
   const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
@@ -295,10 +300,23 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // separate flat view model between the form and the contract any more.
   const [seed, setSeed] = useState<StorySeedInput>(createEmptyStorySeedInput);
 
+  const setActiveSeed = (record: StorySeedRecord | null) => {
+    currentSeedRef.current = record;
+    setCurrentSeed(record);
+  };
+
   useEffect(() => {
+    const ownerChanged = previousSeedOwnerIdRef.current !== seedOwnerId;
+    previousSeedOwnerIdRef.current = seedOwnerId;
+    if (ownerChanged) {
+      setSavedSeeds([]);
+      setActiveSeed(null);
+      setSeed(createEmptyStorySeedInput());
+      setBlueprint(null);
+    }
     if (!seedOwnerId) {
       setSavedSeeds([]);
-      setCurrentSeed(null);
+      setActiveSeed(null);
       return;
     }
     let cancelled = false;
@@ -325,6 +343,12 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // Always a functional update, so rapid successive edits (e.g. toggling two
   // tags in one task) can never lose a write to a stale render closure.
   const updateSeed = (update: SeedUpdate) => setSeed(update);
+  const updateBlueprint = (update: React.SetStateAction<WorldBlueprint>) => {
+    setBlueprint(current => {
+      if (!current) return current;
+      return typeof update === 'function' ? update(current) : update;
+    });
+  };
 
   // Post-auth visual transition: once a gated guest signs in, keep the gate
   // mounted for STORY_AUTH_DISSOLVE_MS so StoryAuthGate's shell can dissolve
@@ -374,8 +398,8 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     };
   }, [desktopSettingsOpen]);
 
-  const rememberSeed = (record: StorySeedRecord) => {
-    setCurrentSeed(record);
+  const rememberSeed = (record: StorySeedRecord, makeCurrent = true) => {
+    if (makeCurrent) setActiveSeed(record);
     setSavedSeeds(previous => [record, ...previous.filter(item => item.id !== record.id)]);
   };
 
@@ -390,11 +414,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     blueprintArtifact?: WorldBlueprint,
   ): Promise<StorySeedRecord | null> => {
     if (!seedOwnerId) throw new Error('Sign in to save this story seed to your account.');
-    const saved = currentSeed && currentSeed.userId === seedOwnerId
-      ? await updateStorySeed(seedOwnerId, currentSeed, payload, blueprintArtifact)
+    const ownerAtStart = seedOwnerId;
+    const activeRecord = currentSeedRef.current;
+    const requestId = ++persistRequestIdRef.current;
+    const saved = activeRecord && activeRecord.userId === ownerAtStart
+      ? await updateStorySeed(ownerAtStart, activeRecord, payload, blueprintArtifact)
       : await createStorySeed(seedOwnerId, payload, blueprintArtifact);
-    rememberSeed(saved);
-    if (saved.blueprint) {
+    const currentRecord = currentSeedRef.current;
+    const stillActive = requestId === persistRequestIdRef.current
+      && seedOwnerIdRef.current === ownerAtStart
+      && (activeRecord ? currentRecord?.id === activeRecord.id : currentRecord === null);
+    rememberSeed(saved, stillActive);
+    if (saved.blueprint && stillActive) {
       // Persistence can be remote. Merge only trusted record metadata into
       // the latest state so edits made while this request was in flight are
       // never replaced by the older saved snapshot.
@@ -445,9 +476,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         ...imported,
         ...previous.filter(record => !imported.some(item => item.id === record.id)),
       ]);
-      setCurrentSeed(imported[0]);
+      setActiveSeed(imported[0]);
     } else {
-      setCurrentSeed(null);
+      setActiveSeed(null);
     }
     const selectedArtifact = imported[0] || artifacts[0];
     const selected = normalizeStorySeedInput(selectedArtifact.seed);
@@ -468,7 +499,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const handleUseSeed = (record: StorySeedRecord) => {
     const selected = normalizeStorySeedInput(record.seed);
-    setCurrentSeed(record);
+    setActiveSeed(record);
     setSeed(selected);
     setBlueprint(record.blueprint
       ? normalizeWorldBlueprint(record.blueprint, selected, blueprintContextForRecord(record))
@@ -620,7 +651,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         )}
         <BlueprintReview
           blueprint={blueprint}
-          setBlueprint={setBlueprint}
+          setBlueprint={updateBlueprint}
           seed={seed}
           updateSeed={updateSeed}
           onBack={() => setStage('intake')}
