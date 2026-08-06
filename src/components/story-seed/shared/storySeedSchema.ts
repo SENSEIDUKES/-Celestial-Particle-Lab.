@@ -23,7 +23,11 @@
  * belongs to the locked `reference/` replica (see `referenceIntake.ts`).
  */
 
-import type { WorldBlueprint } from './types';
+import type {
+  WorldBlueprint,
+  WorldBlueprintMainCharacter,
+  WorldBlueprintOriginSnapshot,
+} from './types';
 import {
   assertValidStoryAdministrativeMetadata,
   type StoryAdministrativeMetadata,
@@ -37,6 +41,9 @@ import { normalizeStoryStyle, type StoryStyle } from './storyStyle';
  * empty. Version 3 is the Creator / Story / World hierarchy above.
  */
 export const STORY_SEED_SCHEMA_VERSION = 3 as const;
+export const WORLD_BLUEPRINT_VERSION = 'v1.0' as const;
+export const STORY_PREMISE_MAX_LENGTH = 3_000;
+export const STORY_TAG_LIMIT = 12;
 
 // ─── Creator ─────────────────────────────────────────────────────────────────
 
@@ -430,7 +437,12 @@ export const validateStorySeedInput = (value: unknown): StorySeedValidationResul
     if (!normalizeStoryStyle(required.style)) errors.push('Style is required.');
     if (!text(required.genre)) errors.push('Genre is required.');
     if (!text(required.premise)) errors.push('Premise is required.');
-    if (stringList(required.storyTags).length === 0) errors.push('Story Tags are required.');
+    if (typeof required.premise === 'string' && required.premise.length > STORY_PREMISE_MAX_LENGTH) {
+      errors.push('Premise cannot exceed 3,000 characters.');
+    }
+    const storyTags = stringList(required.storyTags);
+    if (storyTags.length === 0) errors.push('Story Tags are required.');
+    if (storyTags.length > STORY_TAG_LIMIT) errors.push(`Story Tags cannot exceed ${STORY_TAG_LIMIT}.`);
   }
   return { valid: errors.length === 0, errors };
 };
@@ -491,32 +503,168 @@ export const applyInferredStoryTags = (seed: StorySeedInput): StorySeedInput => 
 
 // ─── Generation boundary ─────────────────────────────────────────────────────
 
+/** Creator-authored Origin provenance, always read from the canonical seed. */
+export const createBlueprintOriginSnapshot = (
+  seed: StorySeedInput,
+): WorldBlueprintOriginSnapshot => ({
+  premise: seed.story.required.premise,
+  genre: seed.story.required.genre,
+  style: seed.story.required.style,
+  storyTags: [...seed.story.required.storyTags],
+});
+
+export interface WorldBlueprintContext {
+  creator?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Generated model output must not supply trusted artifact metadata. */
+  preserveSourceMetadata?: boolean;
+}
+
 /**
  * A first-pass World Blueprint projected from the seed. One-way and
  * generation-facing only: the Blueprint is generated output and is never
  * stored back inside the Story Seed contract.
  */
-export const createBlueprintDraftFromSeed = (seed: StorySeedInput): WorldBlueprint => {
+export const createBlueprintDraftFromSeed = (
+  seed: StorySeedInput,
+  context: WorldBlueprintContext = {},
+): WorldBlueprint => {
   const { worldIdentity, worldFoundations } = seed.world.optional;
+  const mainCharacter = worldFoundations.mainCharacter || {};
+  const backgroundProfile = mainCharacter.bio || mainCharacter.startingIdentity || '';
   return {
+    blueprintVersion: WORLD_BLUEPRINT_VERSION,
+    ...(text(context.creator) ? { creator: text(context.creator) } : {}),
+    ...(text(context.status) ? { status: text(context.status) } : {}),
+    ...(text(context.createdAt) ? { createdAt: text(context.createdAt) } : {}),
+    ...(text(context.updatedAt) ? { updatedAt: text(context.updatedAt) } : {}),
+    originSnapshot: createBlueprintOriginSnapshot(seed),
     title: worldIdentity.title || 'Untitled Story',
-    logline: seed.story.required.premise,
+    // Origin owns the premise. Direction is intentionally projected from the
+    // separate ARC field so a draft never disguises the premise as generated
+    // blueprint guidance.
+    logline: seed.story.optional.additionalStoryDirection || '',
     worldOverview: worldIdentity.worldType || '',
     startingLocation: worldIdentity.startingLocation || '',
     societyStructure: worldIdentity.societyStructure || '',
     powerSystemOutline: worldFoundations.abilities?.startingPowerConcept
       || worldFoundations.powerSystem?.knownRanks
       || '',
-    mcProfile: worldFoundations.mainCharacter?.bio || worldFoundations.mainCharacter?.startingIdentity || '',
+    mainCharacter: {
+      name: mainCharacter.name || '',
+      age: '',
+      personality: mainCharacter.personality || '',
+      appearance: '',
+      backgroundProfile,
+    },
+    mcProfile: backgroundProfile,
     majorFactions: (worldFoundations.factions || []).map(faction => faction.name),
     initialCharacters: (worldFoundations.additionalCharacters || []).map(character => character.name),
     majorMysteries: [],
     firstArcPromise: seed.story.optional.plotAndTropeSettings.firstMajorConflict || '',
     tropeRules: '',
-    styleBible: seed.story.required.style,
+    styleBible: '',
     destinedEnding: worldFoundations.destinedEnding || '',
     estimatedArcs: 10,
     unresolvedPlotThreads: [],
+  };
+};
+
+/**
+ * Makes generated or previously saved Blueprints safe for the current review.
+ * New fields are additive, old flat fields stay intact, and Origin provenance
+ * is replaced from the canonical seed whenever that seed is available.
+ */
+export const normalizeWorldBlueprint = (
+  value: unknown,
+  seed?: StorySeedInput,
+  context: WorldBlueprintContext = {},
+): WorldBlueprint => {
+  const source = isRecord(value) ? value : {};
+  const normalizedSeed = seed ? normalizeStorySeedInput(seed) : createEmptyStorySeedInput();
+  const fallback = createBlueprintDraftFromSeed(normalizedSeed, context);
+  const sourceOrigin = isRecord(source.originSnapshot) ? source.originSnapshot : {};
+  const originSnapshot = seed
+    ? createBlueprintOriginSnapshot(normalizedSeed)
+    : {
+        premise: text(sourceOrigin.premise) || '',
+        genre: text(sourceOrigin.genre) || '',
+        style: text(sourceOrigin.style) || '',
+        storyTags: stringList(sourceOrigin.storyTags),
+      };
+  const sourceMainCharacter = isRecord(source.mainCharacter) ? source.mainCharacter : {};
+  const fallbackMainCharacter = fallback.mainCharacter as WorldBlueprintMainCharacter;
+  const readString = (
+    record: Record<string, unknown>,
+    field: string,
+    fallbackValue = '',
+  ): string => typeof record[field] === 'string'
+    ? record[field].trim()
+    : fallbackValue;
+  const hasString = (record: Record<string, unknown>, field: string): boolean =>
+    typeof record[field] === 'string';
+  const legacyProfile = readString(source, 'mcProfile', fallbackMainCharacter.backgroundProfile);
+  const mainCharacter: WorldBlueprintMainCharacter = {
+    name: readString(sourceMainCharacter, 'name', fallbackMainCharacter.name),
+    age: readString(sourceMainCharacter, 'age', fallbackMainCharacter.age),
+    personality: readString(sourceMainCharacter, 'personality', fallbackMainCharacter.personality),
+    appearance: readString(sourceMainCharacter, 'appearance', fallbackMainCharacter.appearance),
+    backgroundProfile: hasString(sourceMainCharacter, 'backgroundProfile')
+      ? readString(sourceMainCharacter, 'backgroundProfile')
+      : legacyProfile,
+  };
+  // An explicit empty string is an edit, not a missing value. Only absent or
+  // non-string fields receive safe defaults for older Blueprint records.
+  const read = (field: string, fallbackValue = ''): string =>
+    readString(source, field, fallbackValue);
+  const requestedTitle = normalizedSeed.world.optional.worldIdentity.title;
+  const preserveSourceMetadata = context.preserveSourceMetadata !== false;
+  const sourceMetadata = (field: string): string | undefined =>
+    preserveSourceMetadata ? text(source[field]) : undefined;
+  const creator = text(context.creator) || sourceMetadata('creator');
+  const status = text(context.status) || sourceMetadata('status');
+  const createdAt = text(context.createdAt) || sourceMetadata('createdAt');
+  const updatedAt = text(context.updatedAt) || sourceMetadata('updatedAt');
+  const estimatedArcs = typeof source.estimatedArcs === 'number'
+    && Number.isInteger(source.estimatedArcs)
+    && source.estimatedArcs > 0
+    ? source.estimatedArcs
+    : fallback.estimatedArcs;
+
+  return {
+    blueprintVersion: sourceMetadata('blueprintVersion') || WORLD_BLUEPRINT_VERSION,
+    ...(creator ? { creator } : {}),
+    ...(status ? { status } : {}),
+    ...(createdAt ? { createdAt } : {}),
+    ...(updatedAt ? { updatedAt } : {}),
+    originSnapshot,
+    title: requestedTitle || read('title', fallback.title),
+    logline: read('logline', fallback.logline),
+    worldOverview: read('worldOverview', fallback.worldOverview),
+    startingLocation: read('startingLocation', fallback.startingLocation),
+    societyStructure: read('societyStructure', fallback.societyStructure),
+    powerSystemOutline: read('powerSystemOutline', fallback.powerSystemOutline),
+    mainCharacter,
+    mcProfile: mainCharacter.backgroundProfile,
+    majorFactions: Array.isArray(source.majorFactions)
+      ? stringList(source.majorFactions)
+      : fallback.majorFactions,
+    initialCharacters: Array.isArray(source.initialCharacters)
+      ? stringList(source.initialCharacters)
+      : fallback.initialCharacters,
+    majorMysteries: Array.isArray(source.majorMysteries)
+      ? stringList(source.majorMysteries)
+      : fallback.majorMysteries,
+    firstArcPromise: read('firstArcPromise', fallback.firstArcPromise),
+    tropeRules: read('tropeRules', fallback.tropeRules),
+    styleBible: read('styleBible', fallback.styleBible),
+    destinedEnding: read('destinedEnding', fallback.destinedEnding || ''),
+    estimatedArcs,
+    unresolvedPlotThreads: Array.isArray(source.unresolvedPlotThreads)
+      ? stringList(source.unresolvedPlotThreads)
+      : fallback.unresolvedPlotThreads,
   };
 };
 

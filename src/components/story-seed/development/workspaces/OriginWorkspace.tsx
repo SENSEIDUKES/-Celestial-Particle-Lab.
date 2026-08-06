@@ -6,7 +6,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { StorySeedInput } from '../../shared/storySeedSchema';
+import {
+  STORY_PREMISE_MAX_LENGTH,
+  STORY_TAG_LIMIT,
+  type StorySeedInput,
+} from '../../shared/storySeedSchema';
 import { getStoryStyleLabel, normalizeStoryStyle, STORY_STYLE_OPTIONS, type StoryStyle } from '../../shared/storyStyle';
 import {
   CATEGORIZED_TAGS, CATEGORY_COLORS, CURATED_PREMISE_EXAMPLES, GENRE_PRESETS, getTagMetadata,
@@ -23,7 +27,7 @@ interface OriginWorkspaceProps {
   updateSeed: UpdateSeed;
 }
 
-const TAG_LIMIT = 12;
+const TAG_LIMIT = STORY_TAG_LIMIT;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 /** Helpful copy only — 9–12 tags is allowed and never warned about. */
 const TAG_RECOMMENDED_COPY = 'Recommended: 4–8 tags.';
@@ -360,7 +364,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
         label="Core Premise / Secret Catalyst"
         icon={Feather}
         required
-        maxLength={3000}
+        maxLength={STORY_PREMISE_MAX_LENGTH}
         value={premise}
         onChange={value => updateSeed(patchStoryRequired({ premise: value }))}
         onKeyDown={event => {

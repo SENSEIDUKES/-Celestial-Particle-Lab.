@@ -1,43 +1,223 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { MapPin, Layers, Zap, Users, Target, Wand2, FileText, HelpCircle, GitBranch, ArrowRight, Check, Copy, Download } from 'lucide-react';
-import { WorldBlueprint } from '../shared/types';
-import { useAppStore, AGENTS } from '../shared/stubs';
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  GitBranch,
+  HelpCircle,
+  Layers,
+  MapPin,
+  Target,
+  Users,
+  Wand2,
+  Zap,
+} from 'lucide-react';
+import type { WorldBlueprint, WorldBlueprintMainCharacter } from '../shared/types';
+import {
+  STORY_PREMISE_MAX_LENGTH,
+  STORY_TAG_LIMIT,
+  type StorySeedInput,
+  type StorySeedStoryRequired,
+} from '../shared/storySeedSchema';
+import { getStoryStyleLabel, STORY_STYLE_OPTIONS, type StoryStyle } from '../shared/storyStyle';
+import { AGENTS, useAppStore } from '../shared/stubs';
+import { patchStoryRequired, patchWorldIdentity, type UpdateSeed } from './seedState';
 
 interface BlueprintReviewProps {
   blueprint: WorldBlueprint;
   setBlueprint: (blueprint: WorldBlueprint) => void;
+  seed: StorySeedInput;
+  updateSeed: UpdateSeed;
   onBack: () => void;
   onStartStory: () => void;
   onExportSeed: () => void;
   isGenerating: boolean;
 }
 
-export const BlueprintReview = ({ blueprint, setBlueprint, onBack, onStartStory, onExportSeed, isGenerating }: BlueprintReviewProps) => {
+interface EditableLabelProps {
+  htmlFor: string;
+  children: React.ReactNode;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+}
+
+const EditableLabel = ({ htmlFor, children, icon: Icon }: EditableLabelProps) => (
+  <div className="mb-2 flex items-center justify-between gap-3">
+    <label
+      className="flex items-center gap-2 font-sc text-xs font-bold uppercase tracking-widest text-signal"
+      htmlFor={htmlFor}
+    >
+      {Icon && <Icon size={14} className="text-portal" />}
+      <span>{children}</span>
+    </label>
+    <span className="shrink-0 font-mono text-[9px] text-portal">Editable</span>
+  </div>
+);
+
+const SectionHeading = ({ id, children }: { id: string; children: React.ReactNode }) => (
+  <h2 id={id} className="border-b border-neutral-900 pb-2 font-sc text-sm font-bold uppercase tracking-[0.18em] text-portal">
+    {children}
+  </h2>
+);
+
+const fieldClassName = 'w-full rounded-md border border-neutral-900 bg-void p-3 font-sans text-sm text-neutral-300 transition-all focus:border-portal focus:outline-none focus:ring-1 focus:ring-portal/20';
+const compactFieldClassName = `${fieldClassName} text-xs`;
+
+const formatDate = (value: string): string => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
+};
+
+const markdownList = (items: string[]): string => {
+  const cleanItems = items.map(item => item.trim()).filter(Boolean);
+  return cleanItems.length > 0
+    ? cleanItems.map(item => `- ${item}`).join('\n')
+    : '_None yet_';
+};
+
+export const BlueprintReview = ({
+  blueprint,
+  setBlueprint,
+  seed,
+  updateSeed,
+  onBack,
+  onStartStory,
+  onExportSeed,
+  isGenerating,
+}: BlueprintReviewProps) => {
   const activeAgentId = useAppStore(state => state.activeAgentId);
   const [copied, setCopied] = useState(false);
+  const [tagLimitError, setTagLimitError] = useState<string | null>(null);
+  const origin = seed.story.required;
+  const storyTagCount = new Set(origin.storyTags.map(tag => tag.trim()).filter(Boolean)).size;
+  const styleLabel = getStoryStyleLabel(origin.style) || origin.style;
+  const mainCharacter: WorldBlueprintMainCharacter = {
+    name: blueprint.mainCharacter?.name || '',
+    age: blueprint.mainCharacter?.age || '',
+    personality: blueprint.mainCharacter?.personality || '',
+    appearance: blueprint.mainCharacter?.appearance || '',
+    backgroundProfile: blueprint.mainCharacter?.backgroundProfile || blueprint.mcProfile || '',
+  };
+
+  const updateOrigin = (patch: Partial<StorySeedStoryRequired>) => {
+    const nextOrigin = { ...origin, ...patch };
+    updateSeed(patchStoryRequired(patch));
+    setBlueprint({ ...blueprint, originSnapshot: nextOrigin });
+  };
+
+  const updateTitle = (title: string) => {
+    updateSeed(patchWorldIdentity({ title }));
+    setBlueprint({ ...blueprint, title });
+  };
+
+  const updateStoryTags = (value: string) => {
+    const storyTags = value.split(/\r?\n|,/);
+    const uniqueTagCount = new Set(storyTags.map(tag => tag.trim()).filter(Boolean)).size;
+    if (uniqueTagCount > STORY_TAG_LIMIT) {
+      setTagLimitError(`Story Tags cannot exceed ${STORY_TAG_LIMIT}.`);
+      return;
+    }
+    setTagLimitError(null);
+    updateOrigin({ storyTags });
+  };
+
+  const updateMainCharacter = (patch: Partial<WorldBlueprintMainCharacter>) => {
+    const nextMainCharacter = { ...mainCharacter, ...patch };
+    setBlueprint({
+      ...blueprint,
+      mainCharacter: nextMainCharacter,
+      // Keep the established combined field synchronized for existing
+      // initial-story generation consumers.
+      mcProfile: nextMainCharacter.backgroundProfile,
+    });
+  };
 
   const handleCopyBlueprint = () => {
+    const metadata = [
+      `**Blueprint Version:** ${blueprint.blueprintVersion || 'v1.0'}`,
+      blueprint.creator ? `**Creator:** ${blueprint.creator}` : '',
+      blueprint.status ? `**Status:** ${blueprint.status}` : '',
+      blueprint.createdAt ? `**Created:** ${formatDate(blueprint.createdAt)}` : '',
+      blueprint.updatedAt ? `**Updated:** ${formatDate(blueprint.updatedAt)}` : '',
+    ].filter(Boolean).join('\n');
     const textToCopy = `
-# ${blueprint.title || 'Untitled World'}
+# ${blueprint.title || 'Untitled Story'}
 
-**Logline**: ${blueprint.logline || ''}
+${metadata}
 
-## World Overview
+## Origin Snapshot
+
+### Core Premise / Secret Catalyst (User-Created Origin)
+${origin.premise || ''}
+
+**Genre:** ${origin.genre || ''}
+
+**Style / Novel Tradition:** ${styleLabel || ''}
+
+### Story Tags
+${markdownList(origin.storyTags)}
+
+## Main Character
+
+**Name:** ${mainCharacter.name}
+
+**Age:** ${mainCharacter.age}
+
+### Personality
+${mainCharacter.personality}
+
+### Appearance
+${mainCharacter.appearance}
+
+### Background / Profile
+${mainCharacter.backgroundProfile}
+
+## World Setting
+
+### World Overview
 ${blueprint.worldOverview || ''}
 
-## Society & Factions
-${blueprint.societyStructure || ''}
-${blueprint.majorFactions && blueprint.majorFactions.length > 0 ? `\n### Major Factions:\n${blueprint.majorFactions.map(f => `- ${f}`).join('\n')}` : ''}
+### Opening Location
+${blueprint.startingLocation || ''}
 
-## Power System
+### World Order
+${blueprint.societyStructure || ''}
+
+### Power System Outline
 ${blueprint.powerSystemOutline || ''}
 
-## Main Character Profile
-${blueprint.mcProfile || ''}
+## Overall Story Direction
 
-## First Arc Promise
+### Overall / Core Story Direction
+${blueprint.logline || ''}
+
+### First Arc Promise
 ${blueprint.firstArcPromise || ''}
+
+### Destined Ending
+${blueprint.destinedEnding || ''}
+
+### Trope Guidance / Story Direction
+${blueprint.tropeRules || ''}
+
+**Estimated Arcs:** ${blueprint.estimatedArcs || ''}
+
+### Generated Style Bible
+${blueprint.styleBible || ''}
+
+## Side Characters
+${markdownList(blueprint.initialCharacters || [])}
+
+## Factions
+${markdownList(blueprint.majorFactions || [])}
+
+## Major Mysteries
+${markdownList(blueprint.majorMysteries || [])}
+
+## Unresolved Plot Threads
+${markdownList(blueprint.unresolvedPlotThreads || [])}
 `.trim();
 
     navigator.clipboard.writeText(textToCopy).then(() => {
@@ -47,311 +227,376 @@ ${blueprint.firstArcPromise || ''}
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-20" id="creation-portal-root">
-      <div className="text-center mb-10 space-y-4">
-        <span className="font-sc text-portal tracking-[0.2em] text-xs uppercase block">World Blueprint Generated</span>
+    <div className="mx-auto max-w-4xl pb-20" id="creation-portal-root">
+      <header className="mb-10 space-y-4 text-center">
+        <span className="block font-sc text-xs uppercase tracking-[0.2em] text-portal">World Blueprint</span>
 
-        <div className="max-w-xl mx-auto space-y-3">
+        <div className="mx-auto max-w-2xl space-y-3">
           <div>
-            <label className="block text-[10px] font-sc text-portal tracking-widest uppercase mb-1" htmlFor="a11y-control-8rojy1b">World Seed Title</label>
+            <label className="mb-1 block font-sc text-[10px] uppercase tracking-widest text-portal" htmlFor="blueprint-story-title">
+              Story Title
+            </label>
             <input
+              id="blueprint-story-title"
               type="text"
-              value={blueprint.title}
-              onChange={(e) => setBlueprint({ ...blueprint, title: e.target.value })}
-              className="w-full text-center bg-void border border-neutral-900 focus:border-portal text-signal font-display font-bold text-2xl sm:text-3xl rounded-md px-4 py-2 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="Give your world a name" id="a11y-control-8rojy1b"
+              value={blueprint.title || ''}
+              onChange={(event) => updateTitle(event.target.value)}
+              className="w-full rounded-md border border-neutral-900 bg-void px-4 py-2 text-center font-display text-2xl font-bold text-signal transition-all focus:border-portal focus:outline-none focus:ring-1 focus:ring-portal/20 sm:text-3xl"
+              placeholder="Give your story a title"
             />
           </div>
-          <div>
-            <label className="block text-[10px] font-sc text-portal tracking-widest uppercase mb-1" htmlFor="a11y-control-46y56as">Cosmic Logline</label>
-            <textarea
-              value={blueprint.logline}
-              onChange={(e) => setBlueprint({ ...blueprint, logline: e.target.value })}
-              rows={2}
-              className="w-full text-center bg-void border border-neutral-900 focus:border-portal text-neutral-400 font-sans font-light text-xs sm:text-sm rounded-md px-4 py-1.5 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all resize-none"
-              placeholder="Describe the high-concept premise" id="a11y-control-46y56as"
-            />
+
+          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+            <span className="rounded-full border border-portal/30 bg-portal/5 px-3 py-1 text-portal">
+              {blueprint.blueprintVersion || 'v1.0'}
+            </span>
+            {blueprint.creator && <span>Creator: {blueprint.creator}</span>}
+            {blueprint.status && <span>Status: {blueprint.status}</span>}
+            {blueprint.createdAt && <span>Created: {formatDate(blueprint.createdAt)}</span>}
+            {blueprint.updatedAt && <span>Updated: {formatDate(blueprint.updatedAt)}</span>}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="bg-neutral-950/80 border border-portal/30 p-6 sm:p-10 rounded-lg shadow-[0_0_30px_rgba(4,172,255,0.05)] relative space-y-8">
-
-        {/* Section 1: Overview & Opening Location */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm">World Overview</h3>
-              <span className="text-[10px] text-portal font-mono">Editable</span>
-            </div>
-            <textarea
-              value={blueprint.worldOverview}
-              onChange={(e) => setBlueprint({ ...blueprint, worldOverview: e.target.value })}
-              rows={6}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-[#dfd8cf] font-serif text-sm leading-relaxed rounded-md p-4 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all resize-none"
-              placeholder="The settings, lore, and physical characteristics of this universe..."
-            />
+      <div className="relative space-y-10 rounded-lg border border-portal/30 bg-neutral-950/80 p-6 shadow-[0_0_30px_rgba(4,172,255,0.05)] sm:p-10">
+        <section aria-labelledby="blueprint-origin-heading" className="space-y-5">
+          <div>
+            <SectionHeading id="blueprint-origin-heading">Origin Snapshot</SectionHeading>
+            <p className="mt-2 font-sans text-xs leading-relaxed text-neutral-500">
+              Creator-authored Origin inputs. Changes here update the same Story Seed values used for generation.
+            </p>
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-1.5">
-                <MapPin size={14} className="text-portal"/>
-                <span>Opening Location</span>
-              </h3>
-              <span className="text-[10px] text-portal font-mono">Editable</span>
-            </div>
+            <EditableLabel htmlFor="blueprint-origin-premise">
+              Core Premise / Secret Catalyst ({origin.premise.length} / {STORY_PREMISE_MAX_LENGTH})
+            </EditableLabel>
             <textarea
-              value={blueprint.startingLocation || ''}
-              onChange={(e) => setBlueprint({ ...blueprint, startingLocation: e.target.value })}
-              rows={6}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-xs leading-relaxed rounded-md p-4 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all resize-none"
-              placeholder="The initial city, sect outpost, forest, or plane of existence where story begins..."
+              id="blueprint-origin-premise"
+              value={origin.premise}
+              onChange={(event) => updateOrigin({ premise: event.target.value })}
+              maxLength={STORY_PREMISE_MAX_LENGTH}
+              rows={4}
+              className={`${fieldClassName} resize-y font-serif leading-relaxed text-[#dfd8cf]`}
+              placeholder="The premise written in Origin..."
             />
           </div>
-        </div>
 
-        {/* Section 2: World Order & Major Factions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                  <Layers size={14} className="text-portal"/>
-                  <span>World Order</span>
-                </h3>
-                <span className="text-[9px] text-portal font-mono">Editable</span>
-              </div>
+              <EditableLabel htmlFor="blueprint-origin-genre">Genre</EditableLabel>
+              <input
+                id="blueprint-origin-genre"
+                type="text"
+                value={origin.genre}
+                onChange={(event) => updateOrigin({ genre: event.target.value })}
+                className={compactFieldClassName}
+                placeholder="e.g. Xianxia, LitRPG / System"
+              />
+            </div>
+
+            <div>
+              <EditableLabel htmlFor="blueprint-origin-style">Style / Novel Tradition</EditableLabel>
+              <select
+                id="blueprint-origin-style"
+                value={origin.style}
+                onChange={(event) => updateOrigin({ style: event.target.value as StoryStyle | '' })}
+                className={compactFieldClassName}
+              >
+                <option value="">Choose a novel tradition</option>
+                {STORY_STYLE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <EditableLabel htmlFor="blueprint-origin-tags">
+              Story Tags ({storyTagCount} / {STORY_TAG_LIMIT})
+            </EditableLabel>
+            <textarea
+              id="blueprint-origin-tags"
+              value={origin.storyTags.join('\n')}
+              onChange={(event) => updateStoryTags(event.target.value)}
+              rows={3}
+              className={`${compactFieldClassName} font-mono`}
+              placeholder="One Story Tag per line"
+            />
+            {tagLimitError && (
+              <p className="mt-2 font-sans text-xs text-red-300" role="alert">{tagLimitError}</p>
+            )}
+          </div>
+        </section>
+
+        <section aria-labelledby="blueprint-main-character-heading" className="space-y-5">
+          <SectionHeading id="blueprint-main-character-heading">Main Character</SectionHeading>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <EditableLabel htmlFor="blueprint-mc-name" icon={Users}>Name</EditableLabel>
+              <input
+                id="blueprint-mc-name"
+                type="text"
+                value={mainCharacter.name}
+                onChange={(event) => updateMainCharacter({ name: event.target.value })}
+                className={compactFieldClassName}
+                placeholder="Main character name"
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-mc-age">Age</EditableLabel>
+              <input
+                id="blueprint-mc-age"
+                type="text"
+                value={mainCharacter.age}
+                onChange={(event) => updateMainCharacter({ age: event.target.value })}
+                className={compactFieldClassName}
+                placeholder="e.g. 18, Ancient, Unknown"
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-mc-personality">Personality</EditableLabel>
               <textarea
-                value={blueprint.societyStructure}
-                onChange={(e) => setBlueprint({ ...blueprint, societyStructure: e.target.value })}
+                id="blueprint-mc-personality"
+                value={mainCharacter.personality}
+                onChange={(event) => updateMainCharacter({ personality: event.target.value })}
                 rows={4}
-                className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
+                className={fieldClassName}
+                placeholder="Core temperament, values, contradictions..."
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-mc-appearance">Appearance</EditableLabel>
+              <textarea
+                id="blueprint-mc-appearance"
+                value={mainCharacter.appearance}
+                onChange={(event) => updateMainCharacter({ appearance: event.target.value })}
+                rows={4}
+                className={fieldClassName}
+                placeholder="Physical appearance, clothing, distinctive features..."
+              />
+            </div>
+          </div>
+          <div>
+            <EditableLabel htmlFor="blueprint-mc-profile" icon={FileText}>Background / Profile</EditableLabel>
+            <textarea
+              id="blueprint-mc-profile"
+              value={mainCharacter.backgroundProfile}
+              onChange={(event) => updateMainCharacter({ backgroundProfile: event.target.value })}
+              rows={5}
+              className={`${fieldClassName} leading-relaxed`}
+              placeholder="Background, starting identity, flaws, gifts, and relevant history..."
+            />
+          </div>
+        </section>
+
+        <section aria-labelledby="blueprint-world-setting-heading" className="space-y-5">
+          <SectionHeading id="blueprint-world-setting-heading">World Setting</SectionHeading>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <EditableLabel htmlFor="blueprint-world-overview">World Overview</EditableLabel>
+              <textarea
+                id="blueprint-world-overview"
+                value={blueprint.worldOverview || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, worldOverview: event.target.value })}
+                rows={6}
+                className={`${fieldClassName} resize-y font-serif leading-relaxed text-[#dfd8cf]`}
+                placeholder="The setting, lore, and physical characteristics of this universe..."
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-opening-location" icon={MapPin}>Opening Location</EditableLabel>
+              <textarea
+                id="blueprint-opening-location"
+                value={blueprint.startingLocation || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, startingLocation: event.target.value })}
+                rows={6}
+                className={`${compactFieldClassName} resize-y leading-relaxed`}
+                placeholder="Where the story begins..."
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <EditableLabel htmlFor="blueprint-world-order" icon={Layers}>World Order</EditableLabel>
+              <textarea
+                id="blueprint-world-order"
+                value={blueprint.societyStructure || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, societyStructure: event.target.value })}
+                rows={6}
+                className={compactFieldClassName}
                 placeholder="Feudal, corporate, sect-based, military rule..."
               />
             </div>
-
             <div>
-              <h4 className="text-neutral-400 font-sc uppercase tracking-wider font-bold text-xs mb-2">Major Factions (One per line)</h4>
+              <EditableLabel htmlFor="blueprint-power-outline" icon={Zap}>Power System Outline</EditableLabel>
               <textarea
-                value={blueprint.majorFactions?.join('\n') || ''}
-                onChange={(e) => setBlueprint({
-                  ...blueprint,
-                  majorFactions: e.target.value.split('\n')
-                })}
-                rows={4}
-                className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-                placeholder="e.g. Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
+                id="blueprint-power-outline"
+                value={blueprint.powerSystemOutline || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, powerSystemOutline: event.target.value })}
+                rows={6}
+                className={`${compactFieldClassName} font-mono leading-relaxed`}
+                placeholder="Power scaling, ranks, costs, limits, magical energy..."
               />
             </div>
           </div>
+        </section>
 
+        <section aria-labelledby="blueprint-direction-heading" className="space-y-5">
+          <SectionHeading id="blueprint-direction-heading">Overall Story Direction</SectionHeading>
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <Zap size={14} className="text-portal"/>
-                <span>Power System Outline</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
+            <EditableLabel htmlFor="blueprint-core-direction" icon={Target}>Overall / Core Story Direction</EditableLabel>
             <textarea
-              value={blueprint.powerSystemOutline}
-              onChange={(e) => setBlueprint({ ...blueprint, powerSystemOutline: e.target.value })}
-              rows={10}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs leading-relaxed rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all scrollbar-thin"
-              placeholder="Explain the cultivation realms, power scaling, magical energy..."
-            />
-          </div>
-        </div>
-
-        {/* Section 3: MC Profile & First Arc Promise */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <Users size={14} className="text-portal"/>
-                <span>Main Character Profile</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
-            <textarea
-              value={blueprint.mcProfile}
-              onChange={(e) => setBlueprint({ ...blueprint, mcProfile: e.target.value })}
-              rows={5}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-sm leading-relaxed rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="Starting cultivation level, cheat, flaws, unique attributes..."
-            />
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <Target size={14} className="text-portal"/>
-                <span>First Arc Promise</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
-            <textarea
-              value={blueprint.firstArcPromise}
-              onChange={(e) => setBlueprint({ ...blueprint, firstArcPromise: e.target.value })}
-              rows={5}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-sm leading-relaxed rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="The initial central conflict, stakes, face-slapping event..."
-            />
-          </div>
-        </div>
-
-        {/* Section 4: Trope Rules & Style Bible */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <Wand2 size={14} className="text-portal"/>
-                <span>Trope Guidance & Rules</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
-            <textarea
-              value={blueprint.tropeRules || ''}
-              onChange={(e) => setBlueprint({ ...blueprint, tropeRules: e.target.value })}
+              id="blueprint-core-direction"
+              value={blueprint.logline || ''}
+              onChange={(event) => setBlueprint({ ...blueprint, logline: event.target.value })}
               rows={4}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="Action tropes to leverage, wuxia style face-slapping metrics, subversions..."
+              className={`${fieldClassName} leading-relaxed`}
+              placeholder="The generated high-level direction for the complete story..."
             />
           </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <FileText size={14} className="text-portal"/>
-                <span>Stylistic Bible</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <EditableLabel htmlFor="blueprint-first-arc">First Arc Promise</EditableLabel>
+              <textarea
+                id="blueprint-first-arc"
+                value={blueprint.firstArcPromise || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, firstArcPromise: event.target.value })}
+                rows={5}
+                className={`${fieldClassName} leading-relaxed`}
+                placeholder="The opening conflict, stakes, and payoff promised by Arc One..."
+              />
             </div>
-            <textarea
-              value={blueprint.styleBible || ''}
-              onChange={(e) => setBlueprint({ ...blueprint, styleBible: e.target.value })}
-              rows={4}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="Sovereign style rules, forbidden phrasing, key tone requirements..."
-            />
+            <div>
+              <EditableLabel htmlFor="blueprint-destined-ending">Destined Ending</EditableLabel>
+              <textarea
+                id="blueprint-destined-ending"
+                value={blueprint.destinedEnding || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, destinedEnding: event.target.value })}
+                rows={5}
+                className={`${fieldClassName} leading-relaxed`}
+                placeholder="The intended fated destination of the story..."
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-trope-guidance" icon={Wand2}>Trope Guidance / Story Direction</EditableLabel>
+              <textarea
+                id="blueprint-trope-guidance"
+                value={blueprint.tropeRules || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, tropeRules: event.target.value })}
+                rows={5}
+                className={compactFieldClassName}
+                placeholder="Tropes to use or subvert, tone rules, and directional guardrails..."
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-style-bible" icon={FileText}>Generated Style Bible</EditableLabel>
+              <textarea
+                id="blueprint-style-bible"
+                value={blueprint.styleBible || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, styleBible: event.target.value })}
+                rows={5}
+                className={`${compactFieldClassName} font-mono`}
+                placeholder="Generated prose rules, forbidden phrasing, and tone requirements..."
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Section 4.5: Destined Ending & Estimated Arcs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="md:col-span-3">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <span className="text-portal">✦</span>
-                <span>Destined Ending</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
-            <textarea
-              value={blueprint.destinedEnding || ''}
-              onChange={(e) => setBlueprint({ ...blueprint, destinedEnding: e.target.value })}
-              rows={3}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-sm rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="The intended fated destination of the story (e.g. Kingdom Collapse, Final Ascension)..."
-            />
-          </div>
-          <div className="md:col-span-1">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-signal font-sc uppercase tracking-widest font-bold text-sm flex items-center space-x-2">
-                <span>Estimated Arcs</span>
-              </h3>
-              <span className="text-[9px] text-portal font-mono">Editable</span>
-            </div>
+          <div className="max-w-xs">
+            <EditableLabel htmlFor="blueprint-estimated-arcs">Estimated Arcs</EditableLabel>
             <input
+              id="blueprint-estimated-arcs"
               type="number"
               value={blueprint.estimatedArcs || ''}
-              onChange={(e) => setBlueprint({ ...blueprint, estimatedArcs: parseInt(e.target.value) || 5 })}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-sm rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all text-center"
+              onChange={(event) => setBlueprint({ ...blueprint, estimatedArcs: Number.parseInt(event.target.value, 10) || 5 })}
+              className={`${compactFieldClassName} text-center font-mono`}
               placeholder="e.g. 5"
               min="1"
               max="100"
             />
           </div>
-        </div>
+        </section>
 
-        {/* Section 5: Characters, Mysteries & Plot Threads */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <h4 className="text-neutral-400 font-sc uppercase tracking-wider font-bold text-xs mb-2 flex items-center space-x-1">
-              <Users size={12} className="text-portal"/>
-              <span>Initial Characters (One per line)</span>
-            </h4>
-            <textarea
-              value={blueprint.initialCharacters?.join('\n') || ''}
-              onChange={(e) => setBlueprint({
-                ...blueprint,
-                initialCharacters: e.target.value.split('\n')
-              })}
-              rows={5}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="e.g. Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
-            />
+        <section aria-labelledby="blueprint-side-characters-heading" className="space-y-4">
+          <SectionHeading id="blueprint-side-characters-heading">Side Characters</SectionHeading>
+          <EditableLabel htmlFor="blueprint-side-characters" icon={Users}>Side Characters (One per line)</EditableLabel>
+          <textarea
+            id="blueprint-side-characters"
+            value={blueprint.initialCharacters?.join('\n') || ''}
+            onChange={(event) => setBlueprint({ ...blueprint, initialCharacters: event.target.value.split('\n') })}
+            rows={6}
+            className={`${compactFieldClassName} font-mono`}
+            placeholder="Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
+          />
+        </section>
+
+        <section aria-labelledby="blueprint-factions-heading" className="space-y-4">
+          <SectionHeading id="blueprint-factions-heading">Factions</SectionHeading>
+          <EditableLabel htmlFor="blueprint-factions" icon={Layers}>Major Factions (One per line)</EditableLabel>
+          <textarea
+            id="blueprint-factions"
+            value={blueprint.majorFactions?.join('\n') || ''}
+            onChange={(event) => setBlueprint({ ...blueprint, majorFactions: event.target.value.split('\n') })}
+            rows={6}
+            className={`${compactFieldClassName} font-mono`}
+            placeholder="Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
+          />
+        </section>
+
+        <section aria-labelledby="blueprint-mysteries-heading" className="space-y-5">
+          <SectionHeading id="blueprint-mysteries-heading">Major Mysteries / Unresolved Plot Threads</SectionHeading>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <EditableLabel htmlFor="blueprint-major-mysteries" icon={HelpCircle}>Major Mysteries (One per line)</EditableLabel>
+              <textarea
+                id="blueprint-major-mysteries"
+                value={blueprint.majorMysteries?.join('\n') || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, majorMysteries: event.target.value.split('\n') })}
+                rows={6}
+                className={`${compactFieldClassName} font-mono`}
+                placeholder="True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?"
+              />
+            </div>
+            <div>
+              <EditableLabel htmlFor="blueprint-unresolved-threads" icon={GitBranch}>Unresolved Plot Threads (One per line)</EditableLabel>
+              <textarea
+                id="blueprint-unresolved-threads"
+                value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
+                onChange={(event) => setBlueprint({ ...blueprint, unresolvedPlotThreads: event.target.value.split('\n') })}
+                rows={6}
+                className={`${compactFieldClassName} font-mono`}
+                placeholder="Sever the engagement with Chu family&#10;Win the Inner Sect tournament"
+              />
+            </div>
           </div>
+        </section>
 
-          <div>
-            <h4 className="text-neutral-400 font-sc uppercase tracking-wider font-bold text-xs mb-2 flex items-center space-x-1">
-              <HelpCircle size={12} className="text-portal"/>
-              <span>Major Mysteries (One per line)</span>
-            </h4>
-            <textarea
-              value={blueprint.majorMysteries?.join('\n') || ''}
-              onChange={(e) => setBlueprint({
-                ...blueprint,
-                majorMysteries: e.target.value.split('\n')
-              })}
-              rows={5}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="e.g. True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?&#10;The secrets of the Abyss"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-neutral-400 font-sc uppercase tracking-wider font-bold text-xs mb-2 flex items-center space-x-1">
-              <GitBranch size={12} className="text-portal"/>
-              <span>Unresolved Plot Threads (One per line)</span>
-            </h4>
-            <textarea
-              value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
-              onChange={(e) => setBlueprint({
-                ...blueprint,
-                unresolvedPlotThreads: e.target.value.split('\n')
-              })}
-              rows={5}
-              className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-mono text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-              placeholder="e.g. Sever the engagement with Chu family&#10;Win the Inner Sect tournament&#10;Find the lightning herb"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col xl:flex-row items-center justify-between pt-6 border-t border-neutral-900 gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-neutral-900 pt-6 xl:flex-row">
           <button
             type="button"
-             tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={onBack}
+            onClick={onBack}
             disabled={isGenerating}
-            className="text-neutral-400 hover:text-signal text-xs font-sc uppercase tracking-widest"
+            className="font-sc text-xs uppercase tracking-widest text-neutral-400 hover:text-signal"
           >
             ← Refine Details
           </button>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
             <button
               type="button"
-               tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={onStartStory}
+              onClick={onStartStory}
               disabled={isGenerating}
-              className="w-full sm:w-auto font-sc px-6 py-3 rounded text-sm uppercase tracking-widest font-bold flex items-center justify-center space-x-2 bg-human text-signal border border-human hover:bg-void hover:text-human hover:border-human shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-human bg-human px-6 py-3 font-sc text-sm font-bold uppercase tracking-widest text-signal shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all hover:border-human hover:bg-void hover:text-human sm:w-auto"
             >
               {isGenerating ? (
                 <>
                   {activeAgentId === 'versa' ? (
-                    <img src={AGENTS.VERSA.logoUrl} className="w-5 h-5 object-contain animate-pulse" alt="VERSA" />
+                    <img src={AGENTS.VERSA.logoUrl} className="size-5 animate-pulse object-contain" alt="VERSA" />
                   ) : (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="w-4 h-4 border-2 border-neutral-400 border-t-transparent rounded-full" />
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                      className="size-4 rounded-full border-2 border-neutral-400 border-t-transparent"
+                    />
                   )}
                   <span>{activeAgentId === 'versa' ? 'VERSA is writing...' : 'Generating...'}</span>
                 </>
@@ -362,30 +607,20 @@ ${blueprint.firstArcPromise || ''}
 
             <button
               type="button"
-               tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={handleCopyBlueprint}
-              className="w-full sm:w-auto font-sc px-5 py-3 rounded text-sm uppercase tracking-widest font-bold flex items-center justify-center space-x-2 bg-neutral-950 text-portal border border-neutral-800 hover:border-portal hover:text-signal transition-all shadow-[0_0_15px_rgba(4,172,255,0.1)] cursor-pointer"
+              onClick={handleCopyBlueprint}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-neutral-800 bg-neutral-950 px-5 py-3 font-sc text-sm font-bold uppercase tracking-widest text-portal shadow-[0_0_15px_rgba(4,172,255,0.1)] transition-all hover:border-portal hover:text-signal sm:w-auto"
             >
-              {copied ? (
-                <>
-                  <Check size={16} />
-                  <span>Copied Blueprint</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={16} />
-                  <span>Copy Blueprint</span>
-                </>
-              )}
+              {copied ? <><Check size={16} /><span>Copied Blueprint</span></> : <><Copy size={16} /><span>Copy Blueprint</span></>}
             </button>
 
             <button
               type="button"
-               tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={onExportSeed}
-               className="w-full sm:w-auto font-sc px-5 py-3 rounded text-sm uppercase tracking-widest font-bold flex items-center justify-center space-x-2 bg-neutral-950 text-neutral-400 border border-neutral-850 hover:border-neutral-700 hover:text-signal transition-all cursor-pointer"
-             >
-               <Download size={16} />
-               <span>Export Seed JSON</span>
-             </button>
+              onClick={onExportSeed}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-neutral-850 bg-neutral-950 px-5 py-3 font-sc text-sm font-bold uppercase tracking-widest text-neutral-400 transition-all hover:border-neutral-700 hover:text-signal sm:w-auto"
+            >
+              <Download size={16} />
+              <span>Export Seed + Blueprint</span>
+            </button>
           </div>
         </div>
       </div>

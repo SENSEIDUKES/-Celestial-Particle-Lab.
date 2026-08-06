@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Feather, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { StorySeedInput } from '../../shared/storySeedSchema';
+import { STORY_PREMISE_MAX_LENGTH, type StorySeedInput } from '../../shared/storySeedSchema';
 import { PREMISE_SUGGESTIONS, TAG_PRESETS } from '../constants';
 import { getSeedSection } from '../seedSections';
 import { patchStoryRequired, storyRequired, updateStoryTags, type UpdateSeed } from '../seedState';
@@ -113,7 +113,7 @@ export const PremiseWorkspace = ({ seed, updateSeed }: PremiseWorkspaceProps) =>
         label="Core Premise / Secret Catalyst"
         icon={Feather}
         required
-        maxLength={3000}
+        maxLength={STORY_PREMISE_MAX_LENGTH}
         value={premise}
         onChange={(val) => updateSeed(patchStoryRequired({ premise: val }))}
         onKeyDown={(e) => {

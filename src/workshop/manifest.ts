@@ -112,13 +112,13 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — Story/World selector with a compact Origin workspace for Story Title, Premise, Style, Genre, and Story Tags, plus an optional ARC workspace combining Face Slap, Plot Armor, Recognition, story direction, conflict, main opposition, Destined Ending, and Make It Work. Navigation Settings includes Rated 18+ story metadata and the Fate Survival UI/state shell with Fate Visibility and Survival Pressure. Tag families open one at a time. Always-available Save Draft, mobile section drawer, Blueprint review, import/export, and saved-seed library are included; a `?` Help menu in the bottom navigation gathers per-topic guidance with matching English audio lines.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — compact Origin and ARC editing, Story Settings, saved drafts, import/export, and a Pass-1 World Blueprint review whose hierarchy keeps canonical Origin provenance separate from generated story direction while preserving every editable Blueprint field.',
     category: 'other',
-    version: 'v1.8',
+    version: 'v1.9',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',
-      lastCompared: '2026-08-05',
+      lastCompared: '2026-08-06',
     },
   },
   {

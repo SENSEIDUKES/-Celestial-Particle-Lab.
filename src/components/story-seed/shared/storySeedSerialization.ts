@@ -1,15 +1,19 @@
 /**
- * Portable Story Seed files. Import and export both speak the canonical
- * Creator / Story / World contract; reading a pre-hierarchy file is delegated
- * to the isolated adapter in `legacySeedImport.ts`.
+ * Portable Story Seed files. The canonical Creator / Story / World seed stays
+ * intact while a reviewed World Blueprint may travel as an optional sibling
+ * artifact. Pre-hierarchy seed migration remains isolated in
+ * `legacySeedImport.ts`; this boundary preserves its sibling Blueprint.
  */
 
 import {
   STORY_SEED_SCHEMA_VERSION,
   normalizeStorySeedInput,
+  normalizeWorldBlueprint,
   type StorySeedInput,
 } from './storySeedSchema';
 import { importLegacyStorySeed, isLegacyStorySeedShape } from './legacySeedImport';
+import type { StorySeedArtifact } from './storySeedRepository';
+import type { WorldBlueprint } from './types';
 
 export const STORY_SEED_FORMAT = 'seihouse-story-seed' as const;
 export const STORY_SEED_COLLECTION_FORMAT = 'seihouse-story-seed-collection' as const;
@@ -41,17 +45,74 @@ const portableSeed = (seed: StorySeedInput): Record<string, unknown> => {
   };
 };
 
-export const createStorySeedExport = (seed: StorySeedInput) => ({
-  format: STORY_SEED_FORMAT,
-  version: STORY_SEED_FORMAT_VERSION,
-  seed: portableSeed(seed),
-});
+/**
+ * Story Title is one canonical value in the current editor. Older artifacts
+ * could save an edited Blueprint title separately, so the reviewed artifact
+ * wins once at the portable boundary and the imported seed is reconciled to it.
+ */
+const reconcileArtifact = (seed: StorySeedInput, blueprintValue?: unknown): StorySeedArtifact => {
+  const normalizedSeed = normalizeStorySeedInput(seed);
+  if (!isRecord(blueprintValue)) return { seed: normalizedSeed };
+  const blueprintTitle = typeof blueprintValue.title === 'string'
+    ? blueprintValue.title.trim()
+    : undefined;
+  const reconciledSeed = blueprintTitle === undefined
+    ? normalizedSeed
+    : normalizeStorySeedInput({
+        ...normalizedSeed,
+        world: {
+          ...normalizedSeed.world,
+          optional: {
+            ...normalizedSeed.world.optional,
+            worldIdentity: {
+              ...normalizedSeed.world.optional.worldIdentity,
+              title: blueprintTitle,
+            },
+          },
+        },
+      });
+  return {
+    seed: reconciledSeed,
+    blueprint: normalizeWorldBlueprint(blueprintValue, reconciledSeed),
+  };
+};
 
-export const createStorySeedCollectionExport = (seeds: StorySeedInput[]) => ({
-  format: STORY_SEED_COLLECTION_FORMAT,
-  version: STORY_SEED_FORMAT_VERSION,
-  seeds: seeds.map(portableSeed),
-});
+export const createStorySeedExport = (
+  seed: StorySeedInput,
+  blueprint?: WorldBlueprint,
+) => {
+  const artifact = reconcileArtifact(seed, blueprint);
+  return {
+    format: STORY_SEED_FORMAT,
+    version: STORY_SEED_FORMAT_VERSION,
+    seed: portableSeed(artifact.seed),
+    ...(artifact.blueprint ? { blueprint: artifact.blueprint } : {}),
+  };
+};
+
+type StorySeedExportArtifact = StorySeedInput | StorySeedArtifact;
+
+const exportArtifact = (value: StorySeedExportArtifact): StorySeedArtifact =>
+  'seed' in value ? value : { seed: value };
+
+export const createStorySeedCollectionExport = (values: StorySeedExportArtifact[]) => {
+  const artifacts = values
+    .map(exportArtifact)
+    .map(artifact => reconcileArtifact(artifact.seed, artifact.blueprint));
+  const hasBlueprints = artifacts.some(artifact => artifact.blueprint);
+  return {
+    format: STORY_SEED_COLLECTION_FORMAT,
+    version: STORY_SEED_FORMAT_VERSION,
+    seeds: artifacts.map(artifact => portableSeed(artifact.seed)),
+    // Parallel entries keep the established `seeds` array backward-compatible
+    // for seed-only readers while preserving reviewed Blueprint artifacts.
+    ...(hasBlueprints ? {
+      blueprints: artifacts.map(artifact => artifact.blueprint
+        ? normalizeWorldBlueprint(artifact.blueprint, artifact.seed)
+        : null),
+    } : {}),
+  };
+};
 
 const isGeneratedStoryPackage = (value: Record<string, unknown>): boolean =>
   'memory' in value || 'arcs' in value || 'chapters' in value || 'imageHistory' in value || 'codex' in value;
@@ -62,18 +123,27 @@ const isCanonicalShape = (value: Record<string, unknown>): boolean =>
   && isRecord((value.story as Record<string, unknown>).required)
   && isRecord(value.world);
 
-const extractStorySeed = (value: unknown): StorySeedInput => {
+const extractStorySeedArtifact = (value: unknown): StorySeedArtifact => {
   if (!isRecord(value)) throw new Error('Each seed must be a JSON object.');
   if (isGeneratedStoryPackage(value)) {
     throw new Error('This is a generated story package, not a portable story seed.');
   }
-  if (isRecord(value.seed)) return extractStorySeed(value.seed);
-  if (isCanonicalShape(value)) return normalizeStorySeedInput(value);
-  if (isLegacyStorySeedShape(value)) return importLegacyStorySeed(value);
-  throw new Error('No reusable Story Seed data was found in this JSON file.');
+  if (isRecord(value.seed)) {
+    const nested = extractStorySeedArtifact(value.seed);
+    return isRecord(value.blueprint)
+      ? reconcileArtifact(nested.seed, value.blueprint)
+      : nested;
+  }
+  const seed = isCanonicalShape(value)
+    ? normalizeStorySeedInput(value)
+    : isLegacyStorySeedShape(value)
+      ? importLegacyStorySeed(value)
+      : null;
+  if (!seed) throw new Error('No reusable Story Seed data was found in this JSON file.');
+  return reconcileArtifact(seed, value.blueprint);
 };
 
-export const parseStorySeedJson = (input: string): StorySeedInput[] => {
+export const parseStorySeedJson = (input: string): StorySeedArtifact[] => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(input);
@@ -84,10 +154,13 @@ export const parseStorySeedJson = (input: string): StorySeedInput[] => {
   const candidates = Array.isArray(parsed)
     ? parsed
     : isRecord(parsed) && Array.isArray(parsed.seeds)
-      ? parsed.seeds
+      ? parsed.seeds.map((seed, index) => {
+          const blueprint = Array.isArray(parsed.blueprints) ? parsed.blueprints[index] : undefined;
+          return isRecord(blueprint) ? { seed, blueprint } : seed;
+        })
       : [parsed];
   if (candidates.length === 0) throw new Error('The seed file is empty.');
-  return candidates.map(extractStorySeed);
+  return candidates.map(extractStorySeedArtifact);
 };
 
 const safeFilenamePart = (title: string): string =>
@@ -136,16 +209,19 @@ const downloadJsonFile = async (value: unknown, filename: string): Promise<void>
   triggerBrowserDownload(blob, filename);
 };
 
-export const downloadStorySeed = (seed: StorySeedInput): Promise<void> => {
-  const normalized = normalizeStorySeedInput(seed);
+export const downloadStorySeed = (
+  seed: StorySeedInput,
+  blueprint?: WorldBlueprint,
+): Promise<void> => {
+  const artifact = reconcileArtifact(seed, blueprint);
   return downloadJsonFile(
-    createStorySeedExport(normalized),
-    `seihouse_story_seed_${safeFilenamePart(normalized.world.optional.worldIdentity.title || 'untitled')}.json`,
+    createStorySeedExport(artifact.seed, artifact.blueprint),
+    `seihouse_story_seed_${safeFilenamePart(artifact.seed.world.optional.worldIdentity.title || 'untitled')}.json`,
   );
 };
 
-export const downloadStorySeedCollection = (seeds: StorySeedInput[]): Promise<void> =>
+export const downloadStorySeedCollection = (artifacts: StorySeedArtifact[]): Promise<void> =>
   downloadJsonFile(
-    createStorySeedCollectionExport(seeds),
+    createStorySeedCollectionExport(artifacts),
     `seihouse_story_seeds_${new Date().toISOString().slice(0, 10)}.json`,
   );

@@ -4,11 +4,13 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-05
-- **Last source comparison:** 2026-08-05
+- **Last Workshop update:** 2026-08-06
+- **Last source comparison:** 2026-08-06
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-06:** Completed World Blueprint Pass 1 without applying the future glass redesign. Re-mapped the editable review into Blueprint Header, Origin Snapshot, Main Character, World Setting, Overall Story Direction, Side Characters, Factions, and Mysteries / Plot Threads. Origin now reads and edits the canonical Story Seed premise, Genre, Style / Novel Tradition, and Story Tags instead of reusing generated logline/style fields. Added safe `v1.0` Blueprint normalization, structured main-character support, complete Copy Blueprint output, optional sibling Blueprint persistence, and additive portable Blueprint import/export so older seed-only records still open while generated and creator-edited Blueprints can be reopened or remixed intact. The locked Reference replica is unchanged; production `CreationModal` and `BlueprintReview` were rechecked on `Light-Novels/main`.
 
 - **2026-08-05:** Expanded Story Seed Help into a reusable, context-aware Library
   guidance menu without changing its established modal, accordion, icon, or listening
@@ -671,10 +673,12 @@ development/                  — active Workshop version (Phase 2 creation work
   StoryAuthGate.tsx            — Foundation v2 cinematic auth gate (added
                                  2026-08-01); rendered by CreationModal's
                                  signed-out branch
-  BlueprintReview.tsx          — blueprint review stage (unchanged from Phase 1)
-  ImportPanel.tsx              — seed/blueprint JSON import (unchanged)
-  SeedLibraryPanel.tsx         — account seed library; toggled from the header
-                                 "My Seeds" action instead of always rendered
+  BlueprintReview.tsx          — Pass-1 editable hierarchy and canonical Origin
+                                 provenance mapping
+  ImportPanel.tsx              — portable seed import with optional Blueprint
+                                 sibling restoration and legacy support
+  SeedLibraryPanel.tsx         — saved seed/Blueprint library; toggled from the
+                                 header "My Seeds" action instead of always rendered
   constants.ts                  — STORY_TAG_CATALOG (label, category, styles,
                                    aliases, color per entry) plus derived
                                    CATEGORIZED_TAGS, TAG_PRESETS,
@@ -685,11 +689,9 @@ development/                  — active Workshop version (Phase 2 creation work
   story-seed.css               — Story Seed-only workspace ambience; reusable
                                   field/header styles live in components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries
-  types.ts                     — IntakeCharacter, IntakeFaction, IntakeData,
-                                  WorldBlueprint, StorySeedPayload, StorySeed,
-                                  NamedCodexEntry (narrow local subset). Phase 2
-                                  added one view-model field: proseStyle (the
-                                  required Style input).
+  types.ts                     — additive WorldBlueprint artifact fields plus
+                                  the narrow shared NamedCodexEntry subset;
+                                  legacy Reference intake types live separately
   storyTagInference.ts          — deterministic Story Tag inference from
                                   Premise / Genre / Style (genre map + keyword
                                   rules, including fate ingredients); used when
@@ -726,15 +728,16 @@ shared/                        — shared infrastructure plus fork-specific data
   storySeedSchema.ts            — development's authoritative creative intake
                                   contract, field classification, validation,
                                   form adapters, and generation payload builders
-  storySeedSerialization.ts     — portable schema-v2 export/import; excludes
-                                  operational IDs and narrowly migrates valid
-                                  v1 intake/blueprint files
+  storySeedSerialization.ts     — portable schema-v3 seed export/import with
+                                  an optional sibling Blueprint artifact;
+                                  excludes operational IDs and narrowly
+                                  migrates valid v1 intake/blueprint files
   storySeedRepository.ts        — account-scoped development save/load adapter
                                   backed by Workshop local storage
   storySeedSchema.test.ts       — focused validation, empty-World,
                                   classification, serialization, persistence,
-                                  and generation-payload checks (15 tests;
-                                  `npm run test:story-seed`)
+                                  and generation-payload checks
+                                  (`npm run test:story-seed`)
   storyAdministrativeMetadata.ts — minimal internal story identity, lifecycle,
                                    language, version, and durable-reference spine
 ```
@@ -745,26 +748,30 @@ shared/                        — shared infrastructure plus fork-specific data
 {
   creator: {},                // reserved; no creator-controlled fields yet
   story: {
-    storyTags: string[],
-    premise: string,
-    genre: string,
-    style: string,
-    optional: {}
+    required: {
+      storyTags: string[],
+      premise: string,
+      genre: string,
+      style: string
+    },
+    optional: { /* ARC and Story Settings */ }
   },
   world: {
-    optional: {}
+    required: {},
+    optional: { worldIdentity, worldFoundations }
   }
 }
 ```
 
-The Phase 2 workspace edits a flat `IntakeData` view model section by section
-(one section visible at a time). A single boundary adapter classifies it before
-save, export, or generation, so the flat prototype shape is never durable data.
+The current workspace edits this canonical `StorySeedInput` directly, one
+section at a time. The flat production `IntakeData` shape survives only in the
+locked Reference replica and the narrow legacy import adapter.
 
 - **Creator:** no user-facing fields. The family stays in the contract for
   future creator-controlled settings.
-- **Story:** the required Premise / Style / Genre inputs, optional Story Tags,
-  and optional Story Title share the compact Origin workspace. Story Title
+- **Story:** the required Premise / Style / Genre / Story Tags inputs (empty
+  tags are inferred before generation) and optional Story Title share the
+  compact Origin workspace. Story Title
   continues to use the canonical `world.optional.worldIdentity.title` path so
   the World Identity input stays synchronized. The optional ARC workspace
   combines Face Slap, Plot Armor, Recognition, story direction, long-term
@@ -782,9 +789,18 @@ save, export, or generation, so the flat prototype shape is never durable data.
   empty World stays valid. `universe` and
   `majorMysteries` are populated from the generated blueprint, not collected
   as intake.
+- **Blueprint artifact:** generated direction remains separate from the Story
+  Seed. `WorldBlueprint.originSnapshot` captures canonical Origin provenance;
+  new fields normalize additively, so older Blueprints without them still open.
+  A saved record may carry the Blueprint as an optional sibling of `seed`,
+  preserving generated and creator-edited Blueprint data without putting it
+  inside Creator / Story / World. Portable single and collection files use the
+  same optional sibling boundary, so seed-only exports stay compatible while a
+  reviewed Blueprint can round-trip without losing generated fields.
 - **Internal metadata:** schema version, seed/account IDs, display title, and
   created/updated timestamps remain on `StorySeedRecord`, outside the creative
-  intake families.
+  intake families. Blueprint version is a distinct `v1.0` artifact value; seed
+  schema version and later story content version are not displayed as it.
 
 ## Internal story administration
 
@@ -1107,7 +1123,8 @@ tree below and should be removed in the same transfer, with one caution
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form
   is removed in this transfer)
 - `shared/storySeedSchema.ts` draft/generation validation split, the Style
-  correction, and `applyInferredStoryTags` → production's Phase 1 schema
+  correction, `applyInferredStoryTags`, Blueprint Origin projection, and
+  Blueprint normalization → production's Phase 1 schema
   module (the `IntakeData` view-model field `proseStyle` belongs to
   production `src/types.ts`, and now holds a `StoryStyle` value)
 - `shared/storyStyle.ts` → production's creation feature. Transfer before any
@@ -1116,6 +1133,10 @@ tree below and should be removed in the same transfer, with one caution
 - `shared/storyTagInference.ts` → production's creation feature (or replace it
   there with the `/api/suggest-tags` model call, keeping the same contract:
   infer only when empty, save into the seed, pass into generation)
+- `shared/types.ts` World Blueprint additions → production `src/types.ts`
+- `shared/storySeedRepository.ts` optional sibling Blueprint contract → adapt
+  into production's real seed persistence rather than copying the Workshop
+  local-storage adapter
 
 Workshop-only — never transfer: `shared/stubs.ts`, `shared/id.ts` and
 `shared/storySeedFormat.ts` and `shared/dialect.ts` and
@@ -1168,6 +1189,11 @@ registry line.
   `IntakeData`/`WorldBlueprint`/`StorySeed` shapes changed since the last
   comparison date above, re-verify before trusting any Workshop-only type in
   a transfer.
+- Pass 1 adds nested `originSnapshot` and `mainCharacter` Blueprint fields.
+  Production transfer must update its Blueprint response schema, server
+  cleaner, generation prompt/output contract, and durable persistence mapping
+  together; otherwise those additive fields will be dropped even though the
+  Workshop review builds successfully.
 
 ## Lifecycle
 
