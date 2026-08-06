@@ -10,6 +10,8 @@
 
 ## Workshop history
 
+- **2026-08-06:** Completed World Blueprint Pass 2 — the editable review now wears the modern Library dossier skin instead of the old flat grid of black boxes. The Pass-1 hierarchy, data mapping, and generation/edit behavior are unchanged; every blueprint box remains editable. The page became a stack of `LibraryPanel` dossier sections (Blueprint Header cover, Origin Snapshot, Main Character, World Setting, Overall Story Direction, Side Characters, Factions, Mysteries / Plot Threads) inside `seed-workspace-shell` over the gradient-only ambience layer, with gold medallion section headings, serif taglines, gilded dividers, and dossier metadata chips (version, creator, status, dates) under an editable display-serif Story Title cover. All fields moved onto the official `LibraryTextBox` / `LibraryTextArea` (Style keeps a raw `glass-select`), gaining 16px phone text, the gilded focus ring, quiet completed accents, a live premise counter, and the tag-limit error through the component's `error` prop; every label row carries a pencil `Editable` chip. Key fields (creator Premise, main-character Background / Profile, World Overview, Destined Ending) carry a scoped parchment-gold rest edge in `story-seed.css` (`.blueprint-key-field`) without leaving the shared glass language, and the footer actions are `LibraryButton`s (the primary Start Matrix keeps the VERSA writing swap). Every DOM id the preview scripts and persistence flows rely on is verbatim. Verified in headless Chromium at 390px and 1280px: no horizontal overflow, no console errors, edits persist through the Export save path, and a reviewed Blueprint survives reopen and a real page reload.
+
 - **2026-08-06:** Completed World Blueprint Pass 1 without applying the future glass redesign. Re-mapped the editable review into Blueprint Header, Origin Snapshot, Main Character, World Setting, Overall Story Direction, Side Characters, Factions, and Mysteries / Plot Threads. Origin now reads and edits the canonical Story Seed premise, Genre, Style / Novel Tradition, and Story Tags instead of reusing generated logline/style fields. Added safe `v1.0` Blueprint normalization, structured main-character support, complete Copy Blueprint output, optional sibling Blueprint persistence, and additive portable Blueprint import/export so older seed-only records still open while generated and creator-edited Blueprints can be reopened or remixed intact. The locked Reference replica is unchanged; production `CreationModal` and `BlueprintReview` were rechecked on `Light-Novels/main`.
 
 - **2026-08-05:** Expanded Story Seed Help into a reusable, context-aware Library
@@ -673,8 +675,13 @@ development/                  — active Workshop version (Phase 2 creation work
   StoryAuthGate.tsx            — Foundation v2 cinematic auth gate (added
                                  2026-08-01); rendered by CreationModal's
                                  signed-out branch
-  BlueprintReview.tsx          — Pass-1 editable hierarchy and canonical Origin
-                                 provenance mapping
+  BlueprintReview.tsx          — Pass-2 editable Library dossier: `LibraryPanel`
+                                 sections, gold medallion headings, dossier
+                                 metadata chips, `LibraryTextBox` /
+                                 `LibraryTextArea` fields with pencil `Editable`
+                                 chips, gold-edged key fields, and LibraryButton
+                                 footer actions; Pass-1 hierarchy and canonical
+                                 Origin provenance mapping unchanged
   ImportPanel.tsx              — portable seed import with optional Blueprint
                                  sibling restoration and legacy support
   SeedLibraryPanel.tsx         — saved seed/Blueprint library; toggled from the
@@ -686,8 +693,12 @@ development/                  — active Workshop version (Phase 2 creation work
                                    GENRE_PRESETS, PREMISE_SUGGESTIONS,
                                    CURATED_PREMISE_EXAMPLES (static Origin
                                    example premises; no Fate Survival genre)
-  story-seed.css               — Story Seed-only workspace ambience; reusable
-                                  field/header styles live in components/library
+  story-seed.css               — Story Seed-only workspace ambience and glass
+                                  polish, plus the World Blueprint dossier's
+                                  title cover (`.blueprint-title-field`) and
+                                  key-field edge (`.blueprint-key-field`);
+                                  reusable field/header styles live in
+                                  components/library
 shared/                        — shared infrastructure plus fork-specific data boundaries
   types.ts                     — additive WorldBlueprint artifact fields plus
                                   the narrow shared NamedCodexEntry subset;

@@ -90,7 +90,7 @@ export const workshopEntries: WorkshopEntry[] = [
     title: 'Closed-Door Cultivation',
     description: 'Idle Qi reward presentation and absorption animation.',
     category: 'rewards',
-    version: 'v2.0',
+    version: 'v1.7',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/ClosedDoorCultivationModal.tsx',
@@ -112,9 +112,9 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — compact Origin and ARC editing, Story Settings, saved drafts, import/export, and a Pass-1 World Blueprint review whose hierarchy keeps canonical Origin provenance separate from generated story direction while preserving every editable Blueprint field.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — compact Origin and ARC editing, Story Settings, saved drafts, import/export, and an editable World Blueprint dossier whose hierarchy keeps canonical Origin provenance separate from generated story direction while preserving every editable Blueprint field, now wearing the modern Library glass skin with gold-edged key fields.',
     category: 'other',
-    version: 'v1.9',
+    version: 'v1.7',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',

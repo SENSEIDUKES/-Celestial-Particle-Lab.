@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import {
+  ArrowLeft,
   ArrowRight,
+  CalendarDays,
   Check,
   Copy,
   Download,
+  Drama,
+  Feather,
   FileText,
+  Flag,
   GitBranch,
+  Globe,
   HelpCircle,
-  Layers,
+  Hourglass,
+  Info,
+  Landmark,
   MapPin,
+  Pencil,
+  Route,
+  ScrollText,
+  Shield,
+  Sparkle,
+  Tag,
   Target,
+  UserRound,
   Users,
   Wand2,
   Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import type { WorldBlueprint, WorldBlueprintMainCharacter } from '../shared/types';
 import {
@@ -24,6 +39,7 @@ import {
 } from '../shared/storySeedSchema';
 import { getStoryStyleLabel, STORY_STYLE_OPTIONS, type StoryStyle } from '../shared/storyStyle';
 import { AGENTS, useAppStore } from '../shared/stubs';
+import { LibraryButton, LibraryPanel, LibraryTextArea, LibraryTextBox } from '../../library';
 import { patchStoryRequired, patchWorldIdentity, type UpdateSeed } from './seedState';
 
 interface BlueprintReviewProps {
@@ -37,33 +53,83 @@ interface BlueprintReviewProps {
   isGenerating: boolean;
 }
 
-interface EditableLabelProps {
-  htmlFor: string;
-  children: React.ReactNode;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
-}
+/** Pencil + "Editable" chip pinned to the right of every dossier field label,
+ *  so every blueprint box reads as editable before it is ever focused. */
+const EditableChip = () => (
+  <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(205,178,113,0.3)] bg-[rgba(205,178,113,0.05)] px-2 py-0.5 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-[#DDC58A]/80">
+    <Pencil size={9} aria-hidden="true" />
+    Editable
+  </span>
+);
 
-const EditableLabel = ({ htmlFor, children, icon: Icon }: EditableLabelProps) => (
-  <div className="mb-2 flex items-center justify-between gap-3">
-    <label
-      className="flex items-center gap-2 font-sc text-xs font-bold uppercase tracking-widest text-signal"
-      htmlFor={htmlFor}
-    >
-      {Icon && <Icon size={14} className="text-portal" />}
-      <span>{children}</span>
-    </label>
-    <span className="shrink-0 font-mono text-[9px] text-portal">Editable</span>
+/** Dossier section heading — gold medallion glyph, cream display title, an
+ *  optional serif tagline, and the same gilded divider the Seed workspaces use. */
+const BlueprintSectionHeading = ({
+  id,
+  icon: Icon,
+  title,
+  tagline,
+}: {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  tagline?: string;
+}) => (
+  <div>
+    <div className="flex items-center gap-3">
+      <span
+        aria-hidden="true"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(205,178,113,0.38)] bg-[radial-gradient(circle_at_32%_28%,rgba(205,178,113,0.14),rgba(11,14,30,0.55)_68%)] text-[#CDB271] shadow-[0_0_16px_rgba(205,178,113,0.12),inset_0_0_10px_rgba(205,178,113,0.08)]"
+      >
+        <Icon size={15} className="drop-shadow-[0_0_6px_rgba(205,178,113,0.35)]" />
+      </span>
+      <h2 id={id} className="font-display text-lg font-bold uppercase tracking-[0.12em] text-[#F3EDE0] sm:text-xl">
+        {title}
+      </h2>
+    </div>
+    {tagline && (
+      <p className="mt-2 max-w-xl font-serif text-[13px] leading-relaxed text-[#B0A99B]">{tagline}</p>
+    )}
+    <div aria-hidden="true" className="mt-4 flex items-center gap-3">
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[rgba(205,178,113,0.16)] to-[rgba(205,178,113,0.3)]" />
+      <Sparkle size={9} className="shrink-0 text-[#CDB271]/60" />
+      <span className="h-px flex-1 bg-gradient-to-l from-transparent via-[rgba(205,178,113,0.16)] to-[rgba(205,178,113,0.3)]" />
+    </div>
   </div>
 );
 
-const SectionHeading = ({ id, children }: { id: string; children: React.ReactNode }) => (
-  <h2 id={id} className="border-b border-neutral-900 pb-2 font-sc text-sm font-bold uppercase tracking-[0.18em] text-portal">
+/** Small dossier metadata chip for the header (version, creator, dates). */
+const MetadataChip = ({
+  icon: Icon,
+  children,
+  gold = false,
+}: {
+  icon?: LucideIcon;
+  children: React.ReactNode;
+  gold?: boolean;
+}) => (
+  <span
+    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${
+      gold
+        ? 'border-[rgba(205,178,113,0.45)] bg-[rgba(205,178,113,0.07)] text-[#DDC58A] shadow-[0_0_14px_rgba(205,178,113,0.12)]'
+        : 'border-[rgba(172,166,214,0.25)] bg-[rgba(11,14,30,0.5)] text-neutral-300'
+    }`}
+  >
+    {Icon && <Icon size={11} aria-hidden="true" className={gold ? 'text-[#DDC58A]' : 'text-[#ACA6D6]'} />}
     {children}
-  </h2>
+  </span>
 );
 
-const fieldClassName = 'w-full rounded-md border border-neutral-900 bg-void p-3 font-sans text-sm text-neutral-300 transition-all focus:border-portal focus:outline-none focus:ring-1 focus:ring-portal/20';
-const compactFieldClassName = `${fieldClassName} text-xs`;
+/** Shared label row for the one control without a Library wrapper (the Style
+ *  select) so it matches LibraryTextBox / LibraryTextArea label rhythm. */
+const FieldLabelRow = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
+  <div className="mb-2 flex items-end justify-between gap-3">
+    <label className="block font-sc text-xs uppercase tracking-widest text-neutral-400" htmlFor={htmlFor}>
+      {children}
+    </label>
+    <EditableChip />
+  </div>
+);
 
 const formatDate = (value: string): string => {
   const parsed = new Date(value);
@@ -236,411 +302,478 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
   };
 
   return (
-    <div className="mx-auto max-w-4xl pb-20" id="creation-portal-root">
-      <header className="mb-10 space-y-4 text-center">
-        <span className="block font-sc text-xs uppercase tracking-[0.2em] text-portal">World Blueprint</span>
+    // The dossier speaks the Seed workspace dialect of the Library glass
+    // language: `seed-workspace-shell` brings the parchment-gold / soft-purple
+    // field polish, the ambience layer stays gradient-only behind the panels.
+    <div className="seed-workspace-shell relative mx-auto max-w-4xl pb-20" id="creation-portal-root">
+      <div aria-hidden="true" className="seed-workspace-ambience" />
 
-        <div className="mx-auto max-w-2xl space-y-3">
-          <div>
-            <label className="mb-1 block font-sc text-[10px] uppercase tracking-widest text-portal" htmlFor="blueprint-story-title">
-              Story Title
-            </label>
-            <input
+      <div className="relative space-y-6">
+        {/* 1 · Blueprint Header — the dossier cover: editable story title and
+              every available artifact metadata chip. */}
+        <LibraryPanel as="header" padding="lg" className="text-center">
+          <div className="flex items-center justify-center gap-3">
+            <span aria-hidden="true" className="h-px w-8 bg-gradient-to-r from-transparent to-[rgba(205,178,113,0.4)]" />
+            <span className="font-sc text-[11px] font-bold uppercase tracking-[0.34em] text-[#CDB271]">World Blueprint</span>
+            <span aria-hidden="true" className="h-px w-8 bg-gradient-to-l from-transparent to-[rgba(205,178,113,0.4)]" />
+          </div>
+
+          <div className="blueprint-title-field mx-auto mt-5 max-w-2xl">
+            <LibraryTextBox
               id="blueprint-story-title"
-              type="text"
+              label="Story Title"
+              rightElement={<EditableChip />}
               value={blueprint.title || ''}
-              onChange={(event) => updateTitle(event.target.value)}
-              className="w-full rounded-md border border-neutral-900 bg-void px-4 py-2 text-center font-display text-2xl font-bold text-signal transition-all focus:border-portal focus:outline-none focus:ring-1 focus:ring-portal/20 sm:text-3xl"
+              onChange={updateTitle}
               placeholder="Give your story a title"
+              autoComplete="off"
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-            <span className="rounded-full border border-portal/30 bg-portal/5 px-3 py-1 text-portal">
-              {blueprint.blueprintVersion || 'v1.0'}
-            </span>
-            {blueprint.creator && <span>Creator: {blueprint.creator}</span>}
-            {blueprint.status && <span>Status: {blueprint.status}</span>}
-            {blueprint.createdAt && <span>Created: {formatDate(blueprint.createdAt)}</span>}
-            {blueprint.updatedAt && <span>Updated: {formatDate(blueprint.updatedAt)}</span>}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <MetadataChip gold>{blueprint.blueprintVersion || 'v1.0'}</MetadataChip>
+            {blueprint.creator && <MetadataChip icon={UserRound}>Creator: {blueprint.creator}</MetadataChip>}
+            {blueprint.status && <MetadataChip icon={Info}>Status: {blueprint.status}</MetadataChip>}
+            {blueprint.createdAt && <MetadataChip icon={CalendarDays}>Created: {formatDate(blueprint.createdAt)}</MetadataChip>}
+            {blueprint.updatedAt && <MetadataChip icon={CalendarDays}>Updated: {formatDate(blueprint.updatedAt)}</MetadataChip>}
           </div>
-        </div>
-      </header>
+        </LibraryPanel>
 
-      <div className="relative space-y-10 rounded-lg border border-portal/30 bg-neutral-950/80 p-6 shadow-[0_0_30px_rgba(4,172,255,0.05)] sm:p-10">
-        <section aria-labelledby="blueprint-origin-heading" className="space-y-5">
-          <div>
-            <SectionHeading id="blueprint-origin-heading">Origin Snapshot</SectionHeading>
-            <p className="mt-2 font-sans text-xs leading-relaxed text-neutral-500">
-              Creator-authored Origin inputs. Changes here update the same Story Seed values used for generation.
-            </p>
-          </div>
+        {/* 2 · Origin Snapshot — the creator-authored seed values; edits here
+              keep updating the canonical Story Seed used for generation. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-origin-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-origin-heading"
+            icon={Feather}
+            title="Origin Snapshot"
+            tagline="Creator-authored Origin inputs. Changes here update the same Story Seed values used for generation."
+          />
 
-          <div>
-            <EditableLabel htmlFor="blueprint-origin-premise">
-              Core Premise / Secret Catalyst ({origin.premise.length} / {STORY_PREMISE_MAX_LENGTH})
-            </EditableLabel>
-            <textarea
-              id="blueprint-origin-premise"
-              value={origin.premise}
-              onChange={(event) => updateOrigin({ premise: event.target.value })}
-              maxLength={STORY_PREMISE_MAX_LENGTH}
-              rows={4}
-              className={`${fieldClassName} resize-y font-serif leading-relaxed text-[#dfd8cf]`}
-              placeholder="The premise written in Origin..."
-            />
-          </div>
+          <div className="mt-5 space-y-5">
+            <div className="blueprint-key-field">
+              <LibraryTextArea
+                id="blueprint-origin-premise"
+                label="Core Premise / Secret Catalyst"
+                rightElement={<EditableChip />}
+                icon={Feather}
+                value={origin.premise}
+                onChange={premise => updateOrigin({ premise })}
+                maxLength={STORY_PREMISE_MAX_LENGTH}
+                rows={5}
+                className="font-serif leading-relaxed text-[#dfd8cf]"
+                placeholder="The premise written in Origin..."
+              />
+            </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <EditableLabel htmlFor="blueprint-origin-genre">Genre</EditableLabel>
-              <input
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <LibraryTextBox
                 id="blueprint-origin-genre"
-                type="text"
+                label="Genre"
+                rightElement={<EditableChip />}
+                icon={Drama}
                 value={origin.genre}
-                onChange={(event) => updateOrigin({ genre: event.target.value })}
-                className={compactFieldClassName}
+                onChange={genre => updateOrigin({ genre })}
                 placeholder="e.g. Xianxia, LitRPG / System"
               />
+
+              <div>
+                <FieldLabelRow htmlFor="blueprint-origin-style">Style / Novel Tradition</FieldLabelRow>
+                <div className="glass-select">
+                  <select
+                    id="blueprint-origin-style"
+                    value={origin.style}
+                    onChange={(event) => updateOrigin({ style: event.target.value as StoryStyle | '' })}
+                    className="glass-field min-h-[2.75rem] px-4 py-2.5 text-base"
+                    data-complete={origin.style ? 'true' : undefined}
+                  >
+                    <option value="">Choose a novel tradition</option>
+                    {STORY_STYLE_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <EditableLabel htmlFor="blueprint-origin-style">Style / Novel Tradition</EditableLabel>
-              <select
-                id="blueprint-origin-style"
-                value={origin.style}
-                onChange={(event) => updateOrigin({ style: event.target.value as StoryStyle | '' })}
-                className={compactFieldClassName}
-              >
-                <option value="">Choose a novel tradition</option>
-                {STORY_STYLE_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <EditableLabel htmlFor="blueprint-origin-tags">
-              Story Tags ({storyTagCount} / {STORY_TAG_LIMIT})
-            </EditableLabel>
-            <textarea
+            <LibraryTextArea
               id="blueprint-origin-tags"
+              label={`Story Tags (${storyTagCount} / ${STORY_TAG_LIMIT})`}
+              rightElement={<EditableChip />}
+              icon={Tag}
               value={origin.storyTags.join('\n')}
-              onChange={(event) => updateStoryTags(event.target.value)}
+              onChange={updateStoryTags}
               rows={3}
-              className={`${compactFieldClassName} font-mono`}
+              className="font-mono"
               placeholder="One Story Tag per line"
+              error={tagLimitError ?? undefined}
             />
-            {tagLimitError && (
-              <p className="mt-2 font-sans text-xs text-red-300" role="alert">{tagLimitError}</p>
-            )}
           </div>
-        </section>
+        </LibraryPanel>
 
-        <section aria-labelledby="blueprint-main-character-heading" className="space-y-5">
-          <SectionHeading id="blueprint-main-character-heading">Main Character</SectionHeading>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <EditableLabel htmlFor="blueprint-mc-name" icon={Users}>Name</EditableLabel>
-              <input
+        {/* 3 · Main Character — the protagonist the blueprint builds around. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-main-character-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-main-character-heading"
+            icon={UserRound}
+            title="Main Character"
+            tagline="The protagonist this blueprint builds around."
+          />
+
+          <div className="mt-5 space-y-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <LibraryTextBox
                 id="blueprint-mc-name"
-                type="text"
+                label="Name"
+                rightElement={<EditableChip />}
+                icon={UserRound}
                 value={mainCharacter.name}
-                onChange={(event) => updateMainCharacter({ name: event.target.value })}
-                className={compactFieldClassName}
+                onChange={name => updateMainCharacter({ name })}
                 placeholder="Main character name"
               />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-mc-age">Age</EditableLabel>
-              <input
+              <LibraryTextBox
                 id="blueprint-mc-age"
-                type="text"
+                label="Age"
+                rightElement={<EditableChip />}
                 value={mainCharacter.age}
-                onChange={(event) => updateMainCharacter({ age: event.target.value })}
-                className={compactFieldClassName}
+                onChange={age => updateMainCharacter({ age })}
                 placeholder="e.g. 18, Ancient, Unknown"
               />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-mc-personality">Personality</EditableLabel>
-              <textarea
+              <LibraryTextArea
                 id="blueprint-mc-personality"
+                label="Personality"
+                rightElement={<EditableChip />}
                 value={mainCharacter.personality}
-                onChange={(event) => updateMainCharacter({ personality: event.target.value })}
+                onChange={personality => updateMainCharacter({ personality })}
                 rows={4}
-                className={fieldClassName}
                 placeholder="Core temperament, values, contradictions..."
               />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-mc-appearance">Appearance</EditableLabel>
-              <textarea
+              <LibraryTextArea
                 id="blueprint-mc-appearance"
+                label="Appearance"
+                rightElement={<EditableChip />}
                 value={mainCharacter.appearance}
-                onChange={(event) => updateMainCharacter({ appearance: event.target.value })}
+                onChange={appearance => updateMainCharacter({ appearance })}
                 rows={4}
-                className={fieldClassName}
                 placeholder="Physical appearance, clothing, distinctive features..."
               />
             </div>
-          </div>
-          <div>
-            <EditableLabel htmlFor="blueprint-mc-profile" icon={FileText}>Background / Profile</EditableLabel>
-            <textarea
-              id="blueprint-mc-profile"
-              value={mainCharacter.backgroundProfile}
-              onChange={(event) => updateMainCharacter({ backgroundProfile: event.target.value })}
-              rows={5}
-              className={`${fieldClassName} leading-relaxed`}
-              placeholder="Background, starting identity, flaws, gifts, and relevant history..."
-            />
-          </div>
-        </section>
 
-        <section aria-labelledby="blueprint-world-setting-heading" className="space-y-5">
-          <SectionHeading id="blueprint-world-setting-heading">World Setting</SectionHeading>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <EditableLabel htmlFor="blueprint-world-overview">World Overview</EditableLabel>
-              <textarea
+            <div className="blueprint-key-field">
+              <LibraryTextArea
+                id="blueprint-mc-profile"
+                label="Background / Profile"
+                rightElement={<EditableChip />}
+                icon={ScrollText}
+                value={mainCharacter.backgroundProfile}
+                onChange={backgroundProfile => updateMainCharacter({ backgroundProfile })}
+                rows={5}
+                className="leading-relaxed"
+                placeholder="Background, starting identity, flaws, gifts, and relevant history..."
+              />
+            </div>
+          </div>
+        </LibraryPanel>
+
+        {/* 4 · World Setting — overview leads as a key field; the remaining
+              pillars follow in a scannable order. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-world-setting-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-world-setting-heading"
+            icon={Globe}
+            title="World Setting"
+            tagline="The universe, its opening stage, and the rules that govern it."
+          />
+
+          <div className="mt-5 space-y-5">
+            <div className="blueprint-key-field">
+              <LibraryTextArea
                 id="blueprint-world-overview"
+                label="World Overview"
+                rightElement={<EditableChip />}
+                icon={Globe}
                 value={blueprint.worldOverview || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, worldOverview: event.target.value }))}
-                rows={6}
-                className={`${fieldClassName} resize-y font-serif leading-relaxed text-[#dfd8cf]`}
+                onChange={worldOverview => setBlueprint(current => ({ ...current, worldOverview }))}
+                rows={7}
+                className="font-serif leading-relaxed text-[#dfd8cf]"
                 placeholder="The setting, lore, and physical characteristics of this universe..."
               />
             </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-opening-location" icon={MapPin}>Opening Location</EditableLabel>
-              <textarea
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <LibraryTextArea
                 id="blueprint-opening-location"
+                label="Opening Location"
+                rightElement={<EditableChip />}
+                icon={MapPin}
                 value={blueprint.startingLocation || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, startingLocation: event.target.value }))}
-                rows={6}
-                className={`${compactFieldClassName} resize-y leading-relaxed`}
+                onChange={startingLocation => setBlueprint(current => ({ ...current, startingLocation }))}
+                rows={5}
+                className="leading-relaxed"
                 placeholder="Where the story begins..."
               />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <EditableLabel htmlFor="blueprint-world-order" icon={Layers}>World Order</EditableLabel>
-              <textarea
+              <LibraryTextArea
                 id="blueprint-world-order"
+                label="World Order"
+                rightElement={<EditableChip />}
+                icon={Landmark}
                 value={blueprint.societyStructure || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, societyStructure: event.target.value }))}
-                rows={6}
-                className={compactFieldClassName}
+                onChange={societyStructure => setBlueprint(current => ({ ...current, societyStructure }))}
+                rows={5}
                 placeholder="Feudal, corporate, sect-based, military rule..."
               />
             </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-power-outline" icon={Zap}>Power System Outline</EditableLabel>
-              <textarea
-                id="blueprint-power-outline"
-                value={blueprint.powerSystemOutline || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, powerSystemOutline: event.target.value }))}
-                rows={6}
-                className={`${compactFieldClassName} font-mono leading-relaxed`}
-                placeholder="Power scaling, ranks, costs, limits, magical energy..."
-              />
-            </div>
-          </div>
-        </section>
 
-        <section aria-labelledby="blueprint-direction-heading" className="space-y-5">
-          <SectionHeading id="blueprint-direction-heading">Overall Story Direction</SectionHeading>
-          <div>
-            <EditableLabel htmlFor="blueprint-core-direction" icon={Target}>Overall / Core Story Direction</EditableLabel>
-            <textarea
-              id="blueprint-core-direction"
-              value={blueprint.logline || ''}
-              onChange={(event) => setBlueprint(current => ({ ...current, logline: event.target.value }))}
+            <LibraryTextArea
+              id="blueprint-power-outline"
+              label="Power System Outline"
+              rightElement={<EditableChip />}
+              icon={Zap}
+              value={blueprint.powerSystemOutline || ''}
+              onChange={powerSystemOutline => setBlueprint(current => ({ ...current, powerSystemOutline }))}
               rows={4}
-              className={`${fieldClassName} leading-relaxed`}
-              placeholder="The generated high-level direction for the complete story..."
+              className="font-mono leading-relaxed"
+              placeholder="Power scaling, ranks, costs, limits, magical energy..."
             />
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <EditableLabel htmlFor="blueprint-first-arc">First Arc Promise</EditableLabel>
-              <textarea
+        </LibraryPanel>
+
+        {/* 5 · Overall Story Direction — generated guidance, with the Destined
+              Ending carrying the key-field weight. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-direction-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-direction-heading"
+            icon={Route}
+            title="Overall Story Direction"
+            tagline="The generated path from the opening promise to the destined ending."
+          />
+
+          <div className="mt-5 space-y-5">
+            <LibraryTextArea
+              id="blueprint-core-direction"
+              label="Overall / Core Story Direction"
+              rightElement={<EditableChip />}
+              icon={Target}
+              value={blueprint.logline || ''}
+              onChange={logline => setBlueprint(current => ({ ...current, logline }))}
+              rows={4}
+              className="leading-relaxed"
+              placeholder="The generated high-level direction for the complete story..."
+            />
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <LibraryTextArea
                 id="blueprint-first-arc"
+                label="First Arc Promise"
+                rightElement={<EditableChip />}
+                icon={Flag}
                 value={blueprint.firstArcPromise || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, firstArcPromise: event.target.value }))}
+                onChange={firstArcPromise => setBlueprint(current => ({ ...current, firstArcPromise }))}
                 rows={5}
-                className={`${fieldClassName} leading-relaxed`}
+                className="leading-relaxed"
                 placeholder="The opening conflict, stakes, and payoff promised by Arc One..."
               />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-destined-ending">Destined Ending</EditableLabel>
-              <textarea
-                id="blueprint-destined-ending"
-                value={blueprint.destinedEnding || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, destinedEnding: event.target.value }))}
-                rows={5}
-                className={`${fieldClassName} leading-relaxed`}
-                placeholder="The intended fated destination of the story..."
-              />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-trope-guidance" icon={Wand2}>Trope Guidance / Story Direction</EditableLabel>
-              <textarea
+              <div className="blueprint-key-field">
+                <LibraryTextArea
+                  id="blueprint-destined-ending"
+                  label="Destined Ending"
+                  rightElement={<EditableChip />}
+                  icon={Hourglass}
+                  value={blueprint.destinedEnding || ''}
+                  onChange={destinedEnding => setBlueprint(current => ({ ...current, destinedEnding }))}
+                  rows={5}
+                  className="leading-relaxed"
+                  placeholder="The intended fated destination of the story..."
+                />
+              </div>
+              <LibraryTextArea
                 id="blueprint-trope-guidance"
+                label="Trope Guidance / Story Direction"
+                rightElement={<EditableChip />}
+                icon={Wand2}
                 value={blueprint.tropeRules || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, tropeRules: event.target.value }))}
+                onChange={tropeRules => setBlueprint(current => ({ ...current, tropeRules }))}
                 rows={5}
-                className={compactFieldClassName}
                 placeholder="Tropes to use or subvert, tone rules, and directional guardrails..."
               />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-style-bible" icon={FileText}>Generated Style Bible</EditableLabel>
-              <textarea
+              <LibraryTextArea
                 id="blueprint-style-bible"
+                label="Generated Style Bible"
+                rightElement={<EditableChip />}
+                icon={FileText}
                 value={blueprint.styleBible || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, styleBible: event.target.value }))}
+                onChange={styleBible => setBlueprint(current => ({ ...current, styleBible }))}
                 rows={5}
-                className={`${compactFieldClassName} font-mono`}
+                className="font-mono"
                 placeholder="Generated prose rules, forbidden phrasing, and tone requirements..."
               />
             </div>
+
+            <div className="sm:max-w-xs">
+              <LibraryTextBox
+                id="blueprint-estimated-arcs"
+                label="Estimated Arcs"
+                rightElement={<EditableChip />}
+                type="number"
+                value={blueprint.estimatedArcs || ''}
+                onChange={(value) => {
+                  const rawValue = value.trim();
+                  const parsedValue = Number.parseInt(rawValue, 10);
+                  setBlueprint(current => ({
+                    ...current,
+                    estimatedArcs: rawValue === '' || Number.isNaN(parsedValue)
+                      ? 0
+                      : Math.min(100, Math.max(1, parsedValue)),
+                  }));
+                }}
+                className="text-center font-mono"
+                placeholder="e.g. 5"
+                min="1"
+                max="100"
+              />
+            </div>
           </div>
-          <div className="max-w-xs">
-            <EditableLabel htmlFor="blueprint-estimated-arcs">Estimated Arcs</EditableLabel>
-            <input
-              id="blueprint-estimated-arcs"
-              type="number"
-              value={blueprint.estimatedArcs || ''}
-              onChange={(event) => {
-                const rawValue = event.target.value.trim();
-                const parsedValue = Number.parseInt(rawValue, 10);
-                setBlueprint(current => ({
-                  ...current,
-                  estimatedArcs: rawValue === '' || Number.isNaN(parsedValue)
-                    ? 0
-                    : Math.min(100, Math.max(1, parsedValue)),
-                }));
-              }}
-              className={`${compactFieldClassName} text-center font-mono`}
-              placeholder="e.g. 5"
-              min="1"
-              max="100"
+        </LibraryPanel>
+
+        {/* 6 · Side Characters — editable one-per-line cast list. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-side-characters-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-side-characters-heading"
+            icon={Users}
+            title="Side Characters"
+            tagline="Cast members the story can draw on — one per line."
+          />
+
+          <div className="mt-5">
+            <LibraryTextArea
+              id="blueprint-side-characters"
+              label="Side Characters (One per line)"
+              rightElement={<EditableChip />}
+              icon={Users}
+              value={blueprint.initialCharacters?.join('\n') || ''}
+              onChange={value => setBlueprint(current => ({ ...current, initialCharacters: value.split('\n') }))}
+              rows={6}
+              className="font-mono"
+              placeholder="Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
             />
           </div>
-        </section>
+        </LibraryPanel>
 
-        <section aria-labelledby="blueprint-side-characters-heading" className="space-y-4">
-          <SectionHeading id="blueprint-side-characters-heading">Side Characters</SectionHeading>
-          <EditableLabel htmlFor="blueprint-side-characters" icon={Users}>Side Characters (One per line)</EditableLabel>
-          <textarea
-            id="blueprint-side-characters"
-            value={blueprint.initialCharacters?.join('\n') || ''}
-            onChange={(event) => setBlueprint(current => ({ ...current, initialCharacters: event.target.value.split('\n') }))}
-            rows={6}
-            className={`${compactFieldClassName} font-mono`}
-            placeholder="Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
+        {/* 7 · Factions — editable one-per-line powers list. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-factions-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-factions-heading"
+            icon={Shield}
+            title="Factions"
+            tagline="Sects, guilds, and powers that already shape the world — one per line."
           />
-        </section>
 
-        <section aria-labelledby="blueprint-factions-heading" className="space-y-4">
-          <SectionHeading id="blueprint-factions-heading">Factions</SectionHeading>
-          <EditableLabel htmlFor="blueprint-factions" icon={Layers}>Major Factions (One per line)</EditableLabel>
-          <textarea
-            id="blueprint-factions"
-            value={blueprint.majorFactions?.join('\n') || ''}
-            onChange={(event) => setBlueprint(current => ({ ...current, majorFactions: event.target.value.split('\n') }))}
-            rows={6}
-            className={`${compactFieldClassName} font-mono`}
-            placeholder="Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
-          />
-        </section>
-
-        <section aria-labelledby="blueprint-mysteries-heading" className="space-y-5">
-          <SectionHeading id="blueprint-mysteries-heading">Major Mysteries / Unresolved Plot Threads</SectionHeading>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <EditableLabel htmlFor="blueprint-major-mysteries" icon={HelpCircle}>Major Mysteries (One per line)</EditableLabel>
-              <textarea
-                id="blueprint-major-mysteries"
-                value={blueprint.majorMysteries?.join('\n') || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, majorMysteries: event.target.value.split('\n') }))}
-                rows={6}
-                className={`${compactFieldClassName} font-mono`}
-                placeholder="True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?"
-              />
-            </div>
-            <div>
-              <EditableLabel htmlFor="blueprint-unresolved-threads" icon={GitBranch}>Unresolved Plot Threads (One per line)</EditableLabel>
-              <textarea
-                id="blueprint-unresolved-threads"
-                value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
-                onChange={(event) => setBlueprint(current => ({ ...current, unresolvedPlotThreads: event.target.value.split('\n') }))}
-                rows={6}
-                className={`${compactFieldClassName} font-mono`}
-                placeholder="Sever the engagement with Chu family&#10;Win the Inner Sect tournament"
-              />
-            </div>
+          <div className="mt-5">
+            <LibraryTextArea
+              id="blueprint-factions"
+              label="Major Factions (One per line)"
+              rightElement={<EditableChip />}
+              icon={Shield}
+              value={blueprint.majorFactions?.join('\n') || ''}
+              onChange={value => setBlueprint(current => ({ ...current, majorFactions: value.split('\n') }))}
+              rows={6}
+              className="font-mono"
+              placeholder="Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
+            />
           </div>
-        </section>
+        </LibraryPanel>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-neutral-900 pt-6 xl:flex-row">
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={isGenerating}
-            className="font-sc text-xs uppercase tracking-widest text-neutral-400 hover:text-signal"
-          >
-            ← Refine Details
-          </button>
+        {/* 8 · Major Mysteries / Unresolved Plot Threads — open questions the
+              story must resolve. */}
+        <LibraryPanel as="section" aria-labelledby="blueprint-mysteries-heading" padding="md">
+          <BlueprintSectionHeading
+            id="blueprint-mysteries-heading"
+            icon={HelpCircle}
+            title="Major Mysteries / Unresolved Plot Threads"
+            tagline="Open questions and threads the story promises to resolve."
+          />
 
-          <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
-            <button
-              type="button"
-              onClick={onStartStory}
+          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+            <LibraryTextArea
+              id="blueprint-major-mysteries"
+              label="Major Mysteries (One per line)"
+              rightElement={<EditableChip />}
+              icon={HelpCircle}
+              value={blueprint.majorMysteries?.join('\n') || ''}
+              onChange={value => setBlueprint(current => ({ ...current, majorMysteries: value.split('\n') }))}
+              rows={6}
+              className="font-mono"
+              placeholder="True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?"
+            />
+            <LibraryTextArea
+              id="blueprint-unresolved-threads"
+              label="Unresolved Plot Threads (One per line)"
+              rightElement={<EditableChip />}
+              icon={GitBranch}
+              value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
+              onChange={value => setBlueprint(current => ({ ...current, unresolvedPlotThreads: value.split('\n') }))}
+              rows={6}
+              className="font-mono"
+              placeholder="Sever the engagement with Chu family&#10;Win the Inner Sect tournament"
+            />
+          </div>
+        </LibraryPanel>
+
+        {/* Dossier footer — refine / manifest / copy / export actions. */}
+        <LibraryPanel padding="sm" className="sm:p-5">
+          <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <LibraryButton
+              variant="ghost"
+              size="sm"
+              icon={ArrowLeft}
+              onClick={onBack}
               disabled={isGenerating}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-human bg-human px-6 py-3 font-sc text-sm font-bold uppercase tracking-widest text-signal shadow-[0_0_15px_rgba(139,0,0,0.3)] transition-all hover:border-human hover:bg-void hover:text-human sm:w-auto"
+              className="self-center xl:self-auto"
             >
-              {isGenerating ? (
-                <>
-                  {activeAgentId === 'versa' ? (
-                    <img src={AGENTS.VERSA.logoUrl} className="size-5 animate-pulse object-contain" alt="VERSA" />
-                  ) : (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-                      className="size-4 rounded-full border-2 border-neutral-400 border-t-transparent"
-                    />
-                  )}
-                  <span>{activeAgentId === 'versa' ? 'VERSA is writing...' : 'Generating...'}</span>
-                </>
-              ) : (
-                <><span>Accept Blueprint & Start Matrix</span><ArrowRight size={16} /></>
-              )}
-            </button>
+              Refine Details
+            </LibraryButton>
 
-            <button
-              type="button"
-              onClick={handleCopyBlueprint}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-neutral-800 bg-neutral-950 px-5 py-3 font-sc text-sm font-bold uppercase tracking-widest text-portal shadow-[0_0_15px_rgba(4,172,255,0.1)] transition-all hover:border-portal hover:text-signal sm:w-auto"
-            >
-              {copied ? <><Check size={16} /><span>Copied Blueprint</span></> : <><Copy size={16} /><span>Copy Blueprint</span></>}
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <LibraryButton
+                variant="primary"
+                size="lg"
+                fullWidth
+                className="sm:w-auto"
+                onClick={onStartStory}
+                loading={isGenerating}
+                loadingIndicator={activeAgentId === 'versa' ? (
+                  <img src={AGENTS.VERSA.logoUrl} className="size-5 animate-pulse object-contain" alt="VERSA" />
+                ) : undefined}
+                iconRight={!isGenerating ? <ArrowRight size={16} /> : undefined}
+              >
+                {isGenerating
+                  ? (activeAgentId === 'versa' ? 'VERSA is writing...' : 'Generating...')
+                  : 'Accept Blueprint & Start Matrix'}
+              </LibraryButton>
 
-            <button
-              type="button"
-              onClick={onExportSeed}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-neutral-850 bg-neutral-950 px-5 py-3 font-sc text-sm font-bold uppercase tracking-widest text-neutral-400 transition-all hover:border-neutral-700 hover:text-signal sm:w-auto"
-            >
-              <Download size={16} />
-              <span>Export Seed + Blueprint</span>
-            </button>
+              <LibraryButton
+                variant="secondary"
+                size="lg"
+                fullWidth
+                className="sm:w-auto"
+                icon={copied ? Check : Copy}
+                onClick={handleCopyBlueprint}
+              >
+                {copied ? 'Copied Blueprint' : 'Copy Blueprint'}
+              </LibraryButton>
+
+              <LibraryButton
+                variant="ghost"
+                size="lg"
+                fullWidth
+                className="sm:w-auto"
+                icon={Download}
+                onClick={onExportSeed}
+              >
+                Export Seed + Blueprint
+              </LibraryButton>
+            </div>
           </div>
-        </div>
+        </LibraryPanel>
       </div>
     </div>
   );
