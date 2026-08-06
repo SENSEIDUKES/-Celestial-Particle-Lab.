@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Story Seed Help content — the single home for guidance that used to live
+ * Library Help content — the single home for guidance that used to live
  * in loose tip boxes scattered across the creation sections.
  *
  * The data is deliberately content-first so the feature grows without UI
@@ -32,6 +32,8 @@ export const DEFAULT_HELP_LANGUAGE: StorySeedHelpLanguage = 'en';
 export interface StorySeedHelpTranslation {
   /** Written guidance line shown on the item's info card. */
   line: string;
+  /** Optional supporting copy. This is written guidance only, never TTS. */
+  detail?: string;
   /** Spoken version of the same line, streamed from the SEIHouse lines CDN. */
   audioUrl: string;
 }
@@ -42,9 +44,35 @@ export interface StorySeedHelpItem {
   /** Short topic label shown in the menu list. */
   label: string;
   icon: LucideIcon;
+  /** Library pages where this topic should be prioritized. */
+  contexts?: string[];
   /** Guidance per language. */
   translations: Partial<Record<StorySeedHelpLanguage, StorySeedHelpTranslation>>;
 }
+
+/** Prioritize the current page, then filter against every visible text field. */
+export const getLibraryHelpItems = (
+  items: StorySeedHelpItem[],
+  language: StorySeedHelpLanguage,
+  page: string,
+  query: string,
+): StorySeedHelpItem[] => {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  return items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => {
+      if (!normalizedQuery) return true;
+      const translation = getHelpTranslation(item, language);
+      return [item.label, translation?.line, translation?.detail]
+        .some(value => value?.toLocaleLowerCase().includes(normalizedQuery));
+    })
+    .sort((a, b) => {
+      const aRelevant = a.item.contexts?.includes(page) ? 1 : 0;
+      const bRelevant = b.item.contexts?.includes(page) ? 1 : 0;
+      return bRelevant - aRelevant || a.index - b.index;
+    })
+    .map(({ item }) => item);
+};
 
 /** Resolve an item's guidance for a language, falling back to English. */
 export const getHelpTranslation = (
@@ -62,9 +90,11 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'story-seed',
     label: 'Story Seed',
     icon: Sprout,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'Your Story Seed is the first spark of the novel. Give the Library enough information for it to create your universe.',
+        detail: 'Quick tip: Start with the clearest version of your idea. You can deepen the world as the seed grows.',
         audioUrl: `${STORY_SEED_LINES_CDN}/STORY%20SEED%20ENG.mp3`,
       },
     },
@@ -73,6 +103,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'origin',
     label: 'Origin',
     icon: Feather,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'Origin holds the required heart of your story, the title, premise, genre, style and tags.',
@@ -84,6 +115,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'premise',
     label: 'Premise',
     icon: Lightbulb,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'The premise tells the Library what your story is really about, scholar.',
@@ -95,6 +127,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'genre',
     label: 'Genre',
     icon: Drama,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'Genre tells the Library what kind of story this should feel like.',
@@ -106,6 +139,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'style',
     label: 'Style',
     icon: PenLine,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'Style controls the flavor of the writing, not the plot itself, cultivator',
@@ -117,9 +151,11 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'story-tags',
     label: 'Story Tags',
     icon: Tag,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'Story Tags are powerful signals. For the best results, use a few strong ones instead of flooding the story.',
+        detail: 'Quick tip: Choose the tags that most strongly define the experience you want the reader to have.',
         audioUrl: `${STORY_SEED_LINES_CDN}/STORY%20TAGS%20ENG.mp3`,
       },
     },
@@ -128,6 +164,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'world',
     label: 'World',
     icon: Globe,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'World details shape the setting, powers, factions, and rules around your story, Choose wisely disciple.',
@@ -139,6 +176,7 @@ export const STORY_SEED_HELP_ITEMS: StorySeedHelpItem[] = [
     id: 'arc',
     label: 'ARC',
     icon: Route,
+    contexts: ['story-seed'],
     translations: {
       en: {
         line: 'ARC guides the path of the story, including plot, tropes, even Face-Slaps, Use ARC to shape the Novels Destiny.',

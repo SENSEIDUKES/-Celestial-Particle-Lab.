@@ -10,6 +10,11 @@
 
 ## Workshop history
 
+- **2026-08-05:** Expanded Story Seed Help into a reusable, context-aware Library
+  guidance menu without changing its established modal, accordion, icon, or listening
+  design. Added full-text guidance search and optional written-only quick-tip details;
+  Story Seed continues to supply its contextual title and keeps its existing topics.
+
 - **2026-08-05:** Refined the Fate Survival mobile settings card after device review: the switch now reads **Fate Survival** instead of **Enable Fate Survival**, the card header stacks on narrow screens so the description no longer squeezes into a thin column, and the mobile Settings sheet scrolls within the viewport with extra bottom safe-area room for Survival Pressure and utility actions.
 
 - **2026-08-05:** Added a dedicated Fate Survival card to the current Story Seed Settings menu in `development/CreationModal.tsx`. The card keeps the requested UI/state shell only: an Enable Fate Survival switch plus Fate Visibility and Survival Pressure choices when enabled. The selected values live in the canonical Story Seed optional settings so drafts, exports, and generation payloads can carry the creator's preference without adding Fate Events, Mind Palace, or deeper survival logic.
