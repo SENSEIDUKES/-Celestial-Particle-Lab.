@@ -39,7 +39,7 @@ import {
 } from '../shared/storySeedSchema';
 import { getStoryStyleLabel, STORY_STYLE_OPTIONS, type StoryStyle } from '../shared/storyStyle';
 import { AGENTS, useAppStore } from '../shared/stubs';
-import { LibraryButton, LibraryPanel, LibraryTextArea, LibraryTextBox } from '../../library';
+import { LibraryButton, LibraryPanel, LibraryTextArea, LibraryTextBox, ManifestButton } from '../../library';
 import { patchStoryRequired, patchWorldIdentity, type UpdateSeed } from './seedState';
 
 interface BlueprintReviewProps {
@@ -738,8 +738,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
             </LibraryButton>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <LibraryButton
-                variant="primary"
+              <ManifestButton
                 size="lg"
                 fullWidth
                 className="sm:w-auto"
@@ -751,9 +750,9 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
                 iconRight={!isGenerating ? <ArrowRight size={16} /> : undefined}
               >
                 {isGenerating
-                  ? (activeAgentId === 'versa' ? 'VERSA is writing...' : 'Generating...')
-                  : 'Manifest'}
-              </LibraryButton>
+                  ? (activeAgentId === 'versa' ? 'VERSA is writing...' : 'Manifesting...')
+                  : 'Manifest Story'}
+              </ManifestButton>
 
               <LibraryButton
                 variant="secondary"

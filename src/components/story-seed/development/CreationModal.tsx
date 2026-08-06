@@ -65,6 +65,7 @@ import {
   LibraryHeaderBadge,
   LibraryNavigationDrawer,
   LibraryPanel,
+  ManifestButton,
 } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { SeedLibraryPanel } from './SeedLibraryPanel';
@@ -725,7 +726,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   ];
 
   return (
-    // `pb-24` clears the sticky Forge strip at the end of scroll; on mobile
+    // `pb-24` clears the sticky Manifest strip at the end of scroll; on mobile
     // the in-flow bottom navigation occupies that space instead.
     <div className="mx-auto max-w-7xl pb-24 max-lg:pb-0" id="creation-portal-root">
       {/* Header — wraps on narrow screens so the action buttons drop to a
@@ -876,7 +877,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             </motion.div>
           </main>
 
-          {/* Action bar — required tracking + Forge as the single primary
+          {/* Action bar — required tracking + Manifest as the single primary
               action, rendered as the panel's footer strip (luminous top
               divider, translucent blur). Section navigation lives in the
               bottom navigation on mobile and the sidebar on desktop. On
@@ -904,8 +905,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 {requiredComplete}/{REQUIRED_STORY_SECTIONS.length} required
               </p>
 
-              <LibraryButton
-                variant="primary"
+              <ManifestButton
                 size="lg"
                 onClick={handleGenerateBlueprintClick}
                 disabled={!canGenerate}
@@ -914,18 +914,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 loadingIndicator={activeAgentId === 'versa' ? (
                   <img src={AGENTS.VERSA.logoUrl} className="h-5 w-5 shrink-0 animate-pulse object-contain" alt="" aria-hidden="true" />
                 ) : undefined}
-                title={missing.length > 0 ? `Missing required: ${missing.map(section => section.label).join(', ')}` : 'Generate the World Blueprint'}
+                title={missing.length > 0 ? `Missing required: ${missing.map(section => section.label).join(', ')}` : 'Manifest the World Blueprint'}
                 className="shrink-0"
               >
                 {isGenerating ? (
-                  <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Generating...'}</span>
+                  <span>{activeAgentId === 'versa' ? 'VERSA is drafting...' : 'Manifesting...'}</span>
                 ) : (
                   <>
-                    <span className="hidden sm:inline">Forge World Blueprint</span>
-                    <span className="sm:hidden">Forge</span>
+                    <span className="hidden sm:inline">Manifest World Blueprint</span>
+                    <span className="sm:hidden">Manifest</span>
                   </>
                 )}
-              </LibraryButton>
+              </ManifestButton>
             </div>
           </LibraryPanel>
         </div>

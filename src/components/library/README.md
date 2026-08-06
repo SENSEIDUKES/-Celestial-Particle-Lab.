@@ -10,6 +10,8 @@ Relics, Reader surfaces) and transfer to production alongside them.
 Celestial Library UI system:
 
 - `LibraryButton`, `LibraryPanel`, and `LibraryNavigationDrawer`
+- `ManifestButton` — the universal spectral creation action ("Manifest …")
+  for primary generation buttons
 - `LibraryBottomNavigation` — the mobile bottom navigation bar
 - `LibraryTextBox` and `LibraryTextArea`
 - `LibraryHeaderBadge` and its emblem/header spectrum treatments
@@ -30,6 +32,17 @@ Reusable visual names use the `library-*` namespace:
 `seed-*` aliases.
 
 ### Shared-component history
+
+- **2026-08-06:** Added `ManifestButton` — the Library's universal creation
+  action. "Manifest" is the Library's creation language: every primary
+  generation button uses it with a label naming what it creates (Manifest
+  World Blueprint, Manifest Story). Behavior comes from `SEIButton`; shape
+  and rhythm are shared with `LibraryButton` (now-exported `BASE`, `SIZES`,
+  `ICON_GLYPH_SIZE`), and the skin is the spectral portal → violet → gold rim
+  shared with `LibraryPanel` (now-exported `SPECTRAL_EDGE`) over obsidian
+  with a restrained spectrum glow that brightens on hover and while busy.
+  First consumer: Story Seed (intake action bar + Blueprint review footer).
+  Secondary actions stay on the quieter `LibraryButton` variants.
 
 - **2026-08-04:** Added `LibraryDragonCycleIcon` — a custom ouroboros glyph
   (dragon chasing its own tail, spiked serpentine body, tail wisp rising into
