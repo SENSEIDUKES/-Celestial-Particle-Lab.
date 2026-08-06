@@ -312,7 +312,13 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
         {/* 1 · Blueprint Header — the dossier cover: editable story title and
               every available artifact metadata chip. */}
         <LibraryPanel as="header" padding="lg" className="text-center">
-          <div className="flex items-center justify-center gap-3">
+          {/* Blueprint version pins to the cover's top-left corner; the
+              remaining metadata chips stay centered under the title. */}
+          <div className="flex justify-start">
+            <MetadataChip gold>{blueprint.blueprintVersion || 'v1.0'}</MetadataChip>
+          </div>
+
+          <div className="mt-4 flex items-center justify-center gap-3">
             <span aria-hidden="true" className="h-px w-8 bg-gradient-to-r from-transparent to-[rgba(205,178,113,0.4)]" />
             <span className="font-sc text-[11px] font-bold uppercase tracking-[0.34em] text-[#CDB271]">World Blueprint</span>
             <span aria-hidden="true" className="h-px w-8 bg-gradient-to-l from-transparent to-[rgba(205,178,113,0.4)]" />
@@ -331,7 +337,6 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <MetadataChip gold>{blueprint.blueprintVersion || 'v1.0'}</MetadataChip>
             {blueprint.creator && <MetadataChip icon={UserRound}>Creator: {blueprint.creator}</MetadataChip>}
             {blueprint.status && <MetadataChip icon={Info}>Status: {blueprint.status}</MetadataChip>}
             {blueprint.createdAt && <MetadataChip icon={CalendarDays}>Created: {formatDate(blueprint.createdAt)}</MetadataChip>}
@@ -747,7 +752,7 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
               >
                 {isGenerating
                   ? (activeAgentId === 'versa' ? 'VERSA is writing...' : 'Generating...')
-                  : 'Accept Blueprint & Start Matrix'}
+                  : 'Manifest'}
               </LibraryButton>
 
               <LibraryButton
