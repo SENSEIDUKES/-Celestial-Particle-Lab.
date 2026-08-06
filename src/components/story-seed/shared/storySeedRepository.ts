@@ -13,9 +13,14 @@ import {
   STORY_SEED_SCHEMA_VERSION,
   type StorySeedInput,
 } from './storySeedSchema';
+import type { WorldBlueprint } from './types';
 import { workshopStorySeedStorage } from './workshopStorySeedStorage';
 
-/** A saved seed plus the minimum needed to list and reopen it. */
+/**
+ * A saved seed plus the minimum needed to list and reopen it. The generated
+ * Blueprint is an optional sibling artifact, never part of Creator / Story /
+ * World, so records written before Blueprint persistence remain valid.
+ */
 export interface StorySeedRecord {
   schemaVersion: typeof STORY_SEED_SCHEMA_VERSION;
   id: string;
@@ -24,13 +29,20 @@ export interface StorySeedRecord {
   createdAt: string;
   updatedAt: string;
   seed: StorySeedInput;
+  blueprint?: WorldBlueprint;
+}
+
+/** Portable or imported creative artifacts before account metadata is added. */
+export interface StorySeedArtifact {
+  seed: StorySeedInput;
+  blueprint?: WorldBlueprint;
 }
 
 export interface StorySeedRepository {
-  create(userId: string, input: StorySeedInput): Promise<StorySeedRecord>;
-  update(userId: string, existing: StorySeedRecord, input: StorySeedInput): Promise<StorySeedRecord>;
+  create(userId: string, input: StorySeedInput, blueprint?: WorldBlueprint): Promise<StorySeedRecord>;
+  update(userId: string, existing: StorySeedRecord, input: StorySeedInput, blueprint?: WorldBlueprint): Promise<StorySeedRecord>;
   list(userId: string): Promise<StorySeedRecord[]>;
-  importMany(userId: string, inputs: StorySeedInput[]): Promise<StorySeedRecord[]>;
+  importMany(userId: string, artifacts: StorySeedArtifact[]): Promise<StorySeedRecord[]>;
   reset(records?: StorySeedRecord[]): void;
 }
 
@@ -41,21 +53,25 @@ export const setStorySeedRepository = (next: StorySeedRepository): void => {
   repository = next;
 };
 
-export const createStorySeed = (userId: string, input: StorySeedInput): Promise<StorySeedRecord> =>
-  repository.create(userId, input);
+export const createStorySeed = (
+  userId: string,
+  input: StorySeedInput,
+  blueprint?: WorldBlueprint,
+): Promise<StorySeedRecord> => repository.create(userId, input, blueprint);
 
 export const updateStorySeed = (
   userId: string,
   existing: StorySeedRecord,
   input: StorySeedInput,
-): Promise<StorySeedRecord> => repository.update(userId, existing, input);
+  blueprint?: WorldBlueprint,
+): Promise<StorySeedRecord> => repository.update(userId, existing, input, blueprint);
 
 export const listStorySeeds = (userId: string): Promise<StorySeedRecord[]> => repository.list(userId);
 
 export const importStorySeeds = (
   userId: string,
-  inputs: StorySeedInput[],
-): Promise<StorySeedRecord[]> => repository.importMany(userId, inputs);
+  artifacts: StorySeedArtifact[],
+): Promise<StorySeedRecord[]> => repository.importMany(userId, artifacts);
 
 export const resetStorySeedRepository = (records: StorySeedRecord[] = []): void =>
   repository.reset(records);

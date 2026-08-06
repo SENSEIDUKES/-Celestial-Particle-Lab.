@@ -6,14 +6,45 @@
  * locked `reference/` replica still speaks lives in `referenceIntake.ts`.
  */
 
+/** The creator-authored Origin values captured with a generated Blueprint. */
+export interface WorldBlueprintOriginSnapshot {
+  premise: string;
+  genre: string;
+  /** Stable Story Style key (`chinese`, `korean`, or `japanese`). */
+  style: string;
+  storyTags: string[];
+}
+
+/** Structured main-character fields used by the editable Blueprint review. */
+export interface WorldBlueprintMainCharacter {
+  name: string;
+  age: string;
+  personality: string;
+  appearance: string;
+  backgroundProfile: string;
+}
+
 /** Generated blueprint output. Produced from a Story Seed; never stored inside one. */
 export interface WorldBlueprint {
+  /** Additive artifact metadata. Older Blueprints safely default to `v1.0`. */
+  blueprintVersion?: string;
+  creator?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /**
+   * Provenance copied from the canonical Story Seed at the generation boundary.
+   * The Story Seed remains the editable source of truth while the review is open.
+   */
+  originSnapshot?: WorldBlueprintOriginSnapshot;
   title: string;
   logline: string;
   worldOverview: string;
   startingLocation: string;
   societyStructure: string;
   powerSystemOutline: string;
+  /** Structured fields added without removing the legacy combined profile. */
+  mainCharacter?: WorldBlueprintMainCharacter;
   mcProfile: string;
   majorFactions: string[];
   initialCharacters: string[];

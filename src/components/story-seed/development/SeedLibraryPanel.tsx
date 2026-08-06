@@ -25,7 +25,7 @@ export const SeedLibraryPanel = ({
           My Story Seeds
         </h2>
         <p className="mt-1 font-sans text-[11px] text-neutral-500">
-          Private account seeds remain available when their generated stories are deleted.
+          Saved seeds and their reviewed Blueprints remain available independently of generated stories.
         </p>
       </div>
       <button
@@ -41,11 +41,11 @@ export const SeedLibraryPanel = ({
 
     {isLoading ? (
       <p className="mt-4 font-mono text-[10px] uppercase tracking-wider text-neutral-600" role="status">
-        Loading account seeds…
+        Loading saved seeds…
       </p>
     ) : seeds.length === 0 ? (
       <p className="mt-4 font-sans text-xs text-neutral-600">
-        No saved seeds yet. Forge or import one to add it to your account.
+        No saved seeds yet. Forge or import one to keep it here.
       </p>
     ) : (
       <div className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">

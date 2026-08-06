@@ -6,6 +6,7 @@ import type {
 import {
   STORY_SEED_SCHEMA_VERSION,
   createEmptyStorySeedInput,
+  normalizeWorldBlueprint,
   type StorySeedInput,
 } from '../../../components/story-seed/shared/storySeedSchema';
 import type { StorySeedRecord } from '../../../components/story-seed/shared/storySeedRepository';
@@ -115,6 +116,8 @@ export const createFilledIntake = (): IntakeData => ({
 });
 
 export const createMockBlueprint = (): WorldBlueprint => ({
+  blueprintVersion: 'v1.0',
+  creator: 'Workshop Creator',
   title: 'Ashes of the Ninth Meridian',
   logline: 'A crippled young master races seven doomed timelines to save a prince the heavens have already condemned.',
   worldOverview:
@@ -130,7 +133,7 @@ export const createMockBlueprint = (): WorldBlueprint => ({
   majorMysteries: ['True origin of the Sovereign Ring', 'Why was the Sect Leader poisoned?'],
   firstArcPromise: 'The sect tournament exposes the first assassination attempt on the prince.',
   tropeRules: 'Face-slapping tied to fate corrections, not petty insults.',
-  styleBible: 'chinese',
+  styleBible: 'Close third-person narration with restrained exposition, concrete sensory detail, and sharp reversals at scene endings.',
   destinedEnding: "The prince survives and shatters the celestial court's grip on fate.",
   estimatedArcs: 12,
   unresolvedPlotThreads: ['Sever the engagement with Chu family', 'Win the Inner Sect tournament'],
@@ -254,6 +257,7 @@ export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = 
     createdAt: now,
     updatedAt: now,
     seed,
+    blueprint: normalizeWorldBlueprint(createMockBlueprint(), seed, { creator: 'Workshop Creator' }),
     ...overrides,
   };
 };
@@ -275,6 +279,20 @@ export const createMockStorySeedLibrary = (): StorySeedRecord[] => {
           },
         },
       },
+      blueprint: normalizeWorldBlueprint(
+        { ...createMockBlueprint(), title: 'The Grimoire That Talks Back' },
+        {
+          ...second,
+          world: {
+            ...second.world,
+            optional: {
+              ...second.world.optional,
+              worldIdentity: { ...second.world.optional.worldIdentity, title: 'The Grimoire That Talks Back' },
+            },
+          },
+        },
+        { creator: 'Workshop Creator' },
+      ),
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
     }),
   ];

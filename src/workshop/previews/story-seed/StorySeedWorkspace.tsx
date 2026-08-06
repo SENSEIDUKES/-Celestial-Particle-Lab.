@@ -235,16 +235,23 @@ export function StorySeedWorkspace() {
   const [activeCategory, setActiveCategory] = useState<PreviewCategory>('intake');
   const currentUser = useAppStore(state => state.currentUser);
 
-  const applyScenario = useCallback((stateId: PreviewState) => {
+  const applyScenario = useCallback((
+    stateId: PreviewState,
+    options: { preserveLocalSeeds?: boolean } = {},
+  ) => {
     const scenario = scenarios.find(s => s.id === stateId)!;
     setActiveState(stateId);
     setMockLocalOnlyMode(scenario.localOnlyMode ?? true);
     resetMockState({
-      currentUser: scenario.signedIn ? { uid: MOCK_USER_ID } : null,
+      currentUser: scenario.signedIn
+        ? { uid: MOCK_USER_ID, displayName: 'Workshop Creator' }
+        : null,
       activeAgentId: scenario.activeAgentId ?? null,
     });
     resetMockSeeds(scenario.seedLibrary === 'populated' ? createMockSeedLibrary() : []);
-    resetStorySeedRepository(scenario.seedLibrary === 'populated' ? createMockStorySeedLibrary() : []);
+    if (!options.preserveLocalSeeds) {
+      resetStorySeedRepository(scenario.seedLibrary === 'populated' ? createMockStorySeedLibrary() : []);
+    }
   }, []);
 
   useEffect(() => {
@@ -253,7 +260,10 @@ export function StorySeedWorkspace() {
     // screenshot verification).
     const requested = new URLSearchParams(window.location.search).get('state') as PreviewState | null;
     const initial = requested && scenarios.some(s => s.id === requested) ? requested : 'empty-intake';
-    applyScenario(initial);
+    // The default local Workshop behaves like the actual local adapter: a
+    // refresh must not erase drafts or reviewed Blueprints. Explicit preview
+    // state changes still reset fixtures so visual scenarios stay deterministic.
+    applyScenario(initial, { preserveLocalSeeds: initial === 'empty-intake' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -80,6 +80,8 @@ export const AGENTS = {
 
 export interface MockUser {
   uid: string;
+  /** Optional display metadata; never substitute the account id for a creator name. */
+  displayName?: string;
 }
 
 export interface MockStoryRef {
@@ -159,7 +161,7 @@ export const selectIsGenerating = (store: { isGenerating?: boolean }) =>
 // ─── Mock login (stands in for signInWithPopup + GoogleAuthProvider) ────────
 
 export async function mockLogin(): Promise<void> {
-  setMockState({ currentUser: { uid: 'mock-user-workshop' } });
+  setMockState({ currentUser: { uid: 'mock-user-workshop', displayName: 'Workshop Creator' } });
 }
 
 // ─── Inert API headers (stands in for hooks/storyEngineHelpers.getApiHeaders) ──

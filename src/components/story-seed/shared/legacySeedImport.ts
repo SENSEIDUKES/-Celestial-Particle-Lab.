@@ -12,9 +12,11 @@
  * (`hardcoreFateMode`, `fatePressure`), experience dials (`romanceLevel`,
  * `faceSlappingLevel`, `comedyLevel`, `tournamentArcPreference`,
  * `haremPreference`, `betrayalLevel`, `dangerLevel`, `generalAtmosphere`,
- * `powerPace`), and generated Blueprint output (`logline`, `firstArcPromise`,
- * `tropeRules`, `unresolvedPlotThreads`, `estimatedArcs`, `majorMysteries`) —
- * are dropped on the way in rather than carried forward.
+ * `powerPace`) are dropped on the way in rather than carried forward. Generated
+ * Blueprint output (`logline`, `firstArcPromise`, `tropeRules`,
+ * `unresolvedPlotThreads`, `estimatedArcs`, `majorMysteries`) never enters the
+ * Story Seed; `storySeedSerialization.ts` preserves and normalizes it as the
+ * separate Blueprint artifact instead.
  */
 
 import {

@@ -4,8 +4,12 @@ import {
   applyInferredStoryTags,
   buildBlueprintGenerationPayload,
   buildInitialStoryGenerationPayload,
+  createBlueprintDraftFromSeed,
+  createBlueprintOriginSnapshot,
   createEmptyStorySeedInput,
   normalizeStorySeedInput,
+  normalizeWorldBlueprint,
+  STORY_PREMISE_MAX_LENGTH,
   validateStorySeedDraft,
   validateStorySeedInput,
   type StorySeedInput,
@@ -20,6 +24,7 @@ import {
   listStorySeeds,
   resetStorySeedRepository,
   updateStorySeed,
+  type StorySeedRecord,
 } from './storySeedRepository';
 import {
   createStoryAdministrativeMetadata,
@@ -162,6 +167,120 @@ describe('Story Seed creator/story/world contract', () => {
     });
   });
 
+  it('keeps canonical Origin provenance separate from generated Blueprint direction', () => {
+    const seed = completeSeed();
+    const generated: WorldBlueprint = {
+      ...blueprint,
+      title: 'A Generated Replacement Title',
+      logline: 'Generated direction that deliberately differs from the premise.',
+      styleBible: 'Generated prose guidance, not a Novel Tradition value.',
+      creator: 'Model-Invented Creator',
+      status: 'Model-Invented Status',
+      createdAt: 'Model-Invented Date',
+      originSnapshot: {
+        premise: 'Incorrect model-authored premise',
+        genre: 'Incorrect genre',
+        style: 'japanese',
+        storyTags: ['incorrect tag'],
+      },
+    };
+
+    expect(createBlueprintOriginSnapshot(seed)).toEqual({
+      premise: 'A prince must survive the seven timelines that say he dies.',
+      genre: 'Xianxia',
+      style: 'chinese',
+      storyTags: ['death flags', 'foreknowledge'],
+    });
+
+    const normalized = normalizeWorldBlueprint(generated, seed, {
+      creator: 'SENSEI',
+      createdAt: '2026-08-06T00:00:00.000Z',
+      updatedAt: '2026-08-06T01:00:00.000Z',
+      preserveSourceMetadata: false,
+    });
+    expect(normalized.originSnapshot).toEqual(createBlueprintOriginSnapshot(seed));
+    expect(normalized.title).toBe('Ashes of the Ninth Meridian');
+    expect(normalized.logline).toBe('Generated direction that deliberately differs from the premise.');
+    expect(normalized.styleBible).toBe('Generated prose guidance, not a Novel Tradition value.');
+    expect(normalized.creator).toBe('SENSEI');
+    expect(normalized.status).toBeUndefined();
+    expect(normalized.createdAt).toBe('2026-08-06T00:00:00.000Z');
+    expect(normalized.updatedAt).toBe('2026-08-06T01:00:00.000Z');
+    expect(normalized.blueprintVersion).toBe('v1.0');
+  });
+
+  it('builds a seed-only Blueprint draft without disguising Origin as generated direction', () => {
+    const draft = createBlueprintDraftFromSeed(completeSeed());
+
+    expect(draft.originSnapshot?.premise).toBe('A prince must survive the seven timelines that say he dies.');
+    expect(draft.logline).toBe('Escalating court intrigue.');
+    expect(draft.logline).not.toBe(draft.originSnapshot?.premise);
+    expect(draft.styleBible).toBe('');
+    expect(draft.mainCharacter).toMatchObject({
+      name: 'Ye Chen',
+      age: '',
+      personality: 'Protective and ruthless',
+      appearance: '',
+    });
+  });
+
+  it('normalizes an older Blueprint without losing any established generated field', () => {
+    const normalized = normalizeWorldBlueprint(blueprint);
+
+    expect(normalized).toMatchObject(blueprint);
+    expect(normalized.blueprintVersion).toBe('v1.0');
+    expect(normalized.creator).toBeUndefined();
+    expect(normalized.originSnapshot).toEqual({ premise: '', genre: '', style: '', storyTags: [] });
+    expect(normalized.mainCharacter).toEqual({
+      name: '',
+      age: '',
+      personality: '',
+      appearance: '',
+      backgroundProfile: blueprint.mcProfile,
+    });
+    expect(normalized.majorFactions).toEqual(blueprint.majorFactions);
+    expect(normalized.initialCharacters).toEqual(blueprint.initialCharacters);
+    expect(normalized.majorMysteries).toEqual(blueprint.majorMysteries);
+    expect(normalized.unresolvedPlotThreads).toEqual(blueprint.unresolvedPlotThreads);
+  });
+
+  it('preserves deliberately cleared editable fields instead of restoring seed fallbacks', () => {
+    const seed = completeSeed();
+    seed.world.optional.worldIdentity.title = '';
+    const cleared = normalizeWorldBlueprint({
+      ...blueprint,
+      title: '',
+      startingLocation: '',
+      societyStructure: '',
+      powerSystemOutline: '',
+      firstArcPromise: '',
+      mainCharacter: {
+        name: '',
+        age: '',
+        personality: '',
+        appearance: '',
+        backgroundProfile: '',
+      },
+      mcProfile: 'Legacy profile that must not override the structured edit.',
+    }, seed);
+
+    expect(cleared).toMatchObject({
+      title: '',
+      startingLocation: '',
+      societyStructure: '',
+      powerSystemOutline: '',
+      firstArcPromise: '',
+      mcProfile: '',
+      mainCharacter: {
+        name: '',
+        age: '',
+        personality: '',
+        appearance: '',
+        backgroundProfile: '',
+      },
+    });
+  });
+
   it('treats Story Tags, Premise, Genre, and Style as the required Story inputs', () => {
     expect(validateStorySeedInput(createEmptyStorySeedInput())).toEqual({
       valid: false,
@@ -172,6 +291,17 @@ describe('Story Seed creator/story/world contract', () => {
         'Story Tags are required.',
       ],
     });
+  });
+
+  it('enforces the same Origin premise and Story Tag limits at generation boundaries', () => {
+    const oversized = completeSeed();
+    oversized.story.required.premise = 'x'.repeat(3_001);
+    oversized.story.required.storyTags = Array.from({ length: 13 }, (_, index) => `tag ${index + 1}`);
+
+    expect(validateStorySeedInput(oversized).errors).toEqual([
+      `Premise cannot exceed ${STORY_PREMISE_MAX_LENGTH.toLocaleString('en-US')} characters.`,
+      'Story Tags cannot exceed 12.',
+    ]);
   });
 
   it('accepts only the three novel traditions as Style', () => {
@@ -337,7 +467,7 @@ describe('Story Seed creator/story/world contract', () => {
     // Local entity ids never leave the account.
     expect(JSON.stringify(exported)).not.toContain('character-1');
 
-    const [roundTripped] = parseStorySeedJson(JSON.stringify(exported));
+    const [{ seed: roundTripped }] = parseStorySeedJson(JSON.stringify(exported));
     expect(roundTripped.story.required).toEqual(seed.story.required);
     expect(roundTripped.story.optional.intendedForMatureAudiences).toBe(true);
     expect(roundTripped.story.optional.fateSurvival)
@@ -348,6 +478,41 @@ describe('Story Seed creator/story/world contract', () => {
       .toBe('The weakest bloodline is secretly the only one heaven fears.');
     expect(roundTripped.world.optional.worldIdentity).toEqual(seed.world.optional.worldIdentity);
     expect(createStorySeedCollectionExport([seed]).seeds).toHaveLength(1);
+
+    const reviewedBlueprint = {
+      ...normalizeWorldBlueprint({
+        ...blueprint,
+        logline: 'Creator-approved direction that must survive portability.',
+        mainCharacter: {
+          name: 'Ye Chen',
+          age: '19',
+          personality: 'Protective and ruthless',
+          appearance: 'Silver eyes and a broken jade ring.',
+          backgroundProfile: blueprint.mcProfile,
+        },
+      }, seed, { creator: 'SENSEI' }),
+      // Pre-current artifacts could edit this without synchronizing the seed.
+      title: 'Ashes of the Ninth Meridian — Reviewed',
+    };
+    const artifactExport = createStorySeedExport(seed, reviewedBlueprint);
+    const [artifactRoundTrip] = parseStorySeedJson(JSON.stringify(artifactExport));
+    expect(artifactRoundTrip.blueprint).toMatchObject({
+      title: 'Ashes of the Ninth Meridian — Reviewed',
+      logline: 'Creator-approved direction that must survive portability.',
+      mainCharacter: { age: '19', appearance: 'Silver eyes and a broken jade ring.' },
+    });
+    expect(artifactRoundTrip.seed.world.optional.worldIdentity.title)
+      .toBe('Ashes of the Ninth Meridian — Reviewed');
+    const collectionExport = createStorySeedCollectionExport([
+      { seed, blueprint: reviewedBlueprint },
+      { seed },
+    ]);
+    expect(collectionExport.seeds).toHaveLength(2);
+    expect(collectionExport.blueprints).toHaveLength(2);
+    const collectionRoundTrip = parseStorySeedJson(JSON.stringify(collectionExport));
+    expect(collectionRoundTrip[0].blueprint?.logline)
+      .toBe('Creator-approved direction that must survive portability.');
+    expect(collectionRoundTrip[1].blueprint).toBeUndefined();
   });
 
   it('imports a pre-hierarchy file through the isolated legacy adapter', () => {
@@ -373,10 +538,10 @@ describe('Story Seed creator/story/world contract', () => {
         romanceLevel: 'Single heroine',
         dangerLevel: 'Relentless',
       },
-      blueprint,
+      blueprint: { ...blueprint, title: 'Ashes of the Ninth Meridian — Reviewed Legacy Blueprint' },
     };
 
-    const [migrated] = parseStorySeedJson(JSON.stringify(legacy));
+    const [{ seed: migrated, blueprint: migratedBlueprint }] = parseStorySeedJson(JSON.stringify(legacy));
     expect(migrated.story.required).toEqual({
       storyTags: ['death flags'],
       premise: 'A prince must survive the seven timelines that say he dies.',
@@ -394,9 +559,19 @@ describe('Story Seed creator/story/world contract', () => {
       plotArmor: 'medium',
       recognition: 'medium',
     });
-    expect(migrated.world.optional.worldIdentity.title).toBe('Ashes of the Ninth Meridian');
+    expect(migrated.world.optional.worldIdentity.title)
+      .toBe('Ashes of the Ninth Meridian — Reviewed Legacy Blueprint');
     expect(migrated.world.optional.worldFoundations.mainCharacter).toEqual({ name: 'Ye Chen' });
     expect(migrated.world.optional.worldFoundations.factions?.[0].name).toBe('Heavenly Sword Sect');
+    expect(migratedBlueprint).toMatchObject({
+      title: 'Ashes of the Ninth Meridian — Reviewed Legacy Blueprint',
+      logline: blueprint.logline,
+      firstArcPromise: blueprint.firstArcPromise,
+      tropeRules: blueprint.tropeRules,
+      estimatedArcs: blueprint.estimatedArcs,
+      majorMysteries: blueprint.majorMysteries,
+      unresolvedPlotThreads: blueprint.unresolvedPlotThreads,
+    });
     expect(JSON.stringify(migrated)).not.toContain('fatePressure');
     expect(JSON.stringify(migrated)).not.toContain('Relentless');
   });
@@ -452,6 +627,52 @@ describe('Story Seed creator/story/world contract', () => {
     expect((await listStorySeeds('creator-1'))[0].seed.story.required.premise)
       .toBe('The updated required premise.');
     await expect(updateStorySeed('creator-2', updated, changed)).rejects.toThrow('another account');
+  });
+
+  it('round-trips an edited Blueprint as an optional sibling artifact', async () => {
+    const seed = completeSeed();
+    const generated = normalizeWorldBlueprint(blueprint, seed, { creator: 'SENSEI' });
+    const created = await createStorySeed('creator-1', seed, generated);
+
+    expect(created.seed).not.toHaveProperty('blueprint');
+    expect((await listStorySeeds('creator-1'))[0].blueprint).toEqual(generated);
+
+    const edited = {
+      ...generated,
+      logline: 'The creator-approved overall direction.',
+      mainCharacter: {
+        ...generated.mainCharacter!,
+        age: '19',
+        appearance: 'Silver eyes, weathered sect robes, and a broken jade ring.',
+      },
+    };
+    const updated = await updateStorySeed('creator-1', created, seed, edited);
+    expect((await listStorySeeds('creator-1'))[0].blueprint).toMatchObject({
+      logline: 'The creator-approved overall direction.',
+      mainCharacter: { age: '19', appearance: 'Silver eyes, weathered sect robes, and a broken jade ring.' },
+    });
+
+    await updateStorySeed('creator-1', updated, seed);
+    expect((await listStorySeeds('creator-1'))[0].blueprint).toMatchObject({
+      logline: 'The creator-approved overall direction.',
+      mainCharacter: { age: '19', appearance: 'Silver eyes, weathered sect robes, and a broken jade ring.' },
+    });
+
+    const oldRecord = await createStorySeed('creator-1', seed);
+    expect(oldRecord.blueprint).toBeUndefined();
+    expect(() => normalizeWorldBlueprint(oldRecord.blueprint, oldRecord.seed)).not.toThrow();
+    expect(createBlueprintDraftFromSeed(oldRecord.seed).blueprintVersion).toBe('v1.0');
+  });
+
+  it('omits malformed saved Blueprint siblings instead of fabricating an artifact', async () => {
+    const created = await createStorySeed('creator-1', completeSeed());
+    resetStorySeedRepository([{
+      ...created,
+      blueprint: null,
+    } as unknown as StorySeedRecord]);
+
+    const [reloaded] = await listStorySeeds('creator-1');
+    expect(reloaded.blueprint).toBeUndefined();
   });
 
   it('keeps the minimal administrative spine separate from Creator / Story / World', () => {

@@ -15,6 +15,7 @@ import {
   importStorySeeds,
   listStorySeeds,
   updateStorySeed,
+  type StorySeedArtifact,
   type StorySeedRecord,
 } from '../shared/storySeedRepository';
 import {
@@ -24,6 +25,7 @@ import {
   createBlueprintDraftFromSeed,
   createEmptyStorySeedInput,
   normalizeStorySeedInput,
+  normalizeWorldBlueprint,
   validateStorySeedDraft,
   validateStorySeedInput,
   type BlueprintGenerationPayload,
@@ -251,6 +253,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const storeIsGenerating = useAppStore(selectIsGenerating);
   const activeAgentId = useAppStore(state => state.activeAgentId);
   const currentUser = useAppStore(state => state.currentUser);
+  const seedOwnerId = currentUser?.uid || (LOCAL_ONLY_MODE ? LOCAL_CREATOR_ID : null);
   const equippedRelicTitle = useAppStore(state => {
     const storyMaker = state.routingConfig.storyMaker;
     return typeof storyMaker?.equippedRelicTitle === 'string'
@@ -271,6 +274,11 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [chapterCount] = useState(10);
   const [authDissolving, setAuthDissolving] = useState(false);
   const wasAuthRef = useRef(false);
+  const previousSeedOwnerIdRef = useRef<string | null>(seedOwnerId);
+  const seedOwnerIdRef = useRef<string | null>(seedOwnerId);
+  const currentSeedRef = useRef<StorySeedRecord | null>(null);
+  const persistRequestIdRef = useRef(0);
+  seedOwnerIdRef.current = seedOwnerId;
 
   // Creation workspace state
   const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
@@ -292,37 +300,55 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // separate flat view model between the form and the contract any more.
   const [seed, setSeed] = useState<StorySeedInput>(createEmptyStorySeedInput);
 
+  const setActiveSeed = (record: StorySeedRecord | null) => {
+    currentSeedRef.current = record;
+    setCurrentSeed(record);
+  };
+
   useEffect(() => {
-    if (LOCAL_ONLY_MODE || !currentUser) {
+    const ownerChanged = previousSeedOwnerIdRef.current !== seedOwnerId;
+    previousSeedOwnerIdRef.current = seedOwnerId;
+    if (ownerChanged) {
       setSavedSeeds([]);
-      setCurrentSeed(null);
+      setActiveSeed(null);
+      setSeed(createEmptyStorySeedInput());
+      setBlueprint(null);
+    }
+    if (!seedOwnerId) {
+      setSavedSeeds([]);
+      setActiveSeed(null);
       return;
     }
-    const expectedUid = currentUser.uid;
     let cancelled = false;
     setIsLoadingSeeds(true);
     setSeedError(null);
-    listStorySeeds(expectedUid)
+    listStorySeeds(seedOwnerId)
       .then(seeds => {
-        if (!cancelled && useAppStore.getState().currentUser?.uid === expectedUid) setSavedSeeds(seeds);
+        if (!cancelled) setSavedSeeds(seeds);
       })
       .catch(error => {
-        if (!cancelled && useAppStore.getState().currentUser?.uid === expectedUid) {
+        if (!cancelled) {
           console.error('Failed to load account story seeds:', error);
           setSeedError('Your saved story seeds could not be loaded.');
         }
       })
       .finally(() => {
-        if (!cancelled && useAppStore.getState().currentUser?.uid === expectedUid) setIsLoadingSeeds(false);
+        if (!cancelled) setIsLoadingSeeds(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [currentUser, seedReferenceSignature]);
+  }, [seedOwnerId, seedReferenceSignature]);
 
   // Always a functional update, so rapid successive edits (e.g. toggling two
   // tags in one task) can never lose a write to a stale render closure.
   const updateSeed = (update: SeedUpdate) => setSeed(update);
+  const updateBlueprint = (update: React.SetStateAction<WorldBlueprint>) => {
+    setBlueprint(current => {
+      if (!current) return current;
+      return typeof update === 'function' ? update(current) : update;
+    });
+  };
 
   // Post-auth visual transition: once a gated guest signs in, keep the gate
   // mounted for STORY_AUTH_DISSOLVE_MS so StoryAuthGate's shell can dissolve
@@ -372,18 +398,45 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     };
   }, [desktopSettingsOpen]);
 
-  const rememberSeed = (record: StorySeedRecord) => {
-    setCurrentSeed(record);
+  const rememberSeed = (record: StorySeedRecord, makeCurrent = true) => {
+    if (makeCurrent) setActiveSeed(record);
     setSavedSeeds(previous => [record, ...previous.filter(item => item.id !== record.id)]);
   };
 
-  const persistSeed = async (payload: StorySeedInput): Promise<StorySeedRecord | null> => {
-    if (LOCAL_ONLY_MODE) return null;
-    if (!currentUser) throw new Error('Sign in to save this story seed to your account.');
-    const saved = currentSeed
-      ? await updateStorySeed(currentUser.uid, currentSeed, payload)
-      : await createStorySeed(currentUser.uid, payload);
-    rememberSeed(saved);
+  const blueprintContextForRecord = (record?: StorySeedRecord) => ({
+    creator: currentUser?.displayName,
+    createdAt: record?.createdAt,
+    updatedAt: record?.updatedAt,
+  });
+
+  const persistSeed = async (
+    payload: StorySeedInput,
+    blueprintArtifact?: WorldBlueprint,
+  ): Promise<StorySeedRecord | null> => {
+    if (!seedOwnerId) throw new Error('Sign in to save this story seed to your account.');
+    const ownerAtStart = seedOwnerId;
+    const activeRecord = currentSeedRef.current;
+    const requestId = ++persistRequestIdRef.current;
+    const saved = activeRecord && activeRecord.userId === ownerAtStart
+      ? await updateStorySeed(ownerAtStart, activeRecord, payload, blueprintArtifact)
+      : await createStorySeed(seedOwnerId, payload, blueprintArtifact);
+    const currentRecord = currentSeedRef.current;
+    const stillActive = requestId === persistRequestIdRef.current
+      && seedOwnerIdRef.current === ownerAtStart
+      && (activeRecord ? currentRecord?.id === activeRecord.id : currentRecord === null);
+    rememberSeed(saved, stillActive);
+    if (saved.blueprint && stillActive) {
+      // Persistence can be remote. Merge only trusted record metadata into
+      // the latest state so edits made while this request was in flight are
+      // never replaced by the older saved snapshot.
+      setBlueprint(current => current ? {
+        ...current,
+        blueprintVersion: current.blueprintVersion || saved.blueprint?.blueprintVersion || 'v1.0',
+        ...(currentUser?.displayName ? { creator: currentUser.displayName } : {}),
+        createdAt: current.createdAt || saved.createdAt,
+        updatedAt: saved.updatedAt,
+      } : current);
+    }
     return saved;
   };
 
@@ -400,14 +453,11 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       return;
     }
     try {
-      const userId = currentUser?.uid || LOCAL_CREATOR_ID;
-      const saved = currentSeed && currentSeed.userId === userId
-        ? await updateStorySeed(userId, currentSeed, seedInput)
-        : await createStorySeed(userId, seedInput);
-      setCurrentSeed(saved);
-      if (currentUser) {
-        setSavedSeeds(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
-      }
+      const blueprintArtifact = blueprint
+        ? normalizeWorldBlueprint(blueprint, seedInput, { creator: currentUser?.displayName })
+        : undefined;
+      const saved = await persistSeed(seedInput, blueprintArtifact);
+      if (!saved) return;
       setSeedError(null);
       setSavedFeedback(true);
       if (savedFeedbackTimer.current) window.clearTimeout(savedFeedbackTimer.current);
@@ -418,30 +468,42 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     }
   };
 
-  const handleImport = async (payloads: StorySeedInput[]) => {
-    if (payloads.length === 0) return;
-    const imported = LOCAL_ONLY_MODE || !currentUser ? [] : await importStorySeeds(currentUser.uid, payloads);
+  const handleImport = async (artifacts: StorySeedArtifact[]) => {
+    if (artifacts.length === 0) return;
+    const imported = seedOwnerId ? await importStorySeeds(seedOwnerId, artifacts) : [];
     if (imported.length > 0) {
       setSavedSeeds(previous => [
         ...imported,
         ...previous.filter(record => !imported.some(item => item.id === record.id)),
       ]);
-      setCurrentSeed(imported[0]);
+      setActiveSeed(imported[0]);
     } else {
-      setCurrentSeed(null);
+      setActiveSeed(null);
     }
-    const selected = imported[0]?.seed || payloads[0];
-    setSeed(normalizeStorySeedInput(selected));
-    setBlueprint(createBlueprintDraftFromSeed(selected));
+    const selectedArtifact = imported[0] || artifacts[0];
+    const selected = normalizeStorySeedInput(selectedArtifact.seed);
+    setSeed(selected);
+    setBlueprint(selectedArtifact.blueprint
+      ? normalizeWorldBlueprint(
+          selectedArtifact.blueprint,
+          selected,
+          imported[0]
+            ? blueprintContextForRecord(imported[0])
+            : { creator: currentUser?.displayName },
+        )
+      : createBlueprintDraftFromSeed(selected, { creator: currentUser?.displayName }));
     setStage('blueprint');
     setShowImportPanel(false);
     setSeedError(null);
   };
 
   const handleUseSeed = (record: StorySeedRecord) => {
-    setCurrentSeed(record);
-    setSeed(normalizeStorySeedInput(record.seed));
-    setBlueprint(createBlueprintDraftFromSeed(record.seed));
+    const selected = normalizeStorySeedInput(record.seed);
+    setActiveSeed(record);
+    setSeed(selected);
+    setBlueprint(record.blueprint
+      ? normalizeWorldBlueprint(record.blueprint, selected, blueprintContextForRecord(record))
+      : createBlueprintDraftFromSeed(selected, { creator: currentUser?.displayName }));
     setStage('blueprint');
     setSeedError(null);
   };
@@ -465,11 +527,15 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     // Write the inferred tags back so the creator sees exactly what is saved.
     if (seed.story.required.storyTags.length === 0) setSeed(seedInput);
     try {
-      const bp = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
+      const generated = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
+      const bp = normalizeWorldBlueprint(generated, seedInput, {
+        creator: currentUser?.displayName,
+        preserveSourceMetadata: false,
+      });
       setBlueprint(bp);
       setStage('blueprint');
       try {
-        await persistSeed(seedInput);
+        await persistSeed(seedInput, bp);
         setSeedError(null);
       } catch (seedSaveError) {
         console.error('Failed to save generated story seed:', seedSaveError);
@@ -483,16 +549,25 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const handleStartStoryClick = async () => {
     if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
     if (!blueprint) return;
-    const cleanBlueprint = {
-      ...blueprint,
-      majorFactions: (blueprint.majorFactions || []).map(f => f.trim()).filter(Boolean),
-      initialCharacters: (blueprint.initialCharacters || []).map(f => f.trim()).filter(Boolean),
-      majorMysteries: (blueprint.majorMysteries || []).map(f => f.trim()).filter(Boolean),
-      unresolvedPlotThreads: (blueprint.unresolvedPlotThreads || []).map(f => f.trim()).filter(Boolean),
-    };
     try {
       const seedInput = applyInferredStoryTags(normalizeStorySeedInput(seed));
-      const savedSeed = await persistSeed(seedInput);
+      const validation = validateStorySeedInput(seedInput);
+      if (!validation.valid) {
+        setSeedError(validation.errors.join(' '));
+        return;
+      }
+      const normalizedBlueprint = normalizeWorldBlueprint(blueprint, seedInput, {
+        ...blueprintContextForRecord(currentSeed || undefined),
+      });
+      const cleanBlueprint = {
+        ...normalizedBlueprint,
+        mcProfile: normalizedBlueprint.mainCharacter?.backgroundProfile || normalizedBlueprint.mcProfile,
+        majorFactions: normalizedBlueprint.majorFactions.map(f => f.trim()).filter(Boolean),
+        initialCharacters: normalizedBlueprint.initialCharacters.map(f => f.trim()).filter(Boolean),
+        majorMysteries: normalizedBlueprint.majorMysteries.map(f => f.trim()).filter(Boolean),
+        unresolvedPlotThreads: normalizedBlueprint.unresolvedPlotThreads.map(f => f.trim()).filter(Boolean),
+      };
+      const savedSeed = await persistSeed(seedInput, cleanBlueprint);
       if (!LOCAL_ONLY_MODE && !savedSeed) return;
       const sourceSeedId = savedSeed?.id || currentSeed?.id || `local-seed-${generateUUID()}`;
       const administrative = createStoryAdministrativeMetadata({
@@ -516,28 +591,47 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   const handleExportCurrentSeed = () => {
     const payload = normalizeStorySeedInput(seed);
+    const blueprintArtifact = blueprint
+      ? normalizeWorldBlueprint(
+          blueprint,
+          payload,
+          blueprintContextForRecord(currentSeed || undefined),
+        )
+      : undefined;
     // Start sharing immediately so iOS Safari retains the user gesture needed
     // to present Save to Files. Persistence can finish independently.
     setSeedError(null);
-    void downloadStorySeed(payload).catch(downloadError => {
+    void downloadStorySeed(payload, blueprintArtifact).catch(downloadError => {
       console.error('Failed to export story seed:', downloadError);
       setSeedError('The seed could not be exported. Please try again.');
     });
-    void persistSeed(payload).catch(seedSaveError => {
+    void persistSeed(payload, blueprintArtifact).catch(seedSaveError => {
       console.error('Failed to save seed while exporting:', seedSaveError);
       setSeedError('The seed was exported, but its account copy could not be saved.');
     });
   };
 
   const handleExportSavedSeed = (record: StorySeedRecord) => {
-    void downloadStorySeed(record.seed).catch(downloadError => {
+    const blueprintArtifact = record.blueprint
+      ? normalizeWorldBlueprint(record.blueprint, record.seed, blueprintContextForRecord(record))
+      : undefined;
+    void downloadStorySeed(record.seed, blueprintArtifact).catch(downloadError => {
       console.error('Failed to export saved story seed:', downloadError);
       setSeedError('The seed could not be exported. Please try again.');
     });
   };
 
   const handleExportAllSeeds = () => {
-    void downloadStorySeedCollection(savedSeeds.map(record => record.seed)).catch(downloadError => {
+    void downloadStorySeedCollection(savedSeeds.map(record => ({
+      seed: record.seed,
+      ...(record.blueprint ? {
+        blueprint: normalizeWorldBlueprint(
+          record.blueprint,
+          record.seed,
+          blueprintContextForRecord(record),
+        ),
+      } : {}),
+    }))).catch(downloadError => {
       console.error('Failed to export account story seeds:', downloadError);
       setSeedError('Your seeds could not be exported. Please try again.');
     });
@@ -557,7 +651,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         )}
         <BlueprintReview
           blueprint={blueprint}
-          setBlueprint={setBlueprint}
+          setBlueprint={updateBlueprint}
+          seed={seed}
+          updateSeed={updateSeed}
           onBack={() => setStage('intake')}
           onStartStory={handleStartStoryClick}
           onExportSeed={handleExportCurrentSeed}
@@ -584,7 +680,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     }
   };
 
-  const accountSignedIn = !LOCAL_ONLY_MODE && Boolean(currentUser);
+  const seedLibraryAvailable = Boolean(seedOwnerId);
 
   // Mobile bottom navigation — Sections opens the existing section drawer,
   // Help opens the `?` guidance menu, Settings toggles the utility sheet
@@ -699,7 +795,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             >
               Import
             </LibraryButton>
-            {accountSignedIn && (
+            {seedLibraryAvailable && (
               <LibraryButton
                 variant="ghost"
                 size="sm"
@@ -709,7 +805,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 My Seeds
               </LibraryButton>
             )}
-            {accountSignedIn && savedSeeds.length > 0 && (
+            {seedLibraryAvailable && savedSeeds.length > 0 && (
               <LibraryButton
                 variant="ghost"
                 size="sm"
@@ -735,7 +831,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         </div>
       </header>
 
-      {accountSignedIn && showLibrary && (
+      {seedLibraryAvailable && showLibrary && (
         <div className="mt-6">
           <SeedLibraryPanel
             seeds={savedSeeds}
@@ -944,7 +1040,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                       >
                         Import
                       </LibraryButton>
-                      {accountSignedIn && (
+                      {seedLibraryAvailable && (
                         <LibraryButton
                           fullWidth
                           variant="ghost"
@@ -957,7 +1053,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                           My Seeds
                         </LibraryButton>
                       )}
-                      {accountSignedIn && savedSeeds.length > 0 && (
+                      {seedLibraryAvailable && savedSeeds.length > 0 && (
                         <LibraryButton
                           fullWidth
                           variant="ghost"

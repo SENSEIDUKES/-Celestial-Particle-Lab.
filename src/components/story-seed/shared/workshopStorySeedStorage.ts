@@ -12,8 +12,10 @@ import { generateUUID } from './id';
 import {
   STORY_SEED_SCHEMA_VERSION,
   normalizeStorySeedInput,
+  normalizeWorldBlueprint,
   type StorySeedInput,
 } from './storySeedSchema';
+import type { WorldBlueprint } from './types';
 import type { StorySeedRecord, StorySeedRepository } from './storySeedRepository';
 
 const STORAGE_KEY = 'seihouse-workshop-story-seeds-v3';
@@ -32,6 +34,9 @@ const seedTitle = (seed: StorySeedInput): string =>
   || seed.story.required.premise.slice(0, 80)
   || 'Untitled Seed';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
 const normalizeRecord = (value: unknown): StorySeedRecord | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const source = value as Record<string, unknown>;
@@ -44,6 +49,9 @@ const normalizeRecord = (value: unknown): StorySeedRecord | null => {
   ) return null;
   try {
     const seed = normalizeStorySeedInput(source.seed);
+    const blueprint = isRecord(source.blueprint)
+      ? normalizeWorldBlueprint(source.blueprint, seed)
+      : undefined;
     return {
       schemaVersion: STORY_SEED_SCHEMA_VERSION,
       id: source.id,
@@ -54,6 +62,7 @@ const normalizeRecord = (value: unknown): StorySeedRecord | null => {
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
       seed,
+      ...(blueprint ? { blueprint } : {}),
     };
   } catch {
     return null;
@@ -62,7 +71,13 @@ const normalizeRecord = (value: unknown): StorySeedRecord | null => {
 
 const readRecords = (): StorySeedRecord[] => {
   const persisted = storage()?.getItem(STORAGE_KEY);
-  if (!persisted) return [...memoryRecords];
+  if (!persisted) {
+    const records = memoryRecords
+      .map(normalizeRecord)
+      .filter((seed): seed is StorySeedRecord => seed !== null);
+    memoryRecords = records;
+    return [...records];
+  }
   try {
     const parsed = JSON.parse(persisted);
     if (!Array.isArray(parsed)) return [];
@@ -84,6 +99,7 @@ const buildRecord = (
   id: string,
   input: StorySeedInput,
   createdAt = new Date().toISOString(),
+  blueprint?: WorldBlueprint,
 ): StorySeedRecord => {
   if (!userId) throw new Error('Sign in to save story seeds to your account.');
   const seed = normalizeStorySeedInput(input);
@@ -95,19 +111,26 @@ const buildRecord = (
     createdAt,
     updatedAt: new Date().toISOString(),
     seed,
+    ...(blueprint ? { blueprint: normalizeWorldBlueprint(blueprint, seed) } : {}),
   };
 };
 
 export const workshopStorySeedStorage: StorySeedRepository = {
-  async create(userId, input) {
-    const record = buildRecord(userId, `seed-${generateUUID()}`, input);
+  async create(userId, input, blueprint) {
+    const record = buildRecord(userId, `seed-${generateUUID()}`, input, undefined, blueprint);
     writeRecords([record, ...readRecords()]);
     return record;
   },
 
-  async update(userId, existing, input) {
+  async update(userId, existing, input, blueprint) {
     if (existing.userId !== userId) throw new Error('Cannot update a story seed owned by another account.');
-    const record = buildRecord(userId, existing.id, input, existing.createdAt);
+    const record = buildRecord(
+      userId,
+      existing.id,
+      input,
+      existing.createdAt,
+      blueprint === undefined ? existing.blueprint : blueprint,
+    );
     writeRecords(readRecords().map(seed => (seed.id === record.id ? record : seed)));
     return record;
   },
@@ -119,10 +142,23 @@ export const workshopStorySeedStorage: StorySeedRepository = {
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
 
-  async importMany(userId, inputs) {
-    if (inputs.length > 500) throw new Error('A seed import can contain at most 500 seeds at a time.');
-    const imported = inputs.map(input => buildRecord(userId, `seed-${generateUUID()}`, input));
-    writeRecords([...imported, ...readRecords()]);
+  async importMany(userId, artifacts) {
+    if (artifacts.length > 500) throw new Error('A seed import can contain at most 500 seeds at a time.');
+    const imported = artifacts.map(artifact => buildRecord(
+      userId,
+      `seed-${generateUUID()}`,
+      artifact.seed,
+      undefined,
+      artifact.blueprint,
+    ));
+    const existing = readRecords();
+    const previousMemoryRecords = [...memoryRecords];
+    try {
+      writeRecords([...imported, ...existing]);
+    } catch {
+      memoryRecords = previousMemoryRecords;
+      throw new Error('The Story Seed import could not be saved. Free browser storage space and try again.');
+    }
     return imported;
   },
 

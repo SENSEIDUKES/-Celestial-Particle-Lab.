@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Layers, Upload } from 'lucide-react';
-import type { StorySeedInput } from '../shared/storySeedSchema';
+import type { StorySeedArtifact } from '../shared/storySeedRepository';
 import { parseStorySeedJson } from '../shared/storySeedSerialization';
 
 interface ImportPanelProps {
   show: boolean;
   onClose: () => void;
-  onImport: (payloads: StorySeedInput[]) => Promise<void>;
+  onImport: (artifacts: StorySeedArtifact[]) => Promise<void>;
 }
 
 export const ImportPanel = ({ show, onClose, onImport }: ImportPanelProps) => {
@@ -15,11 +15,11 @@ export const ImportPanel = ({ show, onClose, onImport }: ImportPanelProps) => {
   const [importError, setImportError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const completeImport = async (payloads: StorySeedInput[]) => {
+  const completeImport = async (artifacts: StorySeedArtifact[]) => {
     setIsImporting(true);
     setImportError(null);
     try {
-      await onImport(payloads);
+      await onImport(artifacts);
       setImportText('');
     } catch (error) {
       setImportError(error instanceof Error ? error.message : 'The seed could not be added to your account.');
@@ -82,7 +82,7 @@ export const ImportPanel = ({ show, onClose, onImport }: ImportPanelProps) => {
           </div>
 
           <p className="text-neutral-400 font-sans text-xs leading-relaxed">
-            Import portable Story Seed JSON. Valid prototype JSON is normalized into the Creator / Story / World structure and receives a new private account ID.
+            Import portable Story Seed JSON. A reviewed World Blueprint is restored when present; older seed-only files remain supported.
           </p>
 
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-portal/40 bg-portal/5 px-4 py-3 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:border-portal hover:bg-portal/10">

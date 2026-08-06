@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw, Search, Tag, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { StorySeedInput } from '../../shared/storySeedSchema';
+import { STORY_TAG_LIMIT, type StorySeedInput } from '../../shared/storySeedSchema';
 import { CATEGORIZED_TAGS, TAG_PRESETS } from '../constants';
 import { suggestTagsStub, useAppStore } from '../../shared/stubs';
 import { getSeedSection } from '../seedSections';
@@ -14,7 +14,7 @@ interface StoryTagsWorkspaceProps {
   updateSeed: UpdateSeed;
 }
 
-const TAG_LIMIT = 12;
+const TAG_LIMIT = STORY_TAG_LIMIT;
 const TAG_LIMIT_MESSAGE = `Fated limit reached. Only up to ${TAG_LIMIT} celestial tags can be woven into the universe.`;
 
 /**
