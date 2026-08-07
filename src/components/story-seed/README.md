@@ -10,6 +10,18 @@
 
 ## Workshop history
 
+- **2026-08-07:** Story Bank review fixes. The Import Story Seed panel left
+  its flat pre-dossier skin behind for the modern Library dialect — gold
+  medallion heading, serif tagline, dashed gold dropzone, the official
+  `LibraryTextArea` glass field (wired error announcement included), and a
+  gilded primary `LibraryButton` for Activate Seed — and the bank's content
+  is now scoped under `seed-workspace-shell` so the field carries the same
+  gilded focus ring as the workspaces. On the compact seed cards, the story
+  title now spans the full card width instead of being crushed beside the
+  status chip: the "Novel Manifested" / "No Novel Yet" state moved into the
+  metadata chip row alongside Blueprint version and updated date, so long
+  titles wrap naturally and read horizontally on phones.
+
 - **2026-08-07:** Built the **Story Bank** — the permanent home for saved
   Story Seeds and their World Blueprints — and retired the inline "My Story
   Seeds" panel from the main page. The development fork's mobile bottom
@@ -716,7 +728,8 @@ development/                  — active Workshop version (Phase 2 creation work
                                  footer actions; Pass-1 hierarchy and canonical
                                  Origin provenance mapping unchanged
   ImportPanel.tsx              — portable seed import with optional Blueprint
-                                 sibling restoration and legacy support
+                                 sibling restoration and legacy support, in
+                                 the modern Library dossier skin
   StoryBank.tsx                — the Story Bank view: the permanent home for
                                  saved seeds and their Blueprints. Compact
                                  cards (title, premise, latest Blueprint

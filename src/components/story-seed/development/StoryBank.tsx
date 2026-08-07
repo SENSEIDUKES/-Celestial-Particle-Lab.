@@ -72,27 +72,25 @@ const StoryBankCard = ({
 
   return (
     <article className="flex flex-col rounded-xl border border-[rgba(172,166,214,0.16)] bg-[rgba(11,14,30,0.55)] p-4 shadow-[inset_0_1px_0_rgba(226,220,200,0.05),0_14px_32px_-18px_rgba(1,3,10,0.95)] sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 break-words font-display text-sm font-bold uppercase tracking-[0.12em] text-[#F3EDE0]">
-          {record.title}
-        </h3>
-        {manifested ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[rgba(205,178,113,0.45)] bg-[rgba(205,178,113,0.07)] px-2.5 py-1 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-[#DDC58A] shadow-[0_0_14px_rgba(205,178,113,0.12)]">
-            <Sparkle size={9} aria-hidden="true" />
-            Novel Manifested
-          </span>
-        ) : (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-1 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-neutral-500">
-            No Novel Yet
-          </span>
-        )}
-      </div>
+      <h3 className="break-words font-display text-sm font-bold uppercase tracking-[0.12em] text-[#F3EDE0]">
+        {record.title}
+      </h3>
 
       <p className="mt-2 line-clamp-2 font-serif text-[13px] leading-relaxed text-[#B0A99B]">
         {premise || 'No premise recorded yet.'}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {manifested ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(205,178,113,0.45)] bg-[rgba(205,178,113,0.07)] px-2.5 py-1 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-[#DDC58A] shadow-[0_0_14px_rgba(205,178,113,0.12)]">
+            <Sparkle size={9} aria-hidden="true" />
+            Novel Manifested
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-1 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+            No Novel Yet
+          </span>
+        )}
         {blueprint ? (
           <>
             <BankChip icon={GitBranch}>Blueprint {blueprint.blueprintVersion || 'v1.0'}</BankChip>
@@ -205,7 +203,10 @@ export const StoryBank = ({
     {/* The same restrained celestial ambience the creation workspaces float over. */}
     <div aria-hidden="true" className="seed-workspace-ambience" />
 
-    <div className="relative p-4 sm:p-8">
+    {/* `seed-workspace-shell` scopes the Story Seed field polish (gilded
+        focus ring, quiet completed accents) onto the Import panel's glass
+        field, keeping it consistent with the workspaces. */}
+    <div className="seed-workspace-shell relative p-4 sm:p-8">
       <p className="font-sc text-[11px] font-bold uppercase tracking-[0.34em] text-neutral-500">
         <span className="text-[#CDB271]/90">Story Seed</span>
         <span className="mx-2.5 text-neutral-700">/</span>
