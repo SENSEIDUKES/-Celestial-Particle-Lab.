@@ -10,6 +10,12 @@
 
 ## Workshop history
 
+- **2026-08-07:** Bottom-navigation tune-up per device review. The tab order
+  is now Sections, Profile, Story Bank, Help, Settings, and the bank's tab
+  icon changed from the Vault to a sprouting seed (`Sprout`) at the same
+  20px line style as its neighbors. Destinations, container, spacing, and
+  behavior are untouched — the same state handlers fire, just reordered.
+
 - **2026-08-07:** Story Bank review fixes. The Import Story Seed panel left
   its flat pre-dossier skin behind for the modern Library dialect — gold
   medallion heading, serif tagline, dashed gold dropzone, the official
@@ -25,8 +31,8 @@
 - **2026-08-07:** Built the **Story Bank** — the permanent home for saved
   Story Seeds and their World Blueprints — and retired the inline "My Story
   Seeds" panel from the main page. The development fork's mobile bottom
-  navigation gains a dedicated Story Bank tab (Vault icon, between Sections
-  and Help), and the desktop header's scattered Import / My Seeds / Export
+  navigation gains a dedicated Story Bank tab (a sprouting-seed icon,
+  centered between Profile and Help), and the desktop header's scattered Import / My Seeds / Export
   All actions collapse into a single Story Bank button; Story Seed
   import/export now lives inside the bank. The new
   `development/StoryBank.tsx` view speaks the same dossier language as the

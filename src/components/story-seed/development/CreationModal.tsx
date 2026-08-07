@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './story-seed.css';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Vault, X } from 'lucide-react';
+import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Sprout, Vault, X } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -758,10 +758,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   };
 
   // Mobile bottom navigation — Sections opens the existing section drawer,
-  // Story Bank swaps the workspace for the saved-seed vault, Help opens the
-  // `?` guidance menu, Settings toggles the utility sheet (Save Draft and the
-  // story settings), and Profile is a placeholder for the future Library
-  // profile surface. The bar is presentational; it drives the same state as
+  // Profile is a placeholder for the future Library profile surface, Story
+  // Bank swaps the workspace for the saved-seed vault, Help opens the `?`
+  // guidance menu, and Settings toggles the utility sheet (Save Draft and the
+  // story settings). The bar is presentational; it drives the same state as
   // the existing controls.
   const bottomNavItems: LibraryBottomNavigationItem[] = [
     {
@@ -775,9 +775,16 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       },
     },
     {
+      id: 'profile',
+      label: 'Profile',
+      icon: <CircleUserRound size={20} />,
+      active: mobileSheet === 'profile',
+      onSelect: () => setMobileSheet(sheet => (sheet === 'profile' ? null : 'profile')),
+    },
+    {
       id: 'story-bank',
       label: 'Story Bank',
-      icon: <Vault size={20} />,
+      icon: <Sprout size={20} />,
       active: showStoryBank,
       onSelect: () => {
         setMobileSheet(null);
@@ -800,13 +807,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       icon: <Settings size={20} />,
       active: mobileSheet === 'settings',
       onSelect: () => setMobileSheet(sheet => (sheet === 'settings' ? null : 'settings')),
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: <CircleUserRound size={20} />,
-      active: mobileSheet === 'profile',
-      onSelect: () => setMobileSheet(sheet => (sheet === 'profile' ? null : 'profile')),
     },
   ];
 
