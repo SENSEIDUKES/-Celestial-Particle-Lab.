@@ -45,7 +45,7 @@ export const SeedLibraryPanel = ({
       </p>
     ) : seeds.length === 0 ? (
       <p className="mt-4 font-sans text-xs text-neutral-600">
-        No saved seeds yet. Forge or import one to keep it here.
+        No saved seeds yet. Manifest or import one to keep it here.
       </p>
     ) : (
       <div className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">

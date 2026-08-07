@@ -67,7 +67,7 @@ const BASE = [
  * stays nearly quiet. Screen blend + low opacity keep it folded into the
  * cool glass lighting instead of sitting on top of it.
  */
-const SPECTRAL_EDGE = [
+export const SPECTRAL_EDGE = [
   'before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:p-px',
   "before:content-['']",
   'before:[background:conic-gradient(from_0deg_at_50%_50%,rgba(198,224,255,0.34)_0deg,rgba(4,172,255,0.24)_24deg,rgba(124,92,255,0.22)_52deg,rgba(212,175,55,0.17)_78deg,rgba(4,172,255,0.06)_112deg,transparent_150deg,rgba(212,175,55,0.13)_166deg,transparent_196deg,rgba(4,172,255,0.05)_226deg,rgba(4,172,255,0.15)_252deg,rgba(4,172,255,0.06)_286deg,rgba(124,92,255,0.15)_322deg,rgba(150,200,255,0.24)_348deg,rgba(198,224,255,0.34)_360deg)]',

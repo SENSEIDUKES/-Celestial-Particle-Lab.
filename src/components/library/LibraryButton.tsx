@@ -23,7 +23,7 @@ import { SEIButton, type SEIButtonProps } from './SEIButton';
 export type LibraryButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type LibraryButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
-const BASE = [
+export const BASE = [
   // Shape and rhythm
   'relative isolate rounded-lg font-sc font-bold uppercase leading-none tracking-[0.14em]',
   'select-none cursor-pointer',
@@ -82,14 +82,14 @@ const VARIANTS: Record<LibraryButtonVariant, string> = {
  * Heights clear the 44px comfortable tap target at `md` and above; `sm` is for
  * dense toolbars where the control sits alongside other small controls.
  */
-const SIZES: Record<LibraryButtonSize, string> = {
+export const SIZES: Record<LibraryButtonSize, string> = {
   sm: 'min-h-9 gap-1.5 px-3 py-1.5 text-[11px]',
   md: 'min-h-11 gap-2 px-4 py-2 text-xs',
   lg: 'min-h-12 gap-2.5 px-5 py-2.5 text-sm sm:px-7',
   icon: 'min-h-11 min-w-11 gap-0 p-0 text-xs',
 };
 
-const ICON_GLYPH_SIZE: Record<LibraryButtonSize, number> = {
+export const ICON_GLYPH_SIZE: Record<LibraryButtonSize, number> = {
   sm: 13,
   md: 15,
   lg: 17,

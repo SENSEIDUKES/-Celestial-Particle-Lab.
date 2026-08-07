@@ -5,7 +5,10 @@
  * every Library surface shells its content in. `LibraryButton` is the
  * official button for every Library surface — Story Seed, Story Settings,
  * Fate Survival, Relics, Reader menus, admin pages. `LibraryBottomNavigation`
- * is the official mobile bottom navigation bar. `SEIButton` and
+ * is the official mobile bottom navigation bar. `ManifestButton` is the
+ * universal creation action — every primary "Manifest …" generation button
+ * across Library surfaces uses it, with the spectral rainbow glow.
+ * `SEIButton` and
  * `SEIBottomNavigation` are exported only for building new Library-skinned
  * controls on top of the shared base behavior; pages should not use them
  * directly.
@@ -25,6 +28,8 @@ export type {
   LibraryButtonSize,
   LibraryButtonVariant,
 } from './LibraryButton';
+export { ManifestButton } from './ManifestButton';
+export type { ManifestButtonProps } from './ManifestButton';
 export { SEIButton } from './SEIButton';
 export type { SEIButtonProps } from './SEIButton';
 export { LibraryBottomNavigation } from './LibraryBottomNavigation';
