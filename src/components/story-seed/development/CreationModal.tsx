@@ -80,6 +80,10 @@ interface CreationModalProps {
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
 const INITIAL_CHAPTER_COUNT = 10;
 
+const mapCreationFailure = (failure: 'blueprint' | 'story'): string => failure === 'blueprint'
+  ? 'The World Blueprint could not be generated. Please try again.'
+  : 'The story could not be started. Please try again.';
+
 interface StorySeedWorkspaceProps {
   seed: StorySeedInput;
   updateSeed: (update: SeedUpdate) => void;
@@ -366,9 +370,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       }
     } catch (generationError) {
       console.error('Failed to generate World Blueprint:', generationError);
-      setSeedError(generationError instanceof Error && generationError.message
-        ? generationError.message
-        : 'The World Blueprint could not be generated. Please try again.');
+      setSeedError(mapCreationFailure('blueprint'));
     }
   };
 
@@ -411,7 +413,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     let savedSeed: StorySeedRecord | null;
     try {
       savedSeed = await persistSeed(seedInput, cleanBlueprint);
-      if (!LOCAL_ONLY_MODE && !savedSeed) return;
+      if (!LOCAL_ONLY_MODE && !savedSeed) {
+        setSeedError('The story was not started because its source seed could not be saved to your account.');
+        return;
+      }
     } catch (seedSaveError) {
       console.error('Failed to persist source story seed:', seedSaveError);
       setSeedError('The story was not started because its source seed could not be saved to your account.');
@@ -435,9 +440,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       ));
     } catch (storyStartError) {
       console.error('Failed to start story:', storyStartError);
-      setSeedError(storyStartError instanceof Error && storyStartError.message
-        ? storyStartError.message
-        : 'The story could not be started. Please try again.');
+      setSeedError(mapCreationFailure('story'));
     }
   };
 

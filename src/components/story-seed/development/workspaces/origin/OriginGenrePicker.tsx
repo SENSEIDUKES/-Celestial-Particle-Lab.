@@ -60,6 +60,11 @@ export const OriginGenrePicker = ({ genre, onChange }: OriginGenrePickerProps) =
   const isCustomGenre = Boolean(trimmedGenre) && !GENRE_PRESETS.some(preset => preset.id === trimmedGenre);
   const isCustomPathActive = isCustomPathOpen || isCustomGenre;
   const SelectedGenreSigil = GENRE_PATH_SIGILS[trimmedGenre];
+  const toggleCustomPath = () => {
+    const nextOpen = !isCustomPathActive;
+    if (!nextOpen && isCustomGenre) onChange('');
+    setIsCustomPathOpen(nextOpen);
+  };
 
   return (
     <section className="glass-panel p-4 sm:p-5" aria-labelledby="origin-genre-title">
@@ -135,7 +140,7 @@ export const OriginGenrePicker = ({ genre, onChange }: OriginGenrePickerProps) =
               })}
             </div>
 
-            <button type="button" onClick={() => setIsCustomPathOpen(open => !open)}
+            <button type="button" onClick={toggleCustomPath}
               aria-expanded={isCustomPathActive} aria-controls="genre-custom-path-fields"
               data-selected={isCustomPathActive} style={{ '--choice-accent': CUSTOM_GENRE_PATH_ACCENT } as CSSProperties}
               className="glass-choice mt-3 flex w-full items-center gap-3 px-4 py-3 text-left">

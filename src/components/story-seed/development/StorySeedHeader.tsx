@@ -83,14 +83,14 @@ export const StorySeedHeader = ({
               onClick={() => setSettingsOpen(open => !open)}
               icon={Settings}
               aria-expanded={settingsOpen}
-              aria-haspopup="true"
+              aria-haspopup="dialog"
             >
               Settings
             </LibraryButton>
             {settingsOpen && (
               <div
                 className="absolute right-0 top-[calc(100%+0.5rem)] w-[22rem] max-w-[calc(100vw-2rem)]"
-                role="region"
+                role="dialog"
                 aria-label="Story Seed settings"
               >
                 <LibraryPanel padding="sm">

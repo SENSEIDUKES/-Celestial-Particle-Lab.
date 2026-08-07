@@ -174,7 +174,10 @@ error, and populated states.
   Settings, Story Bank loading ownership, desktop/mobile shell ownership,
   Origin responsibilities, Blueprint dossier primitives/collections/copy
   formatting, repository reset behavior, and error-state previews. Story Bank
-  remained the finalized saved-seed home.
+  remained the finalized saved-seed home. Review follow-up aligned dialog/radio
+  semantics, mobile focus containment, persistence failure reporting, malformed
+  record rejection, and canonical Origin completion without changing the
+  finalized presentation.
 - **2026-08-07:** Finalized Story Bank, its actions, import/export ownership,
   manifested status, mobile navigation placement, and Library dossier skin.
 - **2026-08-06:** Finalized the editable World Blueprint hierarchy and Library

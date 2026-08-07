@@ -23,10 +23,10 @@ interface OriginWorkspaceProps {
 /** Keeps all four Story essentials in one mobile-first creation flow. */
 export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
   const section = getSeedSection('origin');
-  const { premise, genre, storyTags } = storyRequired(seed);
+  const { premise, genre, storyTags, style } = storyRequired(seed);
   const identity = worldIdentity(seed);
-  const selectedStyle = normalizeStoryStyle(storyRequired(seed).style);
-  const originComplete = Boolean(selectedStyle && genre.trim() && premise.trim());
+  const selectedStyle = normalizeStoryStyle(style);
+  const originComplete = section.isFilled(seed);
 
   return (
     <WorkspaceShell section={section} complete={originComplete}>

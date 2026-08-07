@@ -76,13 +76,15 @@ const FateSurvivalSetting = ({ settings, onChange }: FateSurvivalSettingProps) =
         <p className="font-sc text-[11px] font-bold uppercase tracking-[0.16em] text-signal">{title}</p>
         <p className="mt-1 font-sans text-[11px] leading-relaxed text-neutral-500">{subtitle}</p>
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-2" role="radiogroup" aria-label={title}>
         {options.map(option => {
           const selected = option.value === value;
           return (
             <button
               key={option.value}
               type="button"
+              role="radio"
+              aria-checked={selected}
               onClick={() => onSelect(option.value)}
               className={`rounded-xl border p-3 text-left transition-colors ${selected
                 ? 'border-portal/60 bg-portal/10 text-signal shadow-[0_0_24px_rgba(34,211,238,0.08)]'

@@ -21,13 +21,8 @@ import type { StorySeedRecord, StorySeedRepository } from './storySeedRepository
 const STORAGE_KEY = 'seihouse-workshop-story-seeds-v3';
 let memoryRecords: StorySeedRecord[] = [];
 
-const storage = (): Storage | null => {
-  try {
-    return typeof window === 'undefined' ? null : window.localStorage;
-  } catch {
-    return null;
-  }
-};
+const storage = (): Storage | null =>
+  typeof window === 'undefined' ? null : window.localStorage;
 
 const seedTitle = (seed: StorySeedInput): string =>
   seed.world.optional.worldIdentity.title
@@ -70,14 +65,11 @@ const normalizeRecord = (value: unknown): StorySeedRecord | null => {
 };
 
 const readRecords = (): StorySeedRecord[] => {
-  const browserStorage = storage();
   let persisted: string | null = null;
-  if (browserStorage) {
-    try {
-      persisted = browserStorage.getItem(STORAGE_KEY);
-    } catch {
-      throw new Error('Saved Story Seeds could not be read. Check browser storage access and try again.');
-    }
+  try {
+    persisted = storage()?.getItem(STORAGE_KEY) ?? null;
+  } catch {
+    throw new Error('Saved Story Seeds could not be read. Check browser storage access and try again.');
   }
   if (!persisted) {
     const records = memoryRecords
@@ -89,7 +81,11 @@ const readRecords = (): StorySeedRecord[] => {
   try {
     const parsed = JSON.parse(persisted);
     if (!Array.isArray(parsed)) throw new Error('Stored Story Seed data is not a collection.');
-    const records = parsed.map(normalizeRecord).filter((seed): seed is StorySeedRecord => seed !== null);
+    const normalizedRecords = parsed.map(normalizeRecord);
+    if (normalizedRecords.some(seed => seed === null)) {
+      throw new Error('Stored Story Seed data contains an invalid record.');
+    }
+    const records = normalizedRecords.filter((seed): seed is StorySeedRecord => seed !== null);
     memoryRecords = records;
     return [...records];
   } catch {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Sprout, X } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
@@ -46,12 +46,48 @@ export const StorySeedMobileNavigation = ({
 }: StorySeedMobileNavigationProps) => {
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [mobileSheet, setMobileSheet] = useState<'settings' | 'profile' | null>(null);
+  const mobileSheetRef = useRef<HTMLDivElement>(null);
+  const mobileSheetTriggerRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!mobileSheet) return;
+    const sheet = mobileSheetRef.current;
+    const trigger = mobileSheetTriggerRef.current;
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const focusableElements = () => Array.from(
+      sheet?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+    ).filter(element => !element.hasAttribute('hidden'));
+
+    (focusableElements()[0] ?? sheet)?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileSheet(null);
+      if (event.key === 'Escape') {
+        setMobileSheet(null);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusableElements();
+      if (elements.length === 0) {
+        event.preventDefault();
+        sheet?.focus();
+        return;
+      }
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     const previous = document.body.style.overflow;
@@ -59,8 +95,21 @@ export const StorySeedMobileNavigation = ({
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previous;
+      trigger?.focus();
     };
   }, [mobileSheet]);
+
+  const toggleMobileSheet = (sheet: 'settings' | 'profile') => {
+    setSelectorOpen(false);
+    if (mobileSheet === sheet) {
+      setMobileSheet(null);
+      return;
+    }
+    mobileSheetTriggerRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    setMobileSheet(sheet);
+  };
 
   const bottomNavItems: LibraryBottomNavigationItem[] = [
     {
@@ -78,7 +127,7 @@ export const StorySeedMobileNavigation = ({
       label: 'Profile',
       icon: <CircleUserRound size={20} />,
       active: mobileSheet === 'profile',
-      onSelect: () => setMobileSheet(sheet => (sheet === 'profile' ? null : 'profile')),
+      onSelect: () => toggleMobileSheet('profile'),
     },
     {
       id: 'story-bank',
@@ -105,7 +154,7 @@ export const StorySeedMobileNavigation = ({
       label: 'Settings',
       icon: <Settings size={20} />,
       active: mobileSheet === 'settings',
-      onSelect: () => setMobileSheet(sheet => (sheet === 'settings' ? null : 'settings')),
+      onSelect: () => toggleMobileSheet('settings'),
     },
   ];
 
@@ -149,6 +198,8 @@ export const StorySeedMobileNavigation = ({
               role="dialog"
               aria-modal="true"
               aria-label={mobileSheet === 'settings' ? 'Story Seed settings' : 'Cultivator profile (placeholder)'}
+              ref={mobileSheetRef}
+              tabIndex={-1}
               className="absolute inset-x-0 bottom-0"
             >
               <LibraryPanel

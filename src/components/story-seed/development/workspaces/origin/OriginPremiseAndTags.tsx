@@ -211,7 +211,7 @@ export const OriginPremiseAndTags = ({
   };
 
   const addCustomTag = () => {
-    const tag = customTagInput.trim().replace(/^,|,$/g, '');
+    const tag = customTagInput.replace(/^\s*,|,\s*$/g, '').trim();
     if (!tag) return;
     if (storyTags.length >= TAG_LIMIT) {
       setTagLimitError(TAG_LIMIT_MESSAGE);
