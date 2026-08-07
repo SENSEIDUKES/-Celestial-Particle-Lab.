@@ -886,22 +886,34 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           <LibraryPanel variant="footer" padding="none" className="sticky max-lg:static z-30 px-4 py-3.5 sm:px-8">
             <div className="flex items-center gap-3">
               <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
-                <div className="flex shrink-0 items-center gap-1.5" aria-label={`${requiredComplete} of ${REQUIRED_STORY_SECTIONS.length} required Story inputs complete`}>
-                  {REQUIRED_STORY_SECTIONS.map(section => (
-                    <span
-                      key={section.id}
-                      title={`${section.label}: ${section.isFilled(seed) ? 'complete' : 'missing'}`}
-                      className={`h-1.5 w-1.5 rounded-full ${section.isFilled(seed) ? 'bg-portal' : 'bg-human/80'}`}
-                    />
-                  ))}
+                <div className="flex shrink-0 items-center gap-2" aria-label={`${requiredComplete} of ${REQUIRED_STORY_SECTIONS.length} required Story inputs complete`}>
+                  {REQUIRED_STORY_SECTIONS.map(section => {
+                    const filled = section.isFilled(seed);
+                    return (
+                      <span
+                        key={section.id}
+                        title={`${section.label}: ${filled ? 'complete' : 'missing'}`}
+                        className={`h-2 w-2 rounded-full ${
+                          filled
+                            ? 'bg-portal shadow-[0_0_6px_rgba(4,172,255,0.65)]'
+                            : 'border border-human/70 bg-human/10'
+                        }`}
+                      />
+                    );
+                  })}
                 </div>
-                <p className="truncate font-sans text-xs text-neutral-500">
-                  {missing.length > 0
-                    ? `Missing required: ${missing.map(section => section.label).join(', ')}`
-                    : 'All required Story inputs complete'}
+                <p className="truncate font-sc text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                  {missing.length > 0 ? (
+                    <>
+                      Missing required:{' '}
+                      <span className="text-human/80">{missing.map(section => section.label).join(', ')}</span>
+                    </>
+                  ) : (
+                    'All required Story inputs complete'
+                  )}
                 </p>
               </div>
-              <p className="flex-1 font-sans text-xs text-neutral-500 sm:hidden">
+              <p className="flex-1 font-sc text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500 sm:hidden">
                 {requiredComplete}/{REQUIRED_STORY_SECTIONS.length} required
               </p>
 

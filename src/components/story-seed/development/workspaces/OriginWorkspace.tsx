@@ -633,7 +633,7 @@ export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
                 );
               })}
             </div>
-          ) : <p className="font-sans text-xs italic leading-relaxed text-neutral-600">No manual tags yet. Your origin will provide them when you forge the blueprint.</p>}
+          ) : <p className="font-sans text-xs italic leading-relaxed text-neutral-600">No manual tags yet. Your origin will provide them when you manifest the blueprint.</p>}
         </div>
       </section>
     </WorkspaceShell>

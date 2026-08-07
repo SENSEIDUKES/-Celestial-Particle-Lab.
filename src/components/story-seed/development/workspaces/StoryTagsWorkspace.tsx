@@ -192,7 +192,7 @@ export const StoryTagsWorkspace = ({ seed, updateSeed }: StoryTagsWorkspaceProps
         ) : (
           <p className="font-sans text-xs italic leading-relaxed text-neutral-600">
             No tags yet. The Library will read your Premise, Genre, and Style and generate a tag set
-            when you forge the blueprint — or add your own here to steer it.
+            when you manifest the blueprint — or add your own here to steer it.
           </p>
         )}
       </div>
