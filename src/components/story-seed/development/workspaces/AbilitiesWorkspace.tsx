@@ -1,4 +1,3 @@
-import React from 'react';
 import { Route, Zap } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { getSeedSection } from '../seedSections';

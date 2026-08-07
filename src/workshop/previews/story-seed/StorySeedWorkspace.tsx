@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ReferenceCreationModal from '../../../components/story-seed/reference/CreationModal';
 import DevelopmentCreationModal from '../../../components/story-seed/development/CreationModal';
 import {
@@ -7,13 +7,16 @@ import {
   setMockLocalOnlyMode,
   useAppStore,
 } from '../../../components/story-seed/shared/stubs';
-import { resetStorySeedRepository } from '../../../components/story-seed/shared/storySeedRepository';
+import {
+  resetStorySeedRepository,
+  setStorySeedRepository,
+} from '../../../components/story-seed/shared/storySeedRepository';
 import { FeatureWorkspace } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
 import {
   createMockBlueprint,
-  createMockSeedLibrary,
-  createMockStorySeedLibrary,
+  createReferenceSavedSeeds,
+  createStoryBankRecords,
   MOCK_USER_ID,
 } from './previewData';
 import {
@@ -23,6 +26,7 @@ import {
   scenarios,
   scenariosInCategory,
 } from './previewStates';
+import { createStoryBankPreviewRepository } from './previewStorySeedRepository';
 
 // ─── DOM-driven scenario scripting ───────────────────────────────────────────
 // CreationModal owns `intake`, `stage`, and `showImportPanel` as internal
@@ -32,7 +36,7 @@ import {
 // inputs and clicking the actual buttons, the same way reader-chamber's
 // `clickInChamber` drove its preview states.
 //
-// Since Phase 2, the two panes are structurally different UIs: the locked
+// The two panes are structurally different UIs: the locked
 // reference fork is the old numbered accordion, the development fork is the
 // two-panel creation workspace. Pane wrappers carry `data-story-seed-pane`
 // so each scenario script can drive each fork through its own real controls.
@@ -249,9 +253,14 @@ export function StorySeedWorkspace() {
       activeAgentId: scenario.activeAgentId ?? null,
       stories: scenario.stories ?? [],
     });
-    resetMockSeeds(scenario.seedLibrary === 'populated' ? createMockSeedLibrary() : []);
+    const storyBankRecords = scenario.storyBank === 'populated' ? createStoryBankRecords() : [];
+    resetMockSeeds(scenario.storyBank === 'populated' ? createReferenceSavedSeeds() : []);
     if (!options.preserveLocalSeeds) {
-      resetStorySeedRepository(scenario.seedLibrary === 'populated' ? createMockStorySeedLibrary() : []);
+      if (scenario.storyBank === 'loading' || scenario.storyBank === 'error') {
+        setStorySeedRepository(createStoryBankPreviewRepository(scenario.storyBank));
+      } else {
+        resetStorySeedRepository(storyBankRecords);
+      }
     }
   }, []);
 
@@ -306,7 +315,7 @@ export function StorySeedWorkspace() {
 
   const chamberProps = {
     isGenerating: Boolean(activeScenario?.isGenerating),
-    error: null as string | null,
+    error: activeScenario?.error ?? null,
     onGenerateBlueprint: async (payload: unknown) => {
       console.log('[Preview] onGenerateBlueprint called with Story Seed', payload);
       await wait(300);

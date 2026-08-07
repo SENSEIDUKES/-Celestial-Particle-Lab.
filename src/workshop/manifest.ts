@@ -112,25 +112,13 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'story-seed',
     title: 'Story Seed',
-    description: 'Two-panel creation workspace on the Creator / Story / World contract — compact Origin and ARC editing, Story Settings, the Story Bank home for saved seeds and their World Blueprints (with import/export), and an editable World Blueprint dossier whose hierarchy keeps canonical Origin provenance separate from generated story direction while preserving every editable Blueprint field, now wearing the modern Library glass skin with gold-edged key fields.',
+    description: 'Two-panel creation workspace on the Creator / Story / World contract — compact Origin and ARC editing, Story Seed Settings, the Story Bank home for saved seeds and their World Blueprints (with import/export), and an editable World Blueprint dossier whose hierarchy keeps canonical Origin provenance separate from generated story direction while preserving every editable Blueprint field, now wearing the modern Library glass skin with gold-edged key fields.',
     category: 'other',
     version: 'v1.7',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/components/CreationModal.tsx',
       lastCompared: '2026-08-06',
-    },
-  },
-  {
-    id: 'story-settings',
-    title: 'Story Settings',
-    description: 'Older separate Story Settings prototype retained only for historical comparison. Fate Survival now belongs to the current Story Seed Settings menu; do not use this page for new Story Seed flow work.',
-    category: 'other',
-    version: 'v1.0',
-    source: {
-      repository: 'SENSEIDUKES/Light-Novels',
-      path: 'src/components/CreationModal.tsx',
-      lastCompared: '2026-08-01',
     },
   },
   {

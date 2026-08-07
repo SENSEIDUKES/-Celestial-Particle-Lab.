@@ -3,7 +3,7 @@
  *
  * `LibraryPanel` is the official Library glass panel — the section container
  * every Library surface shells its content in. `LibraryButton` is the
- * official button for every Library surface — Story Seed, Story Settings,
+ * official button for every Library surface — Story Seed, Story Seed Settings,
  * Fate Survival, Relics, Reader menus, admin pages. `LibraryBottomNavigation`
  * is the official mobile bottom navigation bar. `ManifestButton` is the
  * universal creation action — every primary "Manifest …" generation button

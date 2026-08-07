@@ -13,11 +13,14 @@ export type PreviewState =
   | 'empty-intake'
   | 'filled-intake'
   | 'generating-blueprint'
+  | 'blueprint-generation-error'
   | 'story-bank-import-open'
   | 'blueprint-review'
   | 'blueprint-generating-story'
   | 'story-bank-empty'
   | 'story-bank-populated'
+  | 'story-bank-loading'
+  | 'story-bank-load-error'
   | 'auth-gated';
 
 export interface PreviewScenario {
@@ -38,7 +41,9 @@ export interface PreviewScenario {
    */
   localOnlyMode?: boolean;
   /** Populate the mock Story Bank for this scenario. */
-  seedLibrary?: 'empty' | 'populated';
+  storyBank?: 'empty' | 'populated' | 'loading' | 'error';
+  /** Passed through as CreationModal's external error state. */
+  error?: string;
   /**
    * Mock manifested stories linked back to their seeds by `sourceSeedId`, so
    * Story Bank cards can show the "Novel Manifested" state.
@@ -69,6 +74,13 @@ export const scenarios: PreviewScenario[] = [
     label: 'Generating blueprint (spinner)',
     category: 'intake',
     isGenerating: true,
+    uiAction: 'fill-intake',
+  },
+  {
+    id: 'blueprint-generation-error',
+    label: 'Blueprint generation error',
+    category: 'intake',
+    error: 'The World Blueprint could not be generated. Please try again.',
   },
   {
     id: 'blueprint-review',
@@ -76,7 +88,7 @@ export const scenarios: PreviewScenario[] = [
     category: 'blueprint',
     signedIn: true,
     localOnlyMode: false,
-    seedLibrary: 'populated',
+    storyBank: 'populated',
     uiAction: 'use-first-seed',
   },
   {
@@ -85,7 +97,7 @@ export const scenarios: PreviewScenario[] = [
     category: 'blueprint',
     signedIn: true,
     localOnlyMode: false,
-    seedLibrary: 'populated',
+    storyBank: 'populated',
     uiAction: 'use-first-seed',
     isGenerating: true,
     activeAgentId: 'versa',
@@ -96,7 +108,7 @@ export const scenarios: PreviewScenario[] = [
     category: 'story-bank',
     signedIn: true,
     localOnlyMode: false,
-    seedLibrary: 'empty',
+    storyBank: 'empty',
     uiAction: 'open-story-bank',
   },
   {
@@ -105,8 +117,26 @@ export const scenarios: PreviewScenario[] = [
     category: 'story-bank',
     signedIn: true,
     localOnlyMode: false,
-    seedLibrary: 'populated',
-    stories: [{ id: 'preview-story-1', sourceSeedId: 'preview-seed-v2-1', genre: 'Xianxia' }],
+    storyBank: 'populated',
+    stories: [{ id: 'preview-story-1', sourceSeedId: 'preview-seed-1', genre: 'Xianxia' }],
+    uiAction: 'open-story-bank',
+  },
+  {
+    id: 'story-bank-loading',
+    label: 'Story Bank — loading',
+    category: 'story-bank',
+    signedIn: true,
+    localOnlyMode: false,
+    storyBank: 'loading',
+    uiAction: 'open-story-bank',
+  },
+  {
+    id: 'story-bank-load-error',
+    label: 'Story Bank — load error with retry',
+    category: 'story-bank',
+    signedIn: true,
+    localOnlyMode: false,
+    storyBank: 'error',
     uiAction: 'open-story-bank',
   },
   {

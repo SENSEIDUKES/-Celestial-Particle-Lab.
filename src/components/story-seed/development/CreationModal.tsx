@@ -1,8 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type SetStateAction,
+} from 'react';
 import './story-seed.css';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Sprout, Vault, X } from 'lucide-react';
-import { WorldBlueprint } from '../shared/types';
+import { motion } from 'motion/react';
+import type { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
   AGENTS,
@@ -13,7 +18,6 @@ import {
 import {
   createStorySeed,
   importStorySeeds,
-  listStorySeeds,
   updateStorySeed,
   type StorySeedArtifact,
   type StorySeedRecord,
@@ -30,9 +34,7 @@ import {
   validateStorySeedInput,
   type BlueprintGenerationPayload,
   type InitialStoryGenerationPayload,
-  type StorySeedFateVisibility,
   type StorySeedInput,
-  type StorySeedSurvivalPressure,
 } from '../shared/storySeedSchema';
 import { createStoryAdministrativeMetadata } from '../shared/storyAdministrativeMetadata';
 import StoryAuthGate, { STORY_AUTH_DISSOLVE_MS } from './StoryAuthGate';
@@ -43,12 +45,8 @@ import {
   REQUIRED_STORY_SECTIONS,
   type SeedSectionId,
 } from './seedSections';
-import { patchFateSurvival, setIntendedForMatureAudiences, type SeedUpdate } from './seedState';
-import {
-  buildStorySeedDrawerSections,
-  storySeedDrawerProfile,
-  StorySeedSelector,
-} from './StorySeedSelector';
+import type { SeedUpdate } from './seedState';
+import { StorySeedSelector } from './StorySeedSelector';
 import { OriginWorkspace } from './workspaces/OriginWorkspace';
 import { ArcWorkspace } from './workspaces/ArcWorkspace';
 import { WorldIdentityWorkspace } from './workspaces/WorldIdentityWorkspace';
@@ -58,18 +56,13 @@ import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
 import { ImportPanel } from './ImportPanel';
-import {
-  LibraryBottomNavigation,
-  type LibraryBottomNavigationItem,
-  LibraryButton,
-  LibraryHeaderBadge,
-  LibraryNavigationDrawer,
-  LibraryPanel,
-  ManifestButton,
-} from '../../library';
+import { LibraryPanel, ManifestButton } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
 import { StoryBank } from './StoryBank';
 import { StorySeedHelpMenu } from './StorySeedHelpMenu';
+import { StorySeedHeader } from './StorySeedHeader';
+import { StorySeedMobileNavigation } from './StorySeedMobileNavigation';
+import { useStoryBankRecords } from './useStoryBankRecords';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
 
 interface CreationModalProps {
@@ -79,176 +72,32 @@ interface CreationModalProps {
   error: string | null;
 }
 
-/** Same public Library emblem the StoryAuthGate uses (kept for visual identity). */
-const CELESTIAL_LIBRARY_EMBLEM_URL =
-  'https://pub-e482c2dbbb984c3c87ecdd8ae3a92183.r2.dev/LIBRARY/images/CELESTIAL%20LIBRARY%20ICON.jpg';
-
 /**
  * Stable local namespace for Workshop draft saves when no account is signed
  * in (the Workshop repository is local-storage backed). On transfer to
  * Light-Novels, gate draft saving on real auth exactly like persistSeed.
  */
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
+const INITIAL_CHAPTER_COUNT = 10;
 
-interface MatureAudienceSettingProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+const mapCreationFailure = (failure: 'blueprint' | 'story'): string => failure === 'blueprint'
+  ? 'The World Blueprint could not be generated. Please try again.'
+  : 'The story could not be started. Please try again.';
+
+interface StorySeedWorkspaceProps {
+  seed: StorySeedInput;
+  updateSeed: (update: SeedUpdate) => void;
 }
 
-const FATE_VISIBILITY_OPTIONS: Array<{
-  value: StorySeedFateVisibility;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'full',
-    label: 'Full Fate',
-    description: 'Show threats, clues, countdowns, targets, and likely consequences.',
-  },
-  {
-    value: 'partial',
-    label: 'Partial Fate',
-    description: 'Reveal some signs, but leave parts for you to interpret.',
-  },
-  {
-    value: 'none',
-    label: 'No Fate',
-    description: 'Hide most guidance. You’ll mainly see warnings, scars, clues, and consequences.',
-  },
-];
-
-const SURVIVAL_PRESSURE_OPTIONS: Array<{
-  value: StorySeedSurvivalPressure;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'heaven',
-    label: 'Heaven',
-    description: 'Strong pressure. Major threats can challenge the Destined Ending.',
-  },
-  {
-    value: 'immortal',
-    label: 'Immortal',
-    description: 'Balanced pressure. Fate matters without taking over the whole story.',
-  },
-  {
-    value: 'mortal',
-    label: 'Mortal',
-    description: 'Light pressure. The original story path has more room to continue.',
-  },
-];
-
-interface FateSurvivalSettingProps {
-  settings: StorySeedInput['story']['optional']['fateSurvival'];
-  onChange: (patch: Partial<StorySeedInput['story']['optional']['fateSurvival']>) => void;
-}
-
-const FateSurvivalSetting = ({ settings, onChange }: FateSurvivalSettingProps) => {
-  const optionGroup = <T extends StorySeedFateVisibility | StorySeedSurvivalPressure>(
-    title: string,
-    subtitle: string,
-    value: T,
-    options: Array<{ value: T; label: string; description: string }>,
-    onSelect: (value: T) => void,
-  ) => (
-    <div className="space-y-2">
-      <div>
-        <p className="font-sc text-[11px] font-bold uppercase tracking-[0.16em] text-signal">{title}</p>
-        <p className="mt-1 font-sans text-[11px] leading-relaxed text-neutral-500">{subtitle}</p>
-      </div>
-      <div className="grid gap-2">
-        {options.map(option => {
-          const selected = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onSelect(option.value)}
-              className={`rounded-xl border p-3 text-left transition-colors ${selected
-                ? 'border-portal/60 bg-portal/10 text-signal shadow-[0_0_24px_rgba(34,211,238,0.08)]'
-                : 'border-neutral-800/80 bg-black/20 text-neutral-400 hover:border-neutral-700 hover:text-signal'
-              }`}
-            >
-              <span className="block font-sc text-[11px] font-bold uppercase tracking-[0.12em]">{option.label}</span>
-              <span className="mt-1 block font-sans text-[11px] leading-relaxed text-neutral-500">{option.description}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  return (
-    <section className="space-y-4 rounded-xl border border-neutral-800/80 bg-[#080b17]/80 p-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <span className="min-w-0">
-          <span className="block font-sc text-xs font-semibold tracking-wide text-signal">Fate Survival</span>
-          <span className="mt-1 block font-sans text-[11px] leading-relaxed text-neutral-500">
-            Turn the story into a living timeline where the world pushes back.
-          </span>
-        </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={settings.enabled}
-          aria-label="Fate Survival"
-          onClick={() => onChange({ enabled: !settings.enabled })}
-          className={`flex w-full shrink-0 items-center justify-between gap-2 rounded-full border px-3 py-2 transition-colors sm:w-auto sm:px-2.5 sm:py-1.5 ${settings.enabled
-            ? 'border-portal/60 bg-portal/10 text-portal'
-            : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
-          }`}
-        >
-          <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Fate Survival</span>
-          <span aria-hidden="true" className={`relative h-4 w-7 rounded-full transition-colors ${settings.enabled ? 'bg-portal/70' : 'bg-neutral-700'}`}>
-            <span className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${settings.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-          </span>
-        </button>
-      </div>
-
-      {settings.enabled && (
-        <div className="space-y-4 border-t border-neutral-800/70 pt-4">
-          {optionGroup('Fate Visibility', 'Controls how much the Library reveals.', settings.visibility, FATE_VISIBILITY_OPTIONS, visibility => onChange({ visibility }))}
-          {optionGroup('Survival Pressure', 'Controls how hard the story pushes back.', settings.pressure, SURVIVAL_PRESSURE_OPTIONS, pressure => onChange({ pressure }))}
-        </div>
-      )}
-    </section>
-  );
+const STORY_SEED_WORKSPACES: Record<SeedSectionId, ComponentType<StorySeedWorkspaceProps>> = {
+  origin: OriginWorkspace,
+  arc: ArcWorkspace,
+  'world-identity': WorldIdentityWorkspace,
+  characters: CharactersWorkspace,
+  factions: FactionsWorkspace,
+  abilities: AbilitiesWorkspace,
+  'power-system': PowerSystemWorkspace,
 };
-
-const MatureAudienceSetting = ({ checked, onChange }: MatureAudienceSettingProps) => (
-  <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-800/80 bg-[#080b17]/80 p-3">
-    <span className="min-w-0">
-      <span className="block font-sc text-xs font-semibold tracking-wide text-signal">
-        Intended for mature audiences
-      </span>
-      <span className="mt-1 block font-sans text-[11px] leading-relaxed text-neutral-500">
-        Story metadata for mature themes. This does not request explicit content.
-      </span>
-    </span>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label="Rated 18+"
-      onClick={() => onChange(!checked)}
-      className={`flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors ${checked
-        ? 'border-gold-accent/60 bg-gold-accent/10 text-gold-accent'
-        : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
-      }`}
-    >
-      <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Rated 18+</span>
-      <span
-        aria-hidden="true"
-        className={`relative h-4 w-7 rounded-full transition-colors ${checked ? 'bg-gold-accent/70' : 'bg-neutral-700'}`}
-      >
-        <span
-          className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-        />
-      </span>
-    </button>
-  </div>
-);
 
 export default function CreationModal({ onStartStory, onGenerateBlueprint, isGenerating: isGeneratingProp, error }: CreationModalProps) {
   const storeIsGenerating = useAppStore(selectIsGenerating);
@@ -261,9 +110,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       ? storyMaker.equippedRelicTitle
       : null;
   });
-  const seedReferenceSignature = useAppStore(state => state.stories
-    .map(story => `${story.id}:${story.sourceSeedId || ''}`)
-    .join('|'));
   // Stories manifested from a banked seed drive the Story Bank's "Novel
   // Manifested" card state (stories link back to their seed by `sourceSeedId`).
   const libraryStories = useAppStore(state => state.stories);
@@ -277,10 +123,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [blueprint, setBlueprint] = useState<WorldBlueprint | null>(null);
   const [currentSeed, setCurrentSeed] = useState<StorySeedRecord | null>(null);
-  const [savedSeeds, setSavedSeeds] = useState<StorySeedRecord[]>([]);
-  const [isLoadingSeeds, setIsLoadingSeeds] = useState(false);
+  const {
+    records: savedSeeds,
+    setRecords: setSavedSeeds,
+    isLoading: isLoadingSeeds,
+    loadError: seedLoadError,
+    reload: reloadSavedSeeds,
+  } = useStoryBankRecords(seedOwnerId);
   const [seedError, setSeedError] = useState<string | null>(null);
-  const [chapterCount] = useState(10);
   const [authDissolving, setAuthDissolving] = useState(false);
   const wasAuthRef = useRef(false);
   const previousSeedOwnerIdRef = useRef<string | null>(seedOwnerId);
@@ -291,22 +141,15 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
 
   // Creation workspace state
   const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
-  const [selectorOpen, setSelectorOpen] = useState(false);
   // Story Bank is a real view of the page — the permanent home for saved
   // seeds and their Blueprints — toggled from the bottom navigation's Story
   // Bank tab (mobile) and the header's Story Bank button (desktop).
   const [showStoryBank, setShowStoryBank] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
-  const [desktopSettingsOpen, setDesktopSettingsOpen] = useState(false);
-  const desktopSettingsRef = useRef<HTMLDivElement>(null);
   const savedFeedbackTimer = useRef<number | null>(null);
-  // Mobile bottom-navigation sheets: Settings carries Save Draft and the
-  // story settings moved out of the header; Profile is a placeholder sheet.
-  const [mobileSheet, setMobileSheet] = useState<'settings' | 'profile' | null>(null);
   // The `?` Help menu — one clean home for section guidance, opened from the
   // bottom navigation on mobile and the header Help button on desktop.
   const [helpOpen, setHelpOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
 
   // The workspace edits the canonical Story Seed directly — there is no
   // separate flat view model between the form and the contract any more.
@@ -321,41 +164,20 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     const ownerChanged = previousSeedOwnerIdRef.current !== seedOwnerId;
     previousSeedOwnerIdRef.current = seedOwnerId;
     if (ownerChanged) {
-      setSavedSeeds([]);
       setActiveSeed(null);
       setSeed(createEmptyStorySeedInput());
       setBlueprint(null);
+      setSeedError(null);
     }
     if (!seedOwnerId) {
-      setSavedSeeds([]);
       setActiveSeed(null);
-      return;
     }
-    let cancelled = false;
-    setIsLoadingSeeds(true);
-    setSeedError(null);
-    listStorySeeds(seedOwnerId)
-      .then(seeds => {
-        if (!cancelled) setSavedSeeds(seeds);
-      })
-      .catch(error => {
-        if (!cancelled) {
-          console.error('Failed to load account story seeds:', error);
-          setSeedError('Your saved story seeds could not be loaded.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingSeeds(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [seedOwnerId, seedReferenceSignature]);
+  }, [seedOwnerId]);
 
   // Always a functional update, so rapid successive edits (e.g. toggling two
   // tags in one task) can never lose a write to a stale render closure.
   const updateSeed = (update: SeedUpdate) => setSeed(update);
-  const updateBlueprint = (update: React.SetStateAction<WorldBlueprint>) => {
+  const updateBlueprint = (update: SetStateAction<WorldBlueprint>) => {
     setBlueprint(current => {
       if (!current) return current;
       return typeof update === 'function' ? update(current) : update;
@@ -378,37 +200,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     return () => clearTimeout(timer);
   }, [currentUser]);
 
-  // Mobile sheet behavior mirrors the navigation drawer: Escape closes and
-  // body scroll locks while the sheet is open.
-  useEffect(() => {
-    if (!mobileSheet) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileSheet(null);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previous;
-    };
-  }, [mobileSheet]);
-
-  useEffect(() => {
-    if (!desktopSettingsOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setDesktopSettingsOpen(false);
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      if (!desktopSettingsRef.current?.contains(event.target as Node)) setDesktopSettingsOpen(false);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [desktopSettingsOpen]);
+  useEffect(() => () => {
+    if (savedFeedbackTimer.current) window.clearTimeout(savedFeedbackTimer.current);
+  }, []);
 
   const rememberSeed = (record: StorySeedRecord, makeCurrent = true) => {
     if (makeCurrent) setActiveSeed(record);
@@ -574,8 +368,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         console.error('Failed to save generated story seed:', seedSaveError);
         setSeedError('The blueprint was generated, but its account seed was not saved. Retry before starting the story.');
       }
-    } catch (err) {
-      // Error handled in parent
+    } catch (generationError) {
+      console.error('Failed to generate World Blueprint:', generationError);
+      setSeedError(mapCreationFailure('blueprint'));
     }
   };
 
@@ -590,16 +385,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     blueprintArtifact: WorldBlueprint,
     record: StorySeedRecord | null,
   ) => {
+    const validation = validateStorySeedInput(seedInput);
+    if (!validation.valid) {
+      setSeedError(validation.errors.join(' '));
+      return;
+    }
+
+    let cleanBlueprint: WorldBlueprint;
     try {
-      const validation = validateStorySeedInput(seedInput);
-      if (!validation.valid) {
-        setSeedError(validation.errors.join(' '));
-        return;
-      }
       const normalizedBlueprint = normalizeWorldBlueprint(blueprintArtifact, seedInput, {
         ...blueprintContextForRecord(record || undefined),
       });
-      const cleanBlueprint = {
+      cleanBlueprint = {
         ...normalizedBlueprint,
         mcProfile: normalizedBlueprint.mainCharacter?.backgroundProfile || normalizedBlueprint.mcProfile,
         majorFactions: normalizedBlueprint.majorFactions.map(f => f.trim()).filter(Boolean),
@@ -607,25 +404,43 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         majorMysteries: normalizedBlueprint.majorMysteries.map(f => f.trim()).filter(Boolean),
         unresolvedPlotThreads: normalizedBlueprint.unresolvedPlotThreads.map(f => f.trim()).filter(Boolean),
       };
-      const savedSeed = await persistSeed(seedInput, cleanBlueprint);
-      if (!LOCAL_ONLY_MODE && !savedSeed) return;
-      const sourceSeedId = savedSeed?.id || record?.id || `local-seed-${generateUUID()}`;
-      const administrative = createStoryAdministrativeMetadata({
-        storyId: `story-${generateUUID()}`,
-        creatorId: currentUser?.uid || LOCAL_CREATOR_ID,
-        sourceSeedId,
-        originalLanguage: 'en',
-      });
-      setSeedError(null);
+    } catch (blueprintError) {
+      console.error('Failed to prepare World Blueprint:', blueprintError);
+      setSeedError('The story was not started because its World Blueprint is invalid. Refine it and try again.');
+      return;
+    }
+
+    let savedSeed: StorySeedRecord | null;
+    try {
+      savedSeed = await persistSeed(seedInput, cleanBlueprint);
+      if (!LOCAL_ONLY_MODE && !savedSeed) {
+        setSeedError('The story was not started because its source seed could not be saved to your account.');
+        return;
+      }
+    } catch (seedSaveError) {
+      console.error('Failed to persist source story seed:', seedSaveError);
+      setSeedError('The story was not started because its source seed could not be saved to your account.');
+      return;
+    }
+
+    const sourceSeedId = savedSeed?.id || record?.id || `local-seed-${generateUUID()}`;
+    const administrative = createStoryAdministrativeMetadata({
+      storyId: `story-${generateUUID()}`,
+      creatorId: currentUser?.uid || LOCAL_CREATOR_ID,
+      sourceSeedId,
+      originalLanguage: 'en',
+    });
+    setSeedError(null);
+    try {
       await onStartStory(buildInitialStoryGenerationPayload(
         seedInput,
         administrative,
         cleanBlueprint,
-        chapterCount,
+        INITIAL_CHAPTER_COUNT,
       ));
-    } catch (seedSaveError) {
-      console.error('Failed to persist source story seed:', seedSaveError);
-      setSeedError('The story was not started because its source seed could not be saved to your account.');
+    } catch (storyStartError) {
+      console.error('Failed to start story:', storyStartError);
+      setSeedError(mapCreationFailure('story'));
     }
   };
 
@@ -713,9 +528,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   if (stage === 'blueprint' && blueprint) {
     return (
       <>
-        {seedError && (
+        {(seedError || error) && (
           <div className="mx-auto mb-5 max-w-4xl rounded border border-red-900 bg-red-950/30 p-3 text-center font-sans text-xs text-red-200" role="alert">
-            {seedError}
+            {seedError || error}
           </div>
         )}
         <BlueprintReview
@@ -735,19 +550,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const missing = missingRequiredSections(seed);
   const requiredComplete = REQUIRED_STORY_SECTIONS.length - missing.length;
   const canGenerate = missing.length === 0 && !isGenerating;
-  const workspaceProps = { seed, updateSeed };
-
-  const renderWorkspace = () => {
-    switch (activeSection) {
-      case 'origin': return <OriginWorkspace {...workspaceProps} />;
-      case 'arc': return <ArcWorkspace {...workspaceProps} />;
-      case 'world-identity': return <WorldIdentityWorkspace {...workspaceProps} />;
-      case 'characters': return <CharactersWorkspace {...workspaceProps} />;
-      case 'factions': return <FactionsWorkspace {...workspaceProps} />;
-      case 'abilities': return <AbilitiesWorkspace {...workspaceProps} />;
-      case 'power-system': return <PowerSystemWorkspace {...workspaceProps} />;
-    }
-  };
+  const ActiveWorkspace = STORY_SEED_WORKSPACES[activeSection];
 
   // The Story Bank swap: opening it replaces the creation workspace below the
   // shared header. Closing it also dismisses the Import panel, since Story
@@ -757,155 +560,29 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     setShowStoryBank(open => !open);
   };
 
-  // Mobile bottom navigation — Sections opens the existing section drawer,
-  // Profile is a placeholder for the future Library profile surface, Story
-  // Bank swaps the workspace for the saved-seed vault, Help opens the `?`
-  // guidance menu, and Settings toggles the utility sheet (Save Draft and the
-  // story settings). The bar is presentational; it drives the same state as
-  // the existing controls.
-  const bottomNavItems: LibraryBottomNavigationItem[] = [
-    {
-      id: 'sections',
-      label: 'Sections',
-      icon: <List size={20} />,
-      active: selectorOpen,
-      onSelect: () => {
-        setMobileSheet(null);
-        setSelectorOpen(true);
-      },
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: <CircleUserRound size={20} />,
-      active: mobileSheet === 'profile',
-      onSelect: () => setMobileSheet(sheet => (sheet === 'profile' ? null : 'profile')),
-    },
-    {
-      id: 'story-bank',
-      label: 'Story Bank',
-      icon: <Sprout size={20} />,
-      active: showStoryBank,
-      onSelect: () => {
-        setMobileSheet(null);
-        toggleStoryBank();
-      },
-    },
-    {
-      id: 'help',
-      label: 'Help',
-      icon: <CircleHelp size={20} />,
-      active: helpOpen,
-      onSelect: () => {
-        setMobileSheet(null);
-        setHelpOpen(true);
-      },
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings size={20} />,
-      active: mobileSheet === 'settings',
-      onSelect: () => setMobileSheet(sheet => (sheet === 'settings' ? null : 'settings')),
-    },
-  ];
-
-  return (
+ return (
     // `pb-24` clears the sticky Manifest strip at the end of scroll; on mobile
     // the in-flow bottom navigation occupies that space instead.
     <div className="mx-auto max-w-7xl pb-24 max-lg:pb-0" id="creation-portal-root">
       {/* Header — wraps on narrow screens so the action buttons drop to a
           second row instead of overflowing the viewport. */}
-      <header className="relative z-40 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        {/* S emblem doubles as the home button — back to the main page. */}
-        <LibraryHeaderBadge
-          title="Story Seed"
-          subtitle="Grow Your Universe"
-          emblemSrc={CELESTIAL_LIBRARY_EMBLEM_URL}
-          emblemAlt="Celestial Library"
-          emblemHref="/"
-          emblemLinkLabel="Return to Workshop home"
-        />
-
-        {/* Save Draft is never gated on creative completeness — a draft exists
-            to preserve progress. On mobile these utility actions move into
-            the bottom navigation's Settings sheet; the desktop header keeps
-            them as plain, always-visible actions. */}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 pt-1 max-lg:hidden">
-          <LibraryButton
-            onClick={handleSaveDraft}
-            disabled={isGenerating}
-            title="Save this Story Seed draft"
-            icon={savedFeedback ? Check : Bookmark}
-          >
-            <span className="hidden sm:inline">{savedFeedback ? 'Saved' : 'Save Draft'}</span>
-            <span className="sm:hidden">{savedFeedback ? 'Saved' : 'Save'}</span>
-          </LibraryButton>
-
-          <div className="flex items-center gap-1">
-            <div className="relative" ref={desktopSettingsRef}>
-              <LibraryButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setDesktopSettingsOpen(open => !open)}
-                icon={Settings}
-                aria-expanded={desktopSettingsOpen}
-                aria-haspopup="true"
-              >
-                Settings
-              </LibraryButton>
-              {desktopSettingsOpen && (
-                <div
-                  className="absolute right-0 top-[calc(100%+0.5rem)] w-[22rem] max-w-[calc(100vw-2rem)]"
-                  role="region"
-                  aria-label="Story Seed settings"
-                >
-                  <LibraryPanel padding="sm">
-                    <MatureAudienceSetting
-                      checked={seed.story.optional.intendedForMatureAudiences}
-                      onChange={checked => updateSeed(setIntendedForMatureAudiences(checked))}
-                    />
-                    <FateSurvivalSetting
-                      settings={seed.story.optional.fateSurvival}
-                      onChange={patch => updateSeed(patchFateSurvival(patch))}
-                    />
-                  </LibraryPanel>
-                </div>
-              )}
-            </div>
-            {/* Story Bank is the single home for saved seeds, their
-                Blueprints, and every import/export action — the desktop
-                counterpart of the bottom navigation's Story Bank tab. */}
-            <LibraryButton
-              variant={showStoryBank ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={toggleStoryBank}
-              icon={Vault}
-              aria-pressed={showStoryBank}
-              title="Open the Story Bank — saved Story Seeds and their World Blueprints"
-            >
-              Story Bank
-            </LibraryButton>
-          </div>
-
-          {/* The `?` Help menu is a bottom-navigation destination on mobile;
-              on desktop it lives here with the always-visible actions. */}
-          <LibraryButton
-            variant="ghost"
-            size="sm"
-            onClick={() => setHelpOpen(true)}
-            icon={CircleHelp}
-            title="Story Seed Help — guidance for every section"
-          >
-            Help
-          </LibraryButton>
-        </div>
-      </header>
+      <StorySeedHeader
+        seed={seed}
+        updateSeed={updateSeed}
+        isGenerating={isGenerating}
+        savedFeedback={savedFeedback}
+        showStoryBank={showStoryBank}
+        onSaveDraft={handleSaveDraft}
+        onToggleStoryBank={toggleStoryBank}
+        onOpenHelp={() => setHelpOpen(true)}
+      />
 
       {showStoryBank && (
         <StoryBank
           seeds={savedSeeds}
           isLoading={isLoadingSeeds}
+          loadError={seedLoadError}
+          onRetryLoad={reloadSavedSeeds}
           manifestedSeedIds={manifestedSeedIds}
           isGenerating={isGenerating}
           onToggleImport={() => setShowImportPanel(open => !open)}
@@ -956,7 +633,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
             >
-              {renderWorkspace()}
+              <ActiveWorkspace seed={seed} updateSeed={updateSeed} />
             </motion.div>
           </main>
 
@@ -1037,117 +714,23 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       {/* Mobile section drawer — the Library navigation shell focused purely
           on Story/World section navigation (no profile header; profile
           access lives in the bottom navigation's Profile tab). */}
-      <LibraryNavigationDrawer
-        open={selectorOpen}
-        onClose={() => setSelectorOpen(false)}
-        aria-label="Story Seed sections"
-        closeLabel="Close sections"
-        profile={storySeedDrawerProfile(equippedRelicTitle)}
-        sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
+      <StorySeedMobileNavigation
+        seed={seed}
+        updateSeed={updateSeed}
+        activeSection={activeSection}
+        equippedTitle={equippedRelicTitle}
+        showStoryBank={showStoryBank}
+        helpOpen={helpOpen}
+        isGenerating={isGenerating}
+        savedFeedback={savedFeedback}
+        onSelectSection={(id) => {
           setActiveSection(id);
-          setSelectorOpen(false);
           setShowStoryBank(false);
-        })}
+        }}
+        onToggleStoryBank={toggleStoryBank}
+        onOpenHelp={() => setHelpOpen(true)}
+        onSaveDraft={handleSaveDraft}
       />
-
-      {/* Mobile bottom navigation — the reusable Library bar. Mobile-only:
-          the desktop layout already has the sidebar selector and the header
-          utility actions. Rendered last so it rests at the end of the page
-          and sticks to the viewport bottom while scrolling. */}
-      <LibraryBottomNavigation
-        aria-label="Story Seed navigation"
-        items={bottomNavItems}
-        showLabels={false}
-        className="lg:hidden"
-      />
-
-      {/* Mobile utility sheet — Settings holds Save Draft and the story
-          settings (saved seeds and import/export live in the bottom
-          navigation's Story Bank tab); Profile is a placeholder sheet with
-          no account behavior. */}
-      <AnimatePresence>
-        {mobileSheet && (
-          <div className="fixed inset-0 z-[240] lg:hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.2 }}
-              onClick={() => setMobileSheet(null)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.25, ease: 'easeOut' }}
-              role="dialog"
-              aria-modal="true"
-              aria-label={mobileSheet === 'settings' ? 'Story Seed settings' : 'Cultivator profile (placeholder)'}
-              className="absolute inset-x-0 bottom-0"
-            >
-              <LibraryPanel
-                padding="none"
-                className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-b-none border-x-0 border-b-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
-              >
-                <div className="flex items-center justify-between gap-3 px-4 pt-3">
-                  <p className="font-sc text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-500">
-                    {mobileSheet === 'settings' ? 'Settings' : 'Profile'}
-                  </p>
-                  <LibraryButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileSheet(null)}
-                    aria-label={mobileSheet === 'settings' ? 'Close settings' : 'Close profile'}
-                    icon={X}
-                  />
-                </div>
-
-                {mobileSheet === 'settings' ? (
-                  <div className="mt-2 space-y-3 px-4">
-                    <MatureAudienceSetting
-                      checked={seed.story.optional.intendedForMatureAudiences}
-                      onChange={checked => updateSeed(setIntendedForMatureAudiences(checked))}
-                    />
-                    <FateSurvivalSetting
-                      settings={seed.story.optional.fateSurvival}
-                      onChange={patch => updateSeed(patchFateSurvival(patch))}
-                    />
-                    <div className="space-y-2">
-                      <LibraryButton
-                        fullWidth
-                        onClick={handleSaveDraft}
-                        disabled={isGenerating}
-                        title="Save this Story Seed draft"
-                        icon={savedFeedback ? Check : Bookmark}
-                      >
-                        {savedFeedback ? 'Saved' : 'Save Draft'}
-                      </LibraryButton>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 flex items-center gap-3 px-4 pb-2">
-                    <span
-                      aria-hidden="true"
-                      className="grid size-10 shrink-0 place-items-center rounded-full border border-gold-accent/40 bg-gold-accent/10 font-sc text-sm font-bold text-gold-accent"
-                    >
-                      S
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-sc text-sm font-bold uppercase tracking-widest text-signal">
-                        SENSEI
-                      </span>
-                      <span className="block font-sans text-[11px] leading-relaxed text-neutral-500">
-                        Cultivator Profile is a placeholder — it arrives with a future Library update.
-                      </span>
-                    </span>
-                  </div>
-                )}
-              </LibraryPanel>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Story Seed Help — the `?` guidance menu shared by the mobile bottom
           navigation and the desktop header button. */}

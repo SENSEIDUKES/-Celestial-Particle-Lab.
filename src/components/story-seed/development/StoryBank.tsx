@@ -1,5 +1,6 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import {
+  AlertTriangle,
   CalendarDays,
   Copy,
   Download,
@@ -49,7 +50,7 @@ const BankChip = ({
   children,
 }: {
   icon?: LucideIcon;
-  children: React.ReactNode;
+  children: ReactNode;
 }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(172,166,214,0.25)] bg-[rgba(11,14,30,0.5)] px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-neutral-300">
     {Icon && <Icon size={10} aria-hidden="true" className="text-[#ACA6D6]" />}
@@ -69,6 +70,10 @@ const StoryBankCard = ({
 }: StoryBankCardProps) => {
   const premise = record.seed.story.required.premise.trim();
   const blueprint = record.blueprint;
+  const updatedAt = new Date(record.updatedAt);
+  const updatedLabel = Number.isNaN(updatedAt.getTime())
+    ? record.updatedAt || 'Unknown'
+    : updatedAt.toLocaleDateString();
 
   return (
     <article className="flex flex-col rounded-xl border border-[rgba(172,166,214,0.16)] bg-[rgba(11,14,30,0.55)] p-4 shadow-[inset_0_1px_0_rgba(226,220,200,0.05),0_14px_32px_-18px_rgba(1,3,10,0.95)] sm:p-5">
@@ -100,7 +105,7 @@ const StoryBankCard = ({
           <BankChip icon={ScrollText}>No Blueprint Yet</BankChip>
         )}
         <BankChip icon={CalendarDays}>
-          Updated {new Date(record.updatedAt).toLocaleDateString()}
+          Updated {updatedLabel}
         </BankChip>
       </div>
 
@@ -170,13 +175,15 @@ const StoryBankCard = ({
 interface StoryBankProps {
   seeds: StorySeedRecord[];
   isLoading: boolean;
+  loadError?: string | null;
+  onRetryLoad?: () => void;
   /** Ids of seeds that already have a manifested novel. */
   manifestedSeedIds: ReadonlySet<string>;
   isGenerating: boolean;
   /** Toggles the Import panel rendered in `importPanel`. */
   onToggleImport: () => void;
   /** The collapsible ImportPanel, owned by CreationModal. */
-  importPanel: React.ReactNode;
+  importPanel: ReactNode;
   onExportAll: () => void;
   onEditSeed: (record: StorySeedRecord) => void;
   onOpenBlueprint: (record: StorySeedRecord) => void;
@@ -188,6 +195,8 @@ interface StoryBankProps {
 export const StoryBank = ({
   seeds,
   isLoading,
+  loadError,
+  onRetryLoad,
   manifestedSeedIds,
   isGenerating,
   onToggleImport,
@@ -227,7 +236,7 @@ export const StoryBank = ({
             </span>
             Story Bank
           </h2>
-          {!isLoading && seeds.length > 0 && (
+          {!isLoading && !loadError && seeds.length > 0 && (
             <span className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-950/60 px-2.5 py-0.5 font-sc text-[10px] uppercase tracking-widest text-neutral-500">
               {seeds.length} {seeds.length === 1 ? 'Seed' : 'Seeds'} Banked
             </span>
@@ -268,6 +277,18 @@ export const StoryBank = ({
           <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-600" role="status">
             Loading saved seeds…
           </p>
+        ) : loadError ? (
+          <div className="rounded-xl border border-red-900/60 bg-red-950/20 px-5 py-6 text-center" role="alert">
+            <AlertTriangle size={20} aria-hidden="true" className="mx-auto text-red-300" />
+            <p className="mt-3 font-serif text-[14px] leading-relaxed text-red-100">
+              {loadError}
+            </p>
+            {onRetryLoad && (
+              <LibraryButton size="sm" variant="secondary" onClick={onRetryLoad} className="mt-4">
+                Retry Story Bank
+              </LibraryButton>
+            )}
+          </div>
         ) : seeds.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-800 bg-black/20 px-6 py-10 text-center">
             <span

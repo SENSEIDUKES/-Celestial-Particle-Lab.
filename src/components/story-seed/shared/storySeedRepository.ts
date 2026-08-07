@@ -14,7 +14,10 @@ import {
   type StorySeedInput,
 } from './storySeedSchema';
 import type { WorldBlueprint } from './types';
-import { workshopStorySeedStorage } from './workshopStorySeedStorage';
+import {
+  resetWorkshopStorySeedStorage,
+  workshopStorySeedStorage,
+} from './workshopStorySeedStorage';
 
 /**
  * A saved seed plus the minimum needed to list and reopen it. The generated
@@ -43,7 +46,6 @@ export interface StorySeedRepository {
   update(userId: string, existing: StorySeedRecord, input: StorySeedInput, blueprint?: WorldBlueprint): Promise<StorySeedRecord>;
   list(userId: string): Promise<StorySeedRecord[]>;
   importMany(userId: string, artifacts: StorySeedArtifact[]): Promise<StorySeedRecord[]>;
-  reset(records?: StorySeedRecord[]): void;
 }
 
 let repository: StorySeedRepository = workshopStorySeedStorage;
@@ -73,5 +75,8 @@ export const importStorySeeds = (
   artifacts: StorySeedArtifact[],
 ): Promise<StorySeedRecord[]> => repository.importMany(userId, artifacts);
 
-export const resetStorySeedRepository = (records: StorySeedRecord[] = []): void =>
-  repository.reset(records);
+/** Restore the Workshop adapter and seed it deterministically for tests/previews. */
+export const resetStorySeedRepository = (records: StorySeedRecord[] = []): void => {
+  repository = workshopStorySeedStorage;
+  resetWorkshopStorySeedStorage(records);
+};
