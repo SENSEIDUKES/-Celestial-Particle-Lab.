@@ -257,7 +257,7 @@ export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = 
     createdAt: now,
     updatedAt: now,
     seed,
-    blueprint: normalizeWorldBlueprint(createMockBlueprint(), seed, { creator: 'Workshop Creator' }),
+    blueprint: normalizeWorldBlueprint(createMockBlueprint(), seed, { creator: 'Workshop Creator', status: 'Reviewed' }),
     ...overrides,
   };
 };

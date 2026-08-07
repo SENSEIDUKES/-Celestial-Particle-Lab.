@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Layers, Upload } from 'lucide-react';
+import { Layers, Upload, X } from 'lucide-react';
 import type { StorySeedArtifact } from '../shared/storySeedRepository';
 import { parseStorySeedJson } from '../shared/storySeedSerialization';
+import { LibraryButton, LibraryTextArea } from '../../library';
+
+/**
+ * Import Story Seed — the portable-JSON intake surface, living inside the
+ * Story Bank. Same dossier dialect as the workspaces and the Blueprint
+ * review: gold medallion heading, serif tagline, the official glass field,
+ * and LibraryButton actions. Behavior (file pick, paste, parse, import) is
+ * unchanged from the original flat panel.
+ */
 
 interface ImportPanelProps {
   show: boolean;
@@ -58,77 +67,76 @@ export const ImportPanel = ({ show, onClose, onImport }: ImportPanelProps) => {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="mb-8 p-6 rounded-lg bg-neutral-950 border border-portal/30 space-y-4 max-w-2xl mx-auto shadow-[0_0_25px_rgba(4,172,255,0.08)] overflow-hidden"
+          className="mt-6 overflow-hidden"
         >
-          <div className="flex justify-between items-center pb-2 border-b border-neutral-900">
-            <h3 className="font-sc font-bold uppercase tracking-widest text-[#FAFAFA] text-xs flex items-center space-x-2">
-              <Layers size={14} className="text-portal" />
-              <span>Import Story Seed</span>
-            </h3>
-            <button
-              type="button"
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  event.currentTarget.click();
-                }
-              }}
-              onClick={onClose}
-              className="text-neutral-500 hover:text-[#FAFAFA] text-xs"
-            >
-              Close
-            </button>
-          </div>
+          <section
+            aria-labelledby="story-seed-import-title"
+            className="rounded-xl border border-[rgba(172,166,214,0.2)] bg-[rgba(11,14,30,0.55)] p-4 shadow-[inset_0_1px_0_rgba(226,220,200,0.05),0_14px_32px_-18px_rgba(1,3,10,0.95)] sm:p-5"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3
+                id="story-seed-import-title"
+                className="flex min-w-0 items-center gap-3 font-display text-base font-bold uppercase tracking-[0.12em] text-[#F3EDE0]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(205,178,113,0.38)] bg-[radial-gradient(circle_at_32%_28%,rgba(205,178,113,0.14),rgba(11,14,30,0.55)_68%)] text-[#CDB271] shadow-[0_0_16px_rgba(205,178,113,0.12),inset_0_0_10px_rgba(205,178,113,0.08)]"
+                >
+                  <Layers size={15} className="drop-shadow-[0_0_6px_rgba(205,178,113,0.35)]" />
+                </span>
+                Import Story Seed
+              </h3>
+              <LibraryButton
+                variant="ghost"
+                size="icon"
+                icon={X}
+                onClick={onClose}
+                aria-label="Close import"
+              />
+            </div>
 
-          <p className="text-neutral-400 font-sans text-xs leading-relaxed">
-            Import portable Story Seed JSON. A reviewed World Blueprint is restored when present; older seed-only files remain supported.
-          </p>
+            <p className="mt-3 max-w-xl font-serif text-[13px] leading-relaxed text-[#B0A99B]">
+              Import portable Story Seed JSON. A reviewed World Blueprint is restored when present; older seed-only files remain supported.
+            </p>
 
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-portal/40 bg-portal/5 px-4 py-3 font-sc text-[10px] font-bold uppercase tracking-widest text-portal transition-colors hover:border-portal hover:bg-portal/10">
-            <Upload size={14} />
-            Choose Story Seed JSON
-            <input
-              type="file"
-              accept="application/json,.json"
-              onChange={handleFileImport}
-              disabled={isImporting}
-              className="sr-only"
-            />
-          </label>
+            <div className="mt-4 space-y-4">
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[rgba(205,178,113,0.32)] bg-[rgba(205,178,113,0.03)] px-4 py-3.5 font-sc text-[10px] font-bold uppercase tracking-[0.18em] text-[#DDC58A] transition-colors hover:border-[rgba(205,178,113,0.55)] hover:bg-[rgba(205,178,113,0.07)]">
+                <Upload size={14} aria-hidden="true" />
+                Choose Story Seed JSON
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={handleFileImport}
+                  disabled={isImporting}
+                  className="sr-only"
+                />
+              </label>
 
-          <textarea
-            value={importText}
-            onChange={(event) => {
-              setImportText(event.target.value);
-              setImportError(null);
-            }}
-            rows={6}
-            placeholder="Paste portable Story Seed JSON here..."
-            className="w-full bg-void border border-neutral-900 focus:border-portal text-neutral-300 font-sans text-xs rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-portal/20 transition-all"
-          />
+              <LibraryTextArea
+                label="Story Seed JSON"
+                value={importText}
+                onChange={(value) => {
+                  setImportText(value);
+                  setImportError(null);
+                }}
+                rows={6}
+                placeholder="Paste portable Story Seed JSON here..."
+                error={importError ?? undefined}
+                disabled={isImporting}
+              />
 
-          {importError && (
-            <p className="text-xs text-human font-sans font-medium">{importError}</p>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  event.currentTarget.click();
-                }
-              }}
-              onClick={handleImportSubmit}
-              disabled={isImporting}
-              className="font-sc px-5 py-2 rounded text-xs uppercase tracking-widest font-bold bg-human text-[#FAFAFA] hover:bg-neutral-900 hover:text-human border border-human transition-colors cursor-pointer"
-            >
-              {isImporting ? 'Saving Seed…' : 'Activate Seed'}
-            </button>
-          </div>
+              <div className="flex justify-end">
+                <LibraryButton
+                  variant="primary"
+                  onClick={handleImportSubmit}
+                  loading={isImporting}
+                  disabled={isImporting}
+                >
+                  {isImporting ? 'Saving Seed…' : 'Activate Seed'}
+                </LibraryButton>
+              </div>
+            </div>
+          </section>
         </motion.div>
       )}
     </AnimatePresence>
