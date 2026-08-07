@@ -247,6 +247,7 @@ export function StorySeedWorkspace() {
         ? { uid: MOCK_USER_ID, displayName: 'Workshop Creator' }
         : null,
       activeAgentId: scenario.activeAgentId ?? null,
+      stories: scenario.stories ?? [],
     });
     resetMockSeeds(scenario.seedLibrary === 'populated' ? createMockSeedLibrary() : []);
     if (!options.preserveLocalSeeds) {
@@ -277,11 +278,17 @@ export function StorySeedWorkspace() {
       if (cancelled) return;
       if (scenario.uiAction === 'open-import-panel') {
         getRoots('reference').forEach(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
+        // Development keeps import inside the Story Bank: open the bank
+        // through its real navigation control, then its Import button.
+        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
+        await wait(150);
         getRoots('development').forEach(root => clickByText(root, 'button', /^Import$/));
-      } else if (scenario.uiAction === 'open-library') {
-        getRoots('development').forEach(root => clickByText(root, 'button', /^My Seeds$/));
+      } else if (scenario.uiAction === 'open-story-bank') {
+        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
       } else if (scenario.uiAction === 'use-first-seed') {
-        getRoots('development').forEach(root => clickByText(root, 'button', /^My Seeds$/));
+        // Development reaches a banked seed through the Story Bank; the
+        // locked reference fork still renders its own always-visible panel.
+        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
         await wait(150);
         getRoots('reference').forEach(root => clickByText(root, 'button', /^Use Seed$/));
         getRoots('development').forEach(root => clickByText(root, 'button', /^Use Seed$/));

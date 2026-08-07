@@ -1,9 +1,11 @@
-export type PreviewCategory = 'intake' | 'blueprint' | 'library' | 'auth';
+import type { MockStoryRef } from '../../../components/story-seed/shared/stubs';
+
+export type PreviewCategory = 'intake' | 'blueprint' | 'story-bank' | 'auth';
 
 export const PREVIEW_CATEGORIES: { id: PreviewCategory; label: string }[] = [
   { id: 'intake', label: 'Creation Workspace' },
   { id: 'blueprint', label: 'Blueprint Review' },
-  { id: 'library', label: 'Seed Library' },
+  { id: 'story-bank', label: 'Story Bank' },
   { id: 'auth', label: 'Sign In' },
 ];
 
@@ -11,11 +13,11 @@ export type PreviewState =
   | 'empty-intake'
   | 'filled-intake'
   | 'generating-blueprint'
-  | 'import-panel-open'
+  | 'story-bank-import-open'
   | 'blueprint-review'
   | 'blueprint-generating-story'
-  | 'library-empty'
-  | 'library-populated'
+  | 'story-bank-empty'
+  | 'story-bank-populated'
   | 'auth-gated';
 
 export interface PreviewScenario {
@@ -30,19 +32,24 @@ export interface PreviewScenario {
   signedIn?: boolean;
   /**
    * Mirrors production's `LOCAL_ONLY_MODE`. Defaults to `true` (no auth
-   * gate, Seed Library menu item hidden — matches almost every production
-   * deployment). Set `false` to reach the auth-gated screen or enable the
-   * account-only Seed Library, both hidden whenever `true`.
+   * gate — matches almost every production deployment). Set `false` to reach
+   * the auth-gated screen, or together with `signedIn` to browse the mock
+   * account's Story Bank (the populated fixtures belong to that account).
    */
   localOnlyMode?: boolean;
-  /** Populate the mock seed library for this scenario. */
+  /** Populate the mock Story Bank for this scenario. */
   seedLibrary?: 'empty' | 'populated';
+  /**
+   * Mock manifested stories linked back to their seeds by `sourceSeedId`, so
+   * Story Bank cards can show the "Novel Manifested" state.
+   */
+  stories?: MockStoryRef[];
   /**
    * A real production interaction the Workshop drives after mount, by
    * clicking the actual rendered control (never a shortcut into internal
    * state) — same approach as `reader-chamber`'s `clickInChamber`.
    */
-  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed' | 'open-library';
+  uiAction?: 'fill-intake' | 'open-import-panel' | 'use-first-seed' | 'open-story-bank';
 }
 
 export const scenarios: PreviewScenario[] = [
@@ -62,12 +69,6 @@ export const scenarios: PreviewScenario[] = [
     label: 'Generating blueprint (spinner)',
     category: 'intake',
     isGenerating: true,
-  },
-  {
-    id: 'import-panel-open',
-    label: 'Import Story Seed panel open',
-    category: 'intake',
-    uiAction: 'open-import-panel',
   },
   {
     id: 'blueprint-review',
@@ -90,22 +91,29 @@ export const scenarios: PreviewScenario[] = [
     activeAgentId: 'versa',
   },
   {
-    id: 'library-empty',
-    label: 'Seed library — empty',
-    category: 'library',
+    id: 'story-bank-empty',
+    label: 'Story Bank — empty',
+    category: 'story-bank',
     signedIn: true,
     localOnlyMode: false,
     seedLibrary: 'empty',
-    uiAction: 'open-library',
+    uiAction: 'open-story-bank',
   },
   {
-    id: 'library-populated',
-    label: 'Seed library — 2 saved seeds',
-    category: 'library',
+    id: 'story-bank-populated',
+    label: 'Story Bank — 2 saved seeds (one manifested)',
+    category: 'story-bank',
     signedIn: true,
     localOnlyMode: false,
     seedLibrary: 'populated',
-    uiAction: 'open-library',
+    stories: [{ id: 'preview-story-1', sourceSeedId: 'preview-seed-v2-1', genre: 'Xianxia' }],
+    uiAction: 'open-story-bank',
+  },
+  {
+    id: 'story-bank-import-open',
+    label: 'Story Bank — import panel open',
+    category: 'story-bank',
+    uiAction: 'open-import-panel',
   },
   {
     id: 'auth-gated',

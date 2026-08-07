@@ -4,11 +4,34 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`, verified on `main`)
 - **Workshop preview:** `?preview=story-seed` (add `&state=<scenario-id>` to deep-link a preview state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-06
+- **Last Workshop update:** 2026-08-07
 - **Last source comparison:** 2026-08-06
 - **Replica status:** under refinement
 
 ## Workshop history
+
+- **2026-08-07:** Built the **Story Bank** — the permanent home for saved
+  Story Seeds and their World Blueprints — and retired the inline "My Story
+  Seeds" panel from the main page. The development fork's mobile bottom
+  navigation gains a dedicated Story Bank tab (Vault icon, between Sections
+  and Help), and the desktop header's scattered Import / My Seeds / Export
+  All actions collapse into a single Story Bank button; Story Seed
+  import/export now lives inside the bank. The new
+  `development/StoryBank.tsx` view speaks the same dossier language as the
+  workspaces and Blueprint review (`LibraryPanel` glass, the seed-workspace
+  ambience, gold medallion heading, gilded divider, metadata chips): compact
+  cards show title, premise, latest Blueprint version/status, last updated
+  date, and a "Novel Manifested" state derived from stories' `sourceSeedId`
+  links, with per-card actions to edit the seed in the intake workspace (new
+  `handleEditSeed` path), view/edit its Blueprint, load it back into Story
+  Seed ("Use Seed"), export it, or manifest the novel directly (the
+  start-story flow was extracted into a shared `startStoryFromSeed` used by
+  both the Blueprint review and the bank). The "Seed Library" preview
+  category became "Story Bank" with renamed deep-link states
+  (`story-bank-empty` / `story-bank-populated` / `story-bank-import-open`),
+  and the populated scenario links one mock manifested story so the card
+  state is inspectable. The locked reference fork is unchanged — production's
+  panel stays visible there for comparison.
 
 - **2026-08-06:** Hardened the reusable Library Help audio lifecycle without
   changing its modal or accordion design. Playback now has one explicit owner,
@@ -649,10 +672,12 @@ reference/                    — untouched replica of production, locked
     index.ts
 development/                  — active Workshop version (Phase 2 creation workspace)
   CreationModal.tsx            — two-panel shell in `LibraryPanel` glass:
-                                 header (Save Draft + plain Import / My Seeds /
-                                 Export All actions), selector/workspace grid,
+                                 header (Save Draft + Settings / Story Bank /
+                                 Help actions), selector/workspace grid,
                                  sticky action bar (`LibraryPanel` footer
-                                 variant), mobile Library navigation drawer
+                                 variant), mobile Library navigation drawer,
+                                 bottom navigation with a dedicated Story Bank
+                                 tab
   seedSections.ts              — the Story/World section model: ids, labels,
                                  icons, required flags, per-section filled
                                  checks, missing-required helpers
@@ -692,8 +717,15 @@ development/                  — active Workshop version (Phase 2 creation work
                                  Origin provenance mapping unchanged
   ImportPanel.tsx              — portable seed import with optional Blueprint
                                  sibling restoration and legacy support
-  SeedLibraryPanel.tsx         — saved seed/Blueprint library; toggled from the
-                                 header "My Seeds" action instead of always rendered
+  StoryBank.tsx                — the Story Bank view: the permanent home for
+                                 saved seeds and their Blueprints. Compact
+                                 cards (title, premise, latest Blueprint
+                                 version/status, updated date, manifested
+                                 state) with Edit Seed / Blueprint / Use Seed /
+                                 Export / Manifest Novel actions, plus the
+                                 seed import/export controls; opened from the
+                                 bottom navigation's Story Bank tab or the
+                                 desktop header button
   constants.ts                  — STORY_TAG_CATALOG (label, category, styles,
                                    aliases, color per entry) plus derived
                                    CATEGORIZED_TAGS, TAG_PRESETS,
@@ -854,7 +886,7 @@ Seed JSON, and no administrative field is rendered anywhere in the Phase 2 UI.
 Both forks render inside
 `src/workshop/previews/story-seed/StorySeedWorkspace.tsx`, which shares one mock
 account/seed-library state and one categorized preview-control panel (Creation
-Workspace / Blueprint Review / Seed Library / Sign In) between them via
+Workspace / Blueprint Review / Story Bank / Sign In) between them via
 `FeatureWorkspace`.
 
 ## What was copied
@@ -894,7 +926,7 @@ Postgres/persistence, no real network calls):
 - **`lib/storySeedStorage`** (`createStorySeed`, `updateStorySeed`,
   `listStorySeeds`, `importStorySeeds`) — replaced with an in-memory
   module-level array in `shared/stubs.ts` implementing the exact same call
-  signatures. Save / Import / "Use Seed" from the Library panel all mutate
+  signatures. Save / Import / "Use Seed" from the Story Bank all mutate
   real local state, so those interactions genuinely work.
 - **`lib/agents` `AGENTS.VERSA`** — only the small VERSA profile object
   (`id`/`name`/`logoUrl`/`colorClass`) was copied into `shared/stubs.ts`,
@@ -926,7 +958,7 @@ Postgres/persistence, no real network calls):
 ## Available preview states
 
 The Workshop preview-control menu is split into four categories, selected
-with a compact `Creation Workspace | Blueprint Review | Seed Library | Sign In`
+with a compact `Creation Workspace | Blueprint Review | Story Bank | Sign In`
 row. Category membership lives on each scenario in
 `src/workshop/previews/story-seed/previewStates.ts` (`category` field), and any
 scenario can be deep-linked with `?preview=story-seed&state=<scenario-id>`.
@@ -949,23 +981,27 @@ are unchanged; the development script walks the new selector).
   System, and ARC (including Destined Ending), landing back on Origin
 - `generating-blueprint` — `isGenerating` prop `true`, showing the Manifest
   button's spinner state
-- `import-panel-open` — clicks the real header "Import" action to open
-  `ImportPanel`
 
 **Blueprint Review** — the blueprint review stage (`stage === 'blueprint'`)
 
-- `blueprint-review` — signs in a mock account, populates the seed library,
-  opens it from the header "My Seeds" action, then clicks the real "Use Seed" button on
-  the first saved seed (`handleUseSeed`'s genuine production code path),
-  landing on `BlueprintReview` with the canned intake + blueprint
+- `blueprint-review` — signs in a mock account, populates the Story Bank,
+  opens it through the real Story Bank navigation control, then clicks the
+  real "Use Seed" button on the first saved seed (`handleUseSeed`'s genuine
+  production code path), landing on `BlueprintReview` with the canned intake
+  + blueprint
 - `blueprint-generating-story` — same path, plus `isGenerating` and
   `activeAgentId: 'versa'`, showing the "VERSA is writing…" icon/label swap
 
-**Seed Library** — the account-only Seed Library panel (`LOCAL_ONLY_MODE = false`)
+**Story Bank** — the saved-seed vault view (mock account signed in,
+`LOCAL_ONLY_MODE = false`)
 
-- `library-empty` — signed in, no saved seeds, library opened via the menu
-- `library-populated` — signed in, 2 mock saved seeds ("Ashes of the Ninth
-  Meridian", "The Grimoire That Talks Back")
+- `story-bank-empty` — signed in, no saved seeds, bank opened via its
+  navigation control, showing the empty state with its Import entry
+- `story-bank-populated` — signed in, 2 mock saved seeds ("Ashes of the Ninth
+  Meridian", "The Grimoire That Talks Back"), the first linked to a mock
+  manifested story so its card shows the "Novel Manifested" state
+- `story-bank-import-open` — opens the Story Bank, then clicks its real
+  "Import" action to open `ImportPanel`
 
 **Sign In** — the auth gate
 
@@ -1083,9 +1119,10 @@ are unchanged; the development script walks the new selector).
   `suggestTagsStub` involvement (Step 3, 2026-08-05).
 - **VERSA logo is a live public URL** (`images.seihouse.org`) — kept for
   visual fidelity; same precedent as reader-chamber's R2 backdrop URLs.
-- **Shared mock store/seed library is a module singleton** — in Compare
-  mode, the account sign-in state and the saved-seed library are identical
-  in both panes at all times (intended: same data on both sides). The
+- **Shared mock store/seed records are a module singleton** — in Compare
+  mode, the account sign-in state and the saved-seed records behind the
+  Story Bank are identical in both panes at all times (intended: same data
+  on both sides). The
   intake form itself, however, is genuine **separate component state** per
   pane (`reference`/`development` are two independent `CreationModal`
   mounts), so the `filled-intake` scenario drives each pane through its own
@@ -1136,7 +1173,10 @@ tree below and should be removed in the same transfer, with one caution
   `useAppStore` swaps back to `store/useAppStore`)
 - `development/BlueprintReview.tsx` → `src/features/creation/components/BlueprintReview.tsx`
 - `development/ImportPanel.tsx` → `src/features/creation/components/ImportPanel.tsx`
-- `development/SeedLibraryPanel.tsx` → `src/features/creation/components/SeedLibraryPanel.tsx`
+- `development/StoryBank.tsx` → `src/features/creation/components/StoryBank.tsx`
+  (replaces production's `SeedLibraryPanel.tsx`; the card "manifested" state
+  reads production stories' `sourceSeedId` links, and card Manifest runs the
+  same extracted start-story path as the Blueprint review)
 - `development/constants.ts` → `src/features/creation/constants.ts`
   (still exports `GENRE_PRESETS`, used by
   `reference/CoreSeedForm.tsx` — keep it until production's Core Seed form

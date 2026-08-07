@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './story-seed.css';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Bookmark, Check, CircleHelp, CircleUserRound, Copy, Database, Download, List, Settings, X } from 'lucide-react';
+import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Vault, X } from 'lucide-react';
 import { WorldBlueprint } from '../shared/types';
 import { generateUUID } from '../shared/id';
 import {
@@ -68,7 +68,7 @@ import {
   ManifestButton,
 } from '../../library';
 import { BlueprintReview } from './BlueprintReview';
-import { SeedLibraryPanel } from './SeedLibraryPanel';
+import { StoryBank } from './StoryBank';
 import { StorySeedHelpMenu } from './StorySeedHelpMenu';
 import { downloadStorySeed, downloadStorySeedCollection } from '../shared/storySeedSerialization';
 
@@ -264,6 +264,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const seedReferenceSignature = useAppStore(state => state.stories
     .map(story => `${story.id}:${story.sourceSeedId || ''}`)
     .join('|'));
+  // Stories manifested from a banked seed drive the Story Bank's "Novel
+  // Manifested" card state (stories link back to their seed by `sourceSeedId`).
+  const libraryStories = useAppStore(state => state.stories);
+  const manifestedSeedIds = new Set(
+    libraryStories
+      .map(story => story.sourceSeedId)
+      .filter((id): id is string => Boolean(id)),
+  );
   const isGenerating = isGeneratingProp || storeIsGenerating;
   const [stage, setStage] = useState<'intake' | 'blueprint'>('intake');
   const [showImportPanel, setShowImportPanel] = useState(false);
@@ -284,13 +292,16 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // Creation workspace state
   const [activeSection, setActiveSection] = useState<SeedSectionId>('origin');
   const [selectorOpen, setSelectorOpen] = useState(false);
-  const [showLibrary, setShowLibrary] = useState(false);
+  // Story Bank is a real view of the page — the permanent home for saved
+  // seeds and their Blueprints — toggled from the bottom navigation's Story
+  // Bank tab (mobile) and the header's Story Bank button (desktop).
+  const [showStoryBank, setShowStoryBank] = useState(false);
   const [savedFeedback, setSavedFeedback] = useState(false);
   const [desktopSettingsOpen, setDesktopSettingsOpen] = useState(false);
   const desktopSettingsRef = useRef<HTMLDivElement>(null);
   const savedFeedbackTimer = useRef<number | null>(null);
-  // Mobile bottom-navigation sheets: Settings carries the seed utility
-  // actions moved out of the header; Profile is a placeholder sheet.
+  // Mobile bottom-navigation sheets: Settings carries Save Draft and the
+  // story settings moved out of the header; Profile is a placeholder sheet.
   const [mobileSheet, setMobileSheet] = useState<'settings' | 'profile' | null>(null);
   // The `?` Help menu — one clean home for section guidance, opened from the
   // bottom navigation on mobile and the header Help button on desktop.
@@ -495,18 +506,39 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       : createBlueprintDraftFromSeed(selected, { creator: currentUser?.displayName }));
     setStage('blueprint');
     setShowImportPanel(false);
+    setShowStoryBank(false);
     setSeedError(null);
   };
 
-  const handleUseSeed = (record: StorySeedRecord) => {
+  /** Make a banked record the active seed and project its Blueprint draft. */
+  const loadSeedIntoWorkspace = (record: StorySeedRecord) => {
     const selected = normalizeStorySeedInput(record.seed);
     setActiveSeed(record);
     setSeed(selected);
     setBlueprint(record.blueprint
       ? normalizeWorldBlueprint(record.blueprint, selected, blueprintContextForRecord(record))
       : createBlueprintDraftFromSeed(selected, { creator: currentUser?.displayName }));
-    setStage('blueprint');
     setSeedError(null);
+  };
+
+  /**
+   * Story Bank: load the seed back into Story Seed and resume its pipeline at
+   * the Blueprint dossier — the stage where a banked seed continues toward
+   * manifestation. The card's Blueprint action shares this landing: the
+   * dossier is where a Blueprint is viewed and edited.
+   */
+  const handleUseSeed = (record: StorySeedRecord) => {
+    loadSeedIntoWorkspace(record);
+    setStage('blueprint');
+    setShowStoryBank(false);
+  };
+
+  /** Story Bank: open the seed itself for editing in the intake workspace. */
+  const handleEditSeed = (record: StorySeedRecord) => {
+    loadSeedIntoWorkspace(record);
+    setStage('intake');
+    setActiveSection('origin');
+    setShowStoryBank(false);
   };
 
   /**
@@ -547,18 +579,25 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     }
   };
 
-  const handleStartStoryClick = async () => {
-    if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
-    if (!blueprint) return;
+  /**
+   * The shared start-story path: the Blueprint review's Manifest Story button
+   * and each Story Bank card's Manifest Novel action both run through it, so a
+   * novel always starts from a validated seed, a cleaned Blueprint, and a
+   * persisted source seed record.
+   */
+  const startStoryFromSeed = async (
+    seedInput: StorySeedInput,
+    blueprintArtifact: WorldBlueprint,
+    record: StorySeedRecord | null,
+  ) => {
     try {
-      const seedInput = applyInferredStoryTags(normalizeStorySeedInput(seed));
       const validation = validateStorySeedInput(seedInput);
       if (!validation.valid) {
         setSeedError(validation.errors.join(' '));
         return;
       }
-      const normalizedBlueprint = normalizeWorldBlueprint(blueprint, seedInput, {
-        ...blueprintContextForRecord(currentSeed || undefined),
+      const normalizedBlueprint = normalizeWorldBlueprint(blueprintArtifact, seedInput, {
+        ...blueprintContextForRecord(record || undefined),
       });
       const cleanBlueprint = {
         ...normalizedBlueprint,
@@ -570,7 +609,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       };
       const savedSeed = await persistSeed(seedInput, cleanBlueprint);
       if (!LOCAL_ONLY_MODE && !savedSeed) return;
-      const sourceSeedId = savedSeed?.id || currentSeed?.id || `local-seed-${generateUUID()}`;
+      const sourceSeedId = savedSeed?.id || record?.id || `local-seed-${generateUUID()}`;
       const administrative = createStoryAdministrativeMetadata({
         storyId: `story-${generateUUID()}`,
         creatorId: currentUser?.uid || LOCAL_CREATOR_ID,
@@ -588,6 +627,35 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       console.error('Failed to persist source story seed:', seedSaveError);
       setSeedError('The story was not started because its source seed could not be saved to your account.');
     }
+  };
+
+  const handleStartStoryClick = async () => {
+    if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
+    if (!blueprint) return;
+    const seedInput = applyInferredStoryTags(normalizeStorySeedInput(seed));
+    await startStoryFromSeed(seedInput, blueprint, currentSeed);
+  };
+
+  /**
+   * Story Bank: manifest the novel straight from a card. The banked record
+   * becomes the active seed first so persistence updates it instead of
+   * creating a duplicate. A seed whose required inputs no longer validate
+   * (edited after its Blueprint was generated) returns to the intake
+   * workspace with the validation errors instead of starting.
+   */
+  const handleManifestSeed = async (record: StorySeedRecord) => {
+    if (isGenerating || selectIsGenerating(useAppStore.getState())) return;
+    if (!record.blueprint) return;
+    const seedInput = applyInferredStoryTags(normalizeStorySeedInput(record.seed));
+    loadSeedIntoWorkspace(record);
+    setShowStoryBank(false);
+    const validation = validateStorySeedInput(seedInput);
+    if (!validation.valid) {
+      setStage('intake');
+      setSeedError(validation.errors.join(' '));
+      return;
+    }
+    await startStoryFromSeed(seedInput, record.blueprint, record);
   };
 
   const handleExportCurrentSeed = () => {
@@ -681,13 +749,20 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     }
   };
 
-  const seedLibraryAvailable = Boolean(seedOwnerId);
+  // The Story Bank swap: opening it replaces the creation workspace below the
+  // shared header. Closing it also dismisses the Import panel, since Story
+  // Seed import/export now lives inside the Story Bank.
+  const toggleStoryBank = () => {
+    if (showStoryBank) setShowImportPanel(false);
+    setShowStoryBank(open => !open);
+  };
 
   // Mobile bottom navigation — Sections opens the existing section drawer,
-  // Help opens the `?` guidance menu, Settings toggles the utility sheet
-  // (Save Draft / Import / library), and Profile is a placeholder for the
-  // future Library profile surface. The bar is presentational; it drives the
-  // same state as the existing controls.
+  // Story Bank swaps the workspace for the saved-seed vault, Help opens the
+  // `?` guidance menu, Settings toggles the utility sheet (Save Draft and the
+  // story settings), and Profile is a placeholder for the future Library
+  // profile surface. The bar is presentational; it drives the same state as
+  // the existing controls.
   const bottomNavItems: LibraryBottomNavigationItem[] = [
     {
       id: 'sections',
@@ -697,6 +772,16 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       onSelect: () => {
         setMobileSheet(null);
         setSelectorOpen(true);
+      },
+    },
+    {
+      id: 'story-bank',
+      label: 'Story Bank',
+      icon: <Vault size={20} />,
+      active: showStoryBank,
+      onSelect: () => {
+        setMobileSheet(null);
+        toggleStoryBank();
       },
     },
     {
@@ -788,34 +873,19 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                 </div>
               )}
             </div>
+            {/* Story Bank is the single home for saved seeds, their
+                Blueprints, and every import/export action — the desktop
+                counterpart of the bottom navigation's Story Bank tab. */}
             <LibraryButton
-              variant="ghost"
+              variant={showStoryBank ? 'secondary' : 'ghost'}
               size="sm"
-              onClick={() => setShowImportPanel(open => !open)}
-              icon={Copy}
+              onClick={toggleStoryBank}
+              icon={Vault}
+              aria-pressed={showStoryBank}
+              title="Open the Story Bank — saved Story Seeds and their World Blueprints"
             >
-              Import
+              Story Bank
             </LibraryButton>
-            {seedLibraryAvailable && (
-              <LibraryButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowLibrary(open => !open)}
-                icon={Database}
-              >
-                My Seeds
-              </LibraryButton>
-            )}
-            {seedLibraryAvailable && savedSeeds.length > 0 && (
-              <LibraryButton
-                variant="ghost"
-                size="sm"
-                onClick={handleExportAllSeeds}
-                icon={Download}
-              >
-                Export All
-              </LibraryButton>
-            )}
           </div>
 
           {/* The `?` Help menu is a bottom-navigation destination on mobile;
@@ -832,16 +902,27 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         </div>
       </header>
 
-      {seedLibraryAvailable && showLibrary && (
-        <div className="mt-6">
-          <SeedLibraryPanel
-            seeds={savedSeeds}
-            isLoading={isLoadingSeeds}
-            onUse={handleUseSeed}
-            onExport={handleExportSavedSeed}
-            onExportAll={handleExportAllSeeds}
-          />
-        </div>
+      {showStoryBank && (
+        <StoryBank
+          seeds={savedSeeds}
+          isLoading={isLoadingSeeds}
+          manifestedSeedIds={manifestedSeedIds}
+          isGenerating={isGenerating}
+          onToggleImport={() => setShowImportPanel(open => !open)}
+          importPanel={(
+            <ImportPanel
+              show={showImportPanel}
+              onClose={() => setShowImportPanel(false)}
+              onImport={handleImport}
+            />
+          )}
+          onExportAll={handleExportAllSeeds}
+          onEditSeed={handleEditSeed}
+          onOpenBlueprint={handleUseSeed}
+          onUseSeed={handleUseSeed}
+          onExportSeed={handleExportSavedSeed}
+          onManifest={handleManifestSeed}
+        />
       )}
 
       {(seedError || error) && (
@@ -851,7 +932,9 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
       )}
 
       {/* Two-panel creation workspace — shelled in the Celestial Library
-          glass panel; the action bar below is its footer strip. */}
+          glass panel; the action bar below is its footer strip. The Story
+          Bank view replaces it while the bank is open. */}
+      {!showStoryBank && (
       <LibraryPanel padding="none" className="mt-6 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-neutral-900/70 lg:block">
           <StorySeedSelector
@@ -942,17 +1025,14 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
           </LibraryPanel>
         </div>
       </LibraryPanel>
+      )}
 
-      <p className="mt-4 text-center font-sans text-[11px] leading-relaxed text-neutral-600">
-        Every empty field will be intelligently extrapolated using Chinese light-novel logic.
-        A World Blueprint is generated for your review before the story begins.
-      </p>
-
-      <ImportPanel
-        show={showImportPanel}
-        onClose={() => setShowImportPanel(false)}
-        onImport={handleImport}
-      />
+      {!showStoryBank && (
+        <p className="mt-4 text-center font-sans text-[11px] leading-relaxed text-neutral-600">
+          Every empty field will be intelligently extrapolated using Chinese light-novel logic.
+          A World Blueprint is generated for your review before the story begins.
+        </p>
+      )}
 
       {/* Mobile section drawer — the Library navigation shell focused purely
           on Story/World section navigation (no profile header; profile
@@ -966,6 +1046,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
           setActiveSection(id);
           setSelectorOpen(false);
+          setShowStoryBank(false);
         })}
       />
 
@@ -980,9 +1061,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         className="lg:hidden"
       />
 
-      {/* Mobile utility sheet — Settings holds the seed utility actions
-          (same handlers as the header buttons); Profile is a placeholder
-          sheet with no account behavior. */}
+      {/* Mobile utility sheet — Settings holds Save Draft and the story
+          settings (saved seeds and import/export live in the bottom
+          navigation's Story Bank tab); Profile is a placeholder sheet with
+          no account behavior. */}
       <AnimatePresence>
         {mobileSheet && (
           <div className="fixed inset-0 z-[240] lg:hidden">
@@ -1041,43 +1123,6 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
                       >
                         {savedFeedback ? 'Saved' : 'Save Draft'}
                       </LibraryButton>
-                      <LibraryButton
-                        fullWidth
-                        variant="ghost"
-                        onClick={() => {
-                          setMobileSheet(null);
-                          setShowImportPanel(true);
-                        }}
-                        icon={Copy}
-                      >
-                        Import
-                      </LibraryButton>
-                      {seedLibraryAvailable && (
-                        <LibraryButton
-                          fullWidth
-                          variant="ghost"
-                          onClick={() => {
-                            setMobileSheet(null);
-                            setShowLibrary(true);
-                          }}
-                          icon={Database}
-                        >
-                          My Seeds
-                        </LibraryButton>
-                      )}
-                      {seedLibraryAvailable && savedSeeds.length > 0 && (
-                        <LibraryButton
-                          fullWidth
-                          variant="ghost"
-                          onClick={() => {
-                            setMobileSheet(null);
-                            handleExportAllSeeds();
-                          }}
-                          icon={Download}
-                        >
-                          Export All
-                        </LibraryButton>
-                      )}
                     </div>
                   </div>
                 ) : (
