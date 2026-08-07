@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "validate:chapter-effects": "node --experimental-strip-types scripts/validateChapterEffectsDirection.ts",
     "test:relics": "vitest run src/server/relics/relicFoundation.test.ts",
-    "test:story-seed": "vitest run src/components/story-seed/shared/storySeedSchema.test.ts"
+    "test:story-seed": "vitest run src/components/story-seed/shared/storySeedSchema.test.ts src/components/story-seed/development/storySeedHelp.test.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
