@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ChevronRight, CircleHelp, Pause, Play, Search, X } from 'lucide-react';
 import { LibraryButton, LibraryPanel, cn } from '../../library';
@@ -25,8 +25,50 @@ interface LibraryHelpMenuProps {
   /** Contextual heading shown to the reader. */
   title?: string;
   /** Allows other Library pages to supply their guidance without a new menu. */
-  topics?: StorySeedHelpItem[];
+  topics?: readonly StorySeedHelpItem[];
 }
+
+interface HelpAudioSession {
+  audio: HTMLAudioElement;
+  audioUrl: string;
+  itemId: string;
+  detachListeners: () => void;
+}
+
+const PLAYABLE_AUDIO_PROTOCOLS = new Set(['http:', 'https:', 'blob:']);
+
+/** Return a trimmed, browser-playable source or `null` for text-only topics. */
+const getPlayableAudioUrl = (audioUrl?: string): string | null => {
+  const candidate = audioUrl?.trim();
+  if (!candidate) return null;
+
+  try {
+    const baseUrl = typeof document === 'undefined'
+      ? 'https://library.seihouse.org'
+      : document.baseURI;
+    const parsedUrl = new URL(candidate, baseUrl);
+    const isAudioDataUrl = parsedUrl.protocol === 'data:' && candidate.startsWith('data:audio/');
+    return PLAYABLE_AUDIO_PROTOCOLS.has(parsedUrl.protocol) || isAudioDataUrl
+      ? candidate
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const resetAudioElement = (audio: HTMLAudioElement) => {
+  try {
+    audio.pause();
+  } catch {
+    // A partially initialized media element may reject browser controls.
+  }
+
+  try {
+    audio.currentTime = 0;
+  } catch {
+    // Some failed or not-yet-loaded media cannot seek; it is still detached.
+  }
+};
 
 /**
  * StorySeedHelpMenu — the `?` destination for Story Seed guidance.
@@ -50,59 +92,124 @@ export const LibraryHelpMenu = ({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeIdRef = useRef<string | null>(null);
+  const audioRef = useRef<HelpAudioSession | null>(null);
 
-  const stopAudio = () => {
-    audioRef.current?.pause();
+  const stopAudio = useCallback(() => {
+    const session = audioRef.current;
     audioRef.current = null;
+
+    if (session) {
+      session.detachListeners();
+      resetAudioElement(session.audio);
+    }
+
     setPlayingId(null);
-  };
+  }, []);
+
+  const releaseAudio = useCallback((session: HelpAudioSession) => {
+    if (audioRef.current !== session) return;
+
+    audioRef.current = null;
+    session.detachListeners();
+    resetAudioElement(session.audio);
+    setPlayingId(null);
+  }, []);
 
   /** Reveal a topic's card (`null` collapses). Playback belongs to the
       visible card, so switching topics stops the previous line. */
-  const revealItem = (id: string | null) => {
-    if (id !== activeId) stopAudio();
-    setActiveId(id);
-  };
+  const revealItem = useCallback((id: string | null) => {
+    if (id === activeIdRef.current) return;
 
-  const toggleAudio = (item: StorySeedHelpItem, translation: StorySeedHelpTranslation) => {
-    if (playingId === item.id) {
+    stopAudio();
+    activeIdRef.current = id;
+    setActiveId(id);
+  }, [stopAudio]);
+
+  const toggleItem = useCallback((id: string) => {
+    revealItem(activeIdRef.current === id ? null : id);
+  }, [revealItem]);
+
+  const toggleAudio = useCallback((
+    item: StorySeedHelpItem,
+    translation: StorySeedHelpTranslation,
+  ) => {
+    const audioUrl = getPlayableAudioUrl(translation.audioUrl);
+    if (!audioUrl) {
       stopAudio();
       return;
     }
+
+    // The ref is authoritative during rapid taps; React state may not have
+    // committed yet, but an existing session can still be stopped safely.
+    if (audioRef.current?.itemId === item.id) {
+      stopAudio();
+      return;
+    }
+
     stopAudio();
-    const audio = new Audio(translation.audioUrl);
-    audioRef.current = audio;
-    setPlayingId(item.id);
-    const release = () => {
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-        setPlayingId(null);
-      }
+
+    let audio: HTMLAudioElement;
+    try {
+      audio = new Audio(audioUrl);
+    } catch {
+      setPlayingId(null);
+      return;
+    }
+
+    let session: HelpAudioSession;
+    const release = () => releaseAudio(session);
+    const events: Array<keyof HTMLMediaElementEventMap> = ['ended', 'error', 'pause', 'abort'];
+    session = {
+      audio,
+      audioUrl,
+      itemId: item.id,
+      detachListeners: () => {
+        events.forEach(eventName => audio.removeEventListener(eventName, release));
+      },
     };
-    audio.onended = release;
-    audio.onerror = release;
-    void audio.play().catch(release);
-  };
+
+    events.forEach(eventName => audio.addEventListener(eventName, release));
+    audioRef.current = session;
+    setPlayingId(item.id);
+
+    try {
+      void Promise.resolve(audio.play()).catch(release);
+    } catch {
+      release();
+    }
+  }, [releaseAudio, stopAudio]);
+
+  const clearActiveItem = useCallback(() => {
+    revealItem(null);
+  }, [revealItem]);
+
+  const handleClose = useCallback(() => {
+    clearActiveItem();
+    onClose();
+  }, [clearActiveItem, onClose]);
 
   // Closing the menu silences playback and resets the revealed topic.
   useEffect(() => {
     if (open) return;
-    audioRef.current?.pause();
-    audioRef.current = null;
-    setPlayingId(null);
-    setActiveId(null);
-  }, [open]);
+    clearActiveItem();
+  }, [clearActiveItem, open]);
 
   // Never leave a line playing after the menu unmounts.
-  useEffect(() => () => audioRef.current?.pause(), []);
+  useEffect(() => () => {
+    const session = audioRef.current;
+    audioRef.current = null;
+    if (!session) return;
+    session.detachListeners();
+    resetAudioElement(session.audio);
+  }, []);
 
   // Same shell behavior as the other Story Seed sheets: Escape closes and
   // body scroll locks while the menu is open.
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', onKeyDown);
     const previous = document.body.style.overflow;
@@ -111,16 +218,43 @@ export const LibraryHelpMenu = ({
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previous;
     };
-  }, [open, onClose]);
+  }, [handleClose, open]);
 
-  const visibleItems = getLibraryHelpItems(topics, language, page, query);
-  const activeItem = visibleItems.find(item => item.id === activeId) ?? null;
-  const activeTranslation = activeItem ? getHelpTranslation(activeItem, language) : undefined;
+  const visibleItems = useMemo(
+    () => getLibraryHelpItems(topics, language, page, query),
+    [language, page, query, topics],
+  );
+  const activeItem = useMemo(
+    () => visibleItems.find(item => item.id === activeId) ?? null,
+    [activeId, visibleItems],
+  );
+  const activeTranslation = useMemo(
+    () => activeItem ? getHelpTranslation(activeItem, language) : undefined,
+    [activeItem, language],
+  );
+  const isActiveIdVisible = activeId === null || activeItem !== null;
+  const activeAudioUrl = getPlayableAudioUrl(activeTranslation?.audioUrl);
 
-  const renderCard = (item: StorySeedHelpItem) => {
+  // Search and context updates preserve a still-visible card. If its topic
+  // disappears, close that card and release its audio as one state change.
+  useEffect(() => {
+    if (activeId !== null && !isActiveIdVisible) clearActiveItem();
+  }, [activeId, clearActiveItem, isActiveIdVisible]);
+
+  // A language/topic data refresh may keep the same id while changing its
+  // audio source. Never let the stale source continue under the new copy.
+  useEffect(() => {
+    const session = audioRef.current;
+    if (session?.itemId === activeId && session.audioUrl !== activeAudioUrl) {
+      stopAudio();
+    }
+  }, [activeAudioUrl, activeId, stopAudio]);
+
+  const renderCard = useCallback((item: StorySeedHelpItem) => {
     const translation = getHelpTranslation(item, language);
     if (!translation) return null;
     const playing = playingId === item.id;
+    const audioUrl = getPlayableAudioUrl(translation.audioUrl);
     return (
       <div className={cn(
         'rounded-xl border border-[rgba(205,178,113,0.22)] bg-[#0b0e1e]/70 p-4 shadow-[inset_0_0_24px_-14px_rgba(205,178,113,0.35)] transition-[border-color,box-shadow] duration-500 motion-reduce:transition-none',
@@ -133,29 +267,31 @@ export const LibraryHelpMenu = ({
             {translation.detail}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => toggleAudio(item, translation)}
-          aria-pressed={playing}
-          className="mt-3.5 inline-flex min-h-[2.5rem] items-center gap-2 rounded-full border border-portal/40 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-[0.16em] text-portal transition-colors hover:border-portal hover:bg-portal/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-        >
-          {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
-          {playing ? 'Pause' : 'Listen'} · English
-          {playing && (
-            <span aria-hidden="true" className="flex h-3 items-center gap-[2.5px]">
-              {[0, 1, 2].map(bar => (
-                <span
-                  key={bar}
-                  className="seed-help-voice-bar block h-3 w-[2px] rounded-full bg-portal"
-                  style={{ animationDelay: `${bar * 160}ms` }}
-                />
-              ))}
-            </span>
-          )}
-        </button>
+        {audioUrl && (
+          <button
+            type="button"
+            onClick={() => toggleAudio(item, translation)}
+            aria-pressed={playing}
+            className="mt-3.5 inline-flex min-h-[2.5rem] items-center gap-2 rounded-full border border-portal/40 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-[0.16em] text-portal transition-colors hover:border-portal hover:bg-portal/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+          >
+            {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
+            {playing ? 'Pause' : 'Listen'} · English
+            {playing && (
+              <span aria-hidden="true" className="flex h-3 items-center gap-[2.5px]">
+                {[0, 1, 2].map(bar => (
+                  <span
+                    key={bar}
+                    className="seed-help-voice-bar block h-3 w-[2px] rounded-full bg-portal"
+                    style={{ animationDelay: `${bar * 160}ms` }}
+                  />
+                ))}
+              </span>
+            )}
+          </button>
+        )}
       </div>
     );
-  };
+  }, [language, playingId, toggleAudio]);
 
   return (
     <AnimatePresence>
@@ -166,7 +302,7 @@ export const LibraryHelpMenu = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.2 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
           <motion.div
@@ -202,7 +338,7 @@ export const LibraryHelpMenu = ({
                 <LibraryButton
                   variant="ghost"
                   size="icon"
-                  onClick={onClose}
+                  onClick={handleClose}
                   aria-label="Close help"
                   icon={X}
                 />
@@ -213,11 +349,7 @@ export const LibraryHelpMenu = ({
                 <input
                   type="search"
                   value={query}
-                  onChange={event => {
-                    stopAudio();
-                    setActiveId(null);
-                    setQuery(event.target.value);
-                  }}
+                  onChange={event => setQuery(event.target.value)}
                   placeholder="Search Library guidance…"
                   aria-label="Search Library guidance"
                   className="min-h-11 w-full rounded-xl border border-neutral-800/80 bg-[#0d1126]/65 py-2.5 pl-10 pr-3 font-sans text-sm text-[#F3EDE0] outline-none placeholder:text-neutral-600 focus:border-[rgba(205,178,113,0.5)] focus:ring-2 focus:ring-portal/30"
@@ -240,7 +372,7 @@ export const LibraryHelpMenu = ({
                             onPointerEnter={event => {
                               if (event.pointerType === 'mouse') revealItem(item.id);
                             }}
-                            onClick={() => revealItem(active ? null : item.id)}
+                            onClick={() => toggleItem(item.id)}
                             className={cn(
                               'flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors',
                               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70',

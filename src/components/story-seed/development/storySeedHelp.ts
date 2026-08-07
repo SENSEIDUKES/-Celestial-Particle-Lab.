@@ -20,7 +20,7 @@ import {
  * - **New help item:** add one entry to `STORY_SEED_HELP_ITEMS`; the menu
  *   renders it automatically.
  * - **New language:** extend `StorySeedHelpLanguage` and add that language's
- *   `line` + `audioUrl` under every item's `translations`. The menu reads
+ *   `line` and optional `audioUrl` under every item's `translations`. The menu reads
  *   whichever language it is given and falls back to English.
  */
 
@@ -34,8 +34,8 @@ export interface StorySeedHelpTranslation {
   line: string;
   /** Optional supporting copy. This is written guidance only, never TTS. */
   detail?: string;
-  /** Spoken version of the same line, streamed from the SEIHouse lines CDN. */
-  audioUrl: string;
+  /** Optional spoken version of the same line. Details are never included. */
+  audioUrl?: string;
 }
 
 export interface StorySeedHelpItem {
@@ -52,7 +52,7 @@ export interface StorySeedHelpItem {
 
 /** Prioritize the current page, then filter against every visible text field. */
 export const getLibraryHelpItems = (
-  items: StorySeedHelpItem[],
+  items: readonly StorySeedHelpItem[],
   language: StorySeedHelpLanguage,
   page: string,
   query: string,
