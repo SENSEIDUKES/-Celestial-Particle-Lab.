@@ -70,7 +70,15 @@ const normalizeRecord = (value: unknown): StorySeedRecord | null => {
 };
 
 const readRecords = (): StorySeedRecord[] => {
-  const persisted = storage()?.getItem(STORAGE_KEY);
+  const browserStorage = storage();
+  let persisted: string | null = null;
+  if (browserStorage) {
+    try {
+      persisted = browserStorage.getItem(STORAGE_KEY);
+    } catch {
+      throw new Error('Saved Story Seeds could not be read. Check browser storage access and try again.');
+    }
+  }
   if (!persisted) {
     const records = memoryRecords
       .map(normalizeRecord)
@@ -80,18 +88,30 @@ const readRecords = (): StorySeedRecord[] => {
   }
   try {
     const parsed = JSON.parse(persisted);
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) throw new Error('Stored Story Seed data is not a collection.');
     const records = parsed.map(normalizeRecord).filter((seed): seed is StorySeedRecord => seed !== null);
     memoryRecords = records;
     return [...records];
   } catch {
-    return [];
+    throw new Error('Saved Story Seed data is unreadable. Import a valid backup or clear the damaged browser data.');
   }
 };
 
 const writeRecords = (records: StorySeedRecord[]): void => {
-  memoryRecords = [...records];
-  storage()?.setItem(STORAGE_KEY, JSON.stringify(records));
+  const nextRecords = [...records];
+  const browserStorage = storage();
+  // Persist first so a quota/security failure never leaves the in-memory view
+  // claiming a save succeeded when browser storage rejected it.
+  browserStorage?.setItem(STORAGE_KEY, JSON.stringify(nextRecords));
+  memoryRecords = nextRecords;
+};
+
+const saveRecords = (records: StorySeedRecord[], message: string): void => {
+  try {
+    writeRecords(records);
+  } catch {
+    throw new Error(message);
+  }
 };
 
 const buildRecord = (
@@ -118,7 +138,10 @@ const buildRecord = (
 export const workshopStorySeedStorage: StorySeedRepository = {
   async create(userId, input, blueprint) {
     const record = buildRecord(userId, `seed-${generateUUID()}`, input, undefined, blueprint);
-    writeRecords([record, ...readRecords()]);
+    saveRecords(
+      [record, ...readRecords()],
+      'The Story Seed could not be saved. Free browser storage space and try again.',
+    );
     return record;
   },
 
@@ -131,7 +154,10 @@ export const workshopStorySeedStorage: StorySeedRepository = {
       existing.createdAt,
       blueprint === undefined ? existing.blueprint : blueprint,
     );
-    writeRecords(readRecords().map(seed => (seed.id === record.id ? record : seed)));
+    saveRecords(
+      readRecords().map(seed => (seed.id === record.id ? record : seed)),
+      'The Story Seed changes could not be saved. Free browser storage space and try again.',
+    );
     return record;
   },
 
@@ -152,17 +178,14 @@ export const workshopStorySeedStorage: StorySeedRepository = {
       artifact.blueprint,
     ));
     const existing = readRecords();
-    const previousMemoryRecords = [...memoryRecords];
-    try {
-      writeRecords([...imported, ...existing]);
-    } catch {
-      memoryRecords = previousMemoryRecords;
-      throw new Error('The Story Seed import could not be saved. Free browser storage space and try again.');
-    }
+    saveRecords(
+      [...imported, ...existing],
+      'The Story Seed import could not be saved. Free browser storage space and try again.',
+    );
     return imported;
   },
+};
 
-  reset(records = []) {
-    writeRecords(records);
-  },
+export const resetWorkshopStorySeedStorage = (records: StorySeedRecord[] = []): void => {
+  writeRecords(records);
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,25 +10,18 @@ import {
   Feather,
   FileText,
   Flag,
-  GitBranch,
   Globe,
-  HelpCircle,
   Hourglass,
   Info,
   Landmark,
   MapPin,
-  Pencil,
   Route,
   ScrollText,
-  Shield,
-  Sparkle,
   Tag,
   Target,
   UserRound,
-  Users,
   Wand2,
   Zap,
-  type LucideIcon,
 } from 'lucide-react';
 import type { WorldBlueprint, WorldBlueprintMainCharacter } from '../shared/types';
 import {
@@ -37,14 +30,22 @@ import {
   type StorySeedInput,
   type StorySeedStoryRequired,
 } from '../shared/storySeedSchema';
-import { getStoryStyleLabel, STORY_STYLE_OPTIONS, type StoryStyle } from '../shared/storyStyle';
+import { STORY_STYLE_OPTIONS, type StoryStyle } from '../shared/storyStyle';
 import { AGENTS, useAppStore } from '../shared/stubs';
 import { LibraryButton, LibraryPanel, LibraryTextArea, LibraryTextBox, ManifestButton } from '../../library';
 import { patchStoryRequired, patchWorldIdentity, type UpdateSeed } from './seedState';
+import {
+  BlueprintSectionHeading,
+  EditableChip,
+  FieldLabelRow,
+  MetadataChip,
+} from './blueprint/BlueprintDossierPrimitives';
+import { BlueprintCollectionSections } from './blueprint/BlueprintCollectionSections';
+import { createBlueprintMarkdown, formatBlueprintDate } from './blueprint/createBlueprintMarkdown';
 
 interface BlueprintReviewProps {
   blueprint: WorldBlueprint;
-  setBlueprint: React.Dispatch<React.SetStateAction<WorldBlueprint>>;
+  setBlueprint: Dispatch<SetStateAction<WorldBlueprint>>;
   seed: StorySeedInput;
   updateSeed: UpdateSeed;
   onBack: () => void;
@@ -52,96 +53,6 @@ interface BlueprintReviewProps {
   onExportSeed: () => void;
   isGenerating: boolean;
 }
-
-/** Pencil + "Editable" chip pinned to the right of every dossier field label,
- *  so every blueprint box reads as editable before it is ever focused. */
-const EditableChip = () => (
-  <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(205,178,113,0.3)] bg-[rgba(205,178,113,0.05)] px-2 py-0.5 font-sc text-[9px] font-bold uppercase tracking-[0.18em] text-[#DDC58A]/80">
-    <Pencil size={9} aria-hidden="true" />
-    Editable
-  </span>
-);
-
-/** Dossier section heading — gold medallion glyph, cream display title, an
- *  optional serif tagline, and the same gilded divider the Seed workspaces use. */
-const BlueprintSectionHeading = ({
-  id,
-  icon: Icon,
-  title,
-  tagline,
-}: {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  tagline?: string;
-}) => (
-  <div>
-    <div className="flex items-center gap-3">
-      <span
-        aria-hidden="true"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgba(205,178,113,0.38)] bg-[radial-gradient(circle_at_32%_28%,rgba(205,178,113,0.14),rgba(11,14,30,0.55)_68%)] text-[#CDB271] shadow-[0_0_16px_rgba(205,178,113,0.12),inset_0_0_10px_rgba(205,178,113,0.08)]"
-      >
-        <Icon size={15} className="drop-shadow-[0_0_6px_rgba(205,178,113,0.35)]" />
-      </span>
-      <h2 id={id} className="font-display text-lg font-bold uppercase tracking-[0.12em] text-[#F3EDE0] sm:text-xl">
-        {title}
-      </h2>
-    </div>
-    {tagline && (
-      <p className="mt-2 max-w-xl font-serif text-[13px] leading-relaxed text-[#B0A99B]">{tagline}</p>
-    )}
-    <div aria-hidden="true" className="mt-4 flex items-center gap-3">
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[rgba(205,178,113,0.16)] to-[rgba(205,178,113,0.3)]" />
-      <Sparkle size={9} className="shrink-0 text-[#CDB271]/60" />
-      <span className="h-px flex-1 bg-gradient-to-l from-transparent via-[rgba(205,178,113,0.16)] to-[rgba(205,178,113,0.3)]" />
-    </div>
-  </div>
-);
-
-/** Small dossier metadata chip for the header (version, creator, dates). */
-const MetadataChip = ({
-  icon: Icon,
-  children,
-  gold = false,
-}: {
-  icon?: LucideIcon;
-  children: React.ReactNode;
-  gold?: boolean;
-}) => (
-  <span
-    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-wider ${
-      gold
-        ? 'border-[rgba(205,178,113,0.45)] bg-[rgba(205,178,113,0.07)] text-[#DDC58A] shadow-[0_0_14px_rgba(205,178,113,0.12)]'
-        : 'border-[rgba(172,166,214,0.25)] bg-[rgba(11,14,30,0.5)] text-neutral-300'
-    }`}
-  >
-    {Icon && <Icon size={11} aria-hidden="true" className={gold ? 'text-[#DDC58A]' : 'text-[#ACA6D6]'} />}
-    {children}
-  </span>
-);
-
-/** Shared label row for the one control without a Library wrapper (the Style
- *  select) so it matches LibraryTextBox / LibraryTextArea label rhythm. */
-const FieldLabelRow = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
-  <div className="mb-2 flex items-end justify-between gap-3">
-    <label className="block font-sc text-xs uppercase tracking-widest text-neutral-400" htmlFor={htmlFor}>
-      {children}
-    </label>
-    <EditableChip />
-  </div>
-);
-
-const formatDate = (value: string): string => {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
-};
-
-const markdownList = (items: string[]): string => {
-  const cleanItems = items.map(item => item.trim()).filter(Boolean);
-  return cleanItems.length > 0
-    ? cleanItems.map(item => `- ${item}`).join('\n')
-    : '_None yet_';
-};
 
 export const BlueprintReview = ({
   blueprint,
@@ -158,7 +69,6 @@ export const BlueprintReview = ({
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
   const origin = seed.story.required;
   const storyTagCount = new Set(origin.storyTags.map(tag => tag.trim()).filter(Boolean)).size;
-  const styleLabel = getStoryStyleLabel(origin.style) || origin.style;
   const mainCharacter: WorldBlueprintMainCharacter = {
     name: blueprint.mainCharacter?.name || '',
     age: blueprint.mainCharacter?.age || '',
@@ -210,92 +120,7 @@ export const BlueprintReview = ({
   };
 
   const handleCopyBlueprint = () => {
-    const metadata = [
-      `**Blueprint Version:** ${blueprint.blueprintVersion || 'v1.0'}`,
-      blueprint.creator ? `**Creator:** ${blueprint.creator}` : '',
-      blueprint.status ? `**Status:** ${blueprint.status}` : '',
-      blueprint.createdAt ? `**Created:** ${formatDate(blueprint.createdAt)}` : '',
-      blueprint.updatedAt ? `**Updated:** ${formatDate(blueprint.updatedAt)}` : '',
-    ].filter(Boolean).join('\n');
-    const textToCopy = `
-# ${blueprint.title || 'Untitled Story'}
-
-${metadata}
-
-## Origin Snapshot
-
-### Core Premise / Secret Catalyst (User-Created Origin)
-${origin.premise || ''}
-
-**Genre:** ${origin.genre || ''}
-
-**Style / Novel Tradition:** ${styleLabel || ''}
-
-### Story Tags
-${markdownList(origin.storyTags)}
-
-## Main Character
-
-**Name:** ${mainCharacter.name}
-
-**Age:** ${mainCharacter.age}
-
-### Personality
-${mainCharacter.personality}
-
-### Appearance
-${mainCharacter.appearance}
-
-### Background / Profile
-${mainCharacter.backgroundProfile}
-
-## World Setting
-
-### World Overview
-${blueprint.worldOverview || ''}
-
-### Opening Location
-${blueprint.startingLocation || ''}
-
-### World Order
-${blueprint.societyStructure || ''}
-
-### Power System Outline
-${blueprint.powerSystemOutline || ''}
-
-## Overall Story Direction
-
-### Overall / Core Story Direction
-${blueprint.logline || ''}
-
-### First Arc Promise
-${blueprint.firstArcPromise || ''}
-
-### Destined Ending
-${blueprint.destinedEnding || ''}
-
-### Trope Guidance / Story Direction
-${blueprint.tropeRules || ''}
-
-**Estimated Arcs:** ${blueprint.estimatedArcs || ''}
-
-### Generated Style Bible
-${blueprint.styleBible || ''}
-
-## Side Characters
-${markdownList(blueprint.initialCharacters || [])}
-
-## Factions
-${markdownList(blueprint.majorFactions || [])}
-
-## Major Mysteries
-${markdownList(blueprint.majorMysteries || [])}
-
-## Unresolved Plot Threads
-${markdownList(blueprint.unresolvedPlotThreads || [])}
-`.trim();
-
-    navigator.clipboard.writeText(textToCopy).then(() => {
+    navigator.clipboard.writeText(createBlueprintMarkdown(blueprint, origin, mainCharacter)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -339,8 +164,8 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             {blueprint.creator && <MetadataChip icon={UserRound}>Creator: {blueprint.creator}</MetadataChip>}
             {blueprint.status && <MetadataChip icon={Info}>Status: {blueprint.status}</MetadataChip>}
-            {blueprint.createdAt && <MetadataChip icon={CalendarDays}>Created: {formatDate(blueprint.createdAt)}</MetadataChip>}
-            {blueprint.updatedAt && <MetadataChip icon={CalendarDays}>Updated: {formatDate(blueprint.updatedAt)}</MetadataChip>}
+            {blueprint.createdAt && <MetadataChip icon={CalendarDays}>Created: {formatBlueprintDate(blueprint.createdAt)}</MetadataChip>}
+            {blueprint.updatedAt && <MetadataChip icon={CalendarDays}>Updated: {formatBlueprintDate(blueprint.updatedAt)}</MetadataChip>}
           </div>
         </LibraryPanel>
 
@@ -639,91 +464,9 @@ ${markdownList(blueprint.unresolvedPlotThreads || [])}
           </div>
         </LibraryPanel>
 
-        {/* 6 · Side Characters — editable one-per-line cast list. */}
-        <LibraryPanel as="section" aria-labelledby="blueprint-side-characters-heading" padding="md">
-          <BlueprintSectionHeading
-            id="blueprint-side-characters-heading"
-            icon={Users}
-            title="Side Characters"
-            tagline="Cast members the story can draw on — one per line."
-          />
+        <BlueprintCollectionSections blueprint={blueprint} setBlueprint={setBlueprint} />
 
-          <div className="mt-5">
-            <LibraryTextArea
-              id="blueprint-side-characters"
-              label="Side Characters (One per line)"
-              rightElement={<EditableChip />}
-              icon={Users}
-              value={blueprint.initialCharacters?.join('\n') || ''}
-              onChange={value => setBlueprint(current => ({ ...current, initialCharacters: value.split('\n') }))}
-              rows={6}
-              className="font-mono"
-              placeholder="Elder Qin (Protector)&#10;Junior Sister Han (Ally)&#10;Young Master Ye (Rival)"
-            />
-          </div>
-        </LibraryPanel>
-
-        {/* 7 · Factions — editable one-per-line powers list. */}
-        <LibraryPanel as="section" aria-labelledby="blueprint-factions-heading" padding="md">
-          <BlueprintSectionHeading
-            id="blueprint-factions-heading"
-            icon={Shield}
-            title="Factions"
-            tagline="Sects, guilds, and powers that already shape the world — one per line."
-          />
-
-          <div className="mt-5">
-            <LibraryTextArea
-              id="blueprint-factions"
-              label="Major Factions (One per line)"
-              rightElement={<EditableChip />}
-              icon={Shield}
-              value={blueprint.majorFactions?.join('\n') || ''}
-              onChange={value => setBlueprint(current => ({ ...current, majorFactions: value.split('\n') }))}
-              rows={6}
-              className="font-mono"
-              placeholder="Heavenly Sword Sect&#10;Deep Sea Alliance&#10;Abyssal Cult"
-            />
-          </div>
-        </LibraryPanel>
-
-        {/* 8 · Major Mysteries / Unresolved Plot Threads — open questions the
-              story must resolve. */}
-        <LibraryPanel as="section" aria-labelledby="blueprint-mysteries-heading" padding="md">
-          <BlueprintSectionHeading
-            id="blueprint-mysteries-heading"
-            icon={HelpCircle}
-            title="Major Mysteries / Unresolved Plot Threads"
-            tagline="Open questions and threads the story promises to resolve."
-          />
-
-          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-            <LibraryTextArea
-              id="blueprint-major-mysteries"
-              label="Major Mysteries (One per line)"
-              rightElement={<EditableChip />}
-              icon={HelpCircle}
-              value={blueprint.majorMysteries?.join('\n') || ''}
-              onChange={value => setBlueprint(current => ({ ...current, majorMysteries: value.split('\n') }))}
-              rows={6}
-              className="font-mono"
-              placeholder="True origin of the Sovereign Ring&#10;Why was the Sect Leader poisoned?"
-            />
-            <LibraryTextArea
-              id="blueprint-unresolved-threads"
-              label="Unresolved Plot Threads (One per line)"
-              rightElement={<EditableChip />}
-              icon={GitBranch}
-              value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
-              onChange={value => setBlueprint(current => ({ ...current, unresolvedPlotThreads: value.split('\n') }))}
-              rows={6}
-              className="font-mono"
-              placeholder="Sever the engagement with Chu family&#10;Win the Inner Sect tournament"
-            />
-          </div>
-        </LibraryPanel>
-
-        {/* Dossier footer — refine / manifest / copy / export actions. */}
+       {/* Dossier footer — refine / manifest / copy / export actions. */}
         <LibraryPanel padding="sm" className="sm:p-5">
           <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-between">
             <LibraryButton

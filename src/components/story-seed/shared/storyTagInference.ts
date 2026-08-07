@@ -42,7 +42,7 @@ const KEYWORD_TAGS: { match: RegExp; tags: string[] }[] = [
   { match: /\bassassin|murder|killed?\b/i, tags: ['assassination plots', 'death flags'] },
   { match: /\bregress|reincarnat|reborn|time ?loop|timeline/i, tags: ['regression/reincarnation', 'time loops', 'future knowledge'] },
   // Fate ingredients — what kinds of fate mechanics the novel may contain.
-  // Unrelated to the Fate Survival experience layer in Story Settings.
+  // Unrelated to the Fate Survival experience layer in Story Seed Settings.
   { match: /\bdoomed?|dies|death sentence|destined to\b/i, tags: ['destined death', 'doom timers'] },
   { match: /\bstolen (?:fate|destiny)|fate (?:theft|exchange|trade)\b/i, tags: ['stolen fate', 'fate exchange'] },
   { match: /\b(?:blood|life|karmic) debt|owes? (?:a life|blood)\b/i, tags: ['blood debt', 'life debt'] },

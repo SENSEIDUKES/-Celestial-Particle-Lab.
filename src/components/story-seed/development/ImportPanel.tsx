@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Layers, Upload, X } from 'lucide-react';
 import type { StorySeedArtifact } from '../shared/storySeedRepository';
@@ -53,11 +53,15 @@ export const ImportPanel = ({ show, onClose, onImport }: ImportPanelProps) => {
     await importJson(importText, 'The pasted Story Seed JSON is invalid.');
   };
 
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    await importJson(await file.text(), 'The selected Story Seed file is invalid.');
+    try {
+      await importJson(await file.text(), 'The selected Story Seed file is invalid.');
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'The selected Story Seed file could not be read.');
+    }
   };
 
   return (

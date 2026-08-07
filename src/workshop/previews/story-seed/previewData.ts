@@ -154,7 +154,7 @@ export const createMockSeed = (overrides: Partial<StorySeed> = {}): StorySeed =>
   };
 };
 
-export const createMockSeedLibrary = (): StorySeed[] => [
+export const createReferenceSavedSeeds = (): StorySeed[] => [
   createMockSeed(),
   createMockSeed({
     id: 'preview-seed-2',
@@ -251,7 +251,7 @@ export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = 
   const seed = createFilledStorySeedInput();
   return {
     schemaVersion: STORY_SEED_SCHEMA_VERSION,
-    id: 'preview-seed-v2-1',
+    id: 'preview-seed-1',
     userId: MOCK_USER_ID,
     title: seed.world.optional.worldIdentity.title || 'Ashes of the Ninth Meridian',
     createdAt: now,
@@ -262,12 +262,12 @@ export const createMockStorySeedRecord = (overrides: Partial<StorySeedRecord> = 
   };
 };
 
-export const createMockStorySeedLibrary = (): StorySeedRecord[] => {
+export const createStoryBankRecords = (): StorySeedRecord[] => {
   const second = createFilledStorySeedInput();
   return [
     createMockStorySeedRecord(),
     createMockStorySeedRecord({
-      id: 'preview-seed-v2-2',
+      id: 'preview-seed-2',
       title: 'The Grimoire That Talks Back',
       seed: {
         ...second,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Compass, Hourglass, ShieldAlert, Sparkles, Swords, Target } from 'lucide-react';
 import type {
   StorySeedInput,

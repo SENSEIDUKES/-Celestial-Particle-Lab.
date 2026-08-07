@@ -561,14 +561,8 @@ export const STORY_TAG_LOOKUP: Record<string, StoryTagMetadata> = Object.fromEnt
 export const getTagMetadata = (label: string): StoryTagMetadata | undefined =>
   STORY_TAG_LOOKUP[label.toLowerCase()];
 
-export const getTagsByStyle = (style: StoryStyle): StoryTagMetadata[] =>
-  STORY_TAG_CATALOG.filter(t => t.styles.includes('all') || t.styles.includes(style as StoryTagStyle));
-
-export const getTagsByCategory = (category: StoryTagCategory): StoryTagMetadata[] =>
-  STORY_TAG_CATALOG.filter(t => t.category === category);
-
 // `Fate Survival` is deliberately absent: it is an experience layer owned by
-// the Story Settings feature, not a genre a novel can be written in.
+// Story Seed Settings, not a genre a novel can be written in.
 export const GENRE_PRESETS = [
   { id: 'Xianxia', name: 'Xianxia', icon: '⚔️' },
   { id: 'Xuanhuan', name: 'Xuanhuan', icon: '🔥' },
@@ -585,20 +579,6 @@ export const GENRE_PRESETS = [
   { id: 'Political Intrigue', name: 'Political Intrigue', icon: '👑' },
   { id: 'Cozy Slice-of-Life', name: 'Cozy/Slice-of-Life', icon: '🏡' },
   { id: 'Mystery Cultivation', name: 'Mystery', icon: '🔍' }
-];
-
-export const PREMISE_SUGGESTIONS = [
-  "In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?",
-  "Awakening a mysterious black tripod cauldron inside the family trash heap that grinds low-grade herbs into peerless tier-9 celestial elixirs.",
-  "Dying in a grand sect betrayal only to regress 10 years to the moment of spiritual root measurement, choosing the forbidden Demonic Scripture.",
-  "The world gets integrated into a cosmic tower system, but a bug grants me a hidden attribute: Infinite Comprehension Speed index.",
-  "A quiet apprentice librarian finds a forgotten manual containing the diary of the first Primordial Creator, which talks back and demands snacks.",
-  "Being the cripple son of a great General who finds out his 'broken' meridians are actually the legendary ancient Dragon-Phoenix Meridian body.",
-  "Entering the lowest class ranking at the Grand Azure Sect Academy, only to unlock a hidden library containing direct instructions of the founder.",
-  "Inheriting a ruined outer-city outpost with scarce resources, but the territory system displays interactive menus for automation.",
-  "Born as an ordinary stable boy in the Beast Taming Sect, but awakening the ability to read hidden beast evolutionary bloodline trees.",
-  "Failing the martial exam but discovering an ancient forge blueprint that allows infusing weapons with broken fragments of heavenly laws.",
-  "Waking up on a barren moon as the sole survivor of a dying stellar sect with an cosmic stellar inheritance diagram in my soul."
 ];
 
 /**

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check, ChevronRight, Sparkles } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
 import {

@@ -1,7 +1,7 @@
 # Celestial Library component set
 
 Shared, reusable Library-skinned components. Not a Workshop preview feature —
-these primitives back the feature replicas (Story Seed, Story Settings,
+these primitives back the feature replicas (Story Seed, Story Seed Settings,
 Relics, Reader surfaces) and transfer to production alongside them.
 
 ## Component ownership

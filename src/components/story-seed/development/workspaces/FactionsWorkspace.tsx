@@ -1,4 +1,3 @@
-import React from 'react';
 import type { StorySeedFaction, StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeCodexAliases, parseCodexAliases } from '../../shared/codexContext';
 import { getSeedSection } from '../seedSections';

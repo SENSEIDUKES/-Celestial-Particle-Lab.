@@ -4,7 +4,7 @@ import { Mail } from 'lucide-react';
 import { mockLogin, useAppStore } from '../shared/stubs';
 
 /**
- * Story Authentication gate — Foundation v2 redesign of CreationModal's
+ * Story Authentication gate for CreationModal's
  * signed-out screen. A full-screen cinematic takeover: the living wuxia
  * backdrop dominates while a nearly invisible glass shell floats the
  * sign-in actions over it.

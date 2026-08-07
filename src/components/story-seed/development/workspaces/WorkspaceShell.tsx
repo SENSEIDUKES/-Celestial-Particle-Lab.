@@ -3,7 +3,7 @@ import { Check, Sparkle, Sparkles } from 'lucide-react';
 import { SEED_FAMILIES, type SeedSection } from '../seedSections';
 
 /**
- * Shared field styling for the Phase 2 workspaces — the glass field system
+ * Shared field styling for the finalized workspaces — the glass field system
  * from `src/components/library/glass-field.css` (imported via the Library
  * barrel), combined
  * with layout utilities. Text inputs and textareas use `LibraryTextBox` /
@@ -95,7 +95,7 @@ export const WorkspaceShell = ({
   );
 };
 
-/** Sub-group heading used inside larger workspaces (Story Settings, Characters). */
+/** Sub-group heading used inside larger workspaces (Story Seed Settings, Characters). */
 export const WorkspaceSubheading = ({ children }: { children: React.ReactNode }) => (
   <h3 className="border-b border-neutral-900/70 pb-2 font-sc text-[11px] font-bold uppercase tracking-widest text-neutral-300">
     {children}

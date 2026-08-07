@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * LibraryDragonCycleIcon — the Celestial Library's cycle glyph: a dragon
  * chasing its own tail (ouroboros). It is part of the ecosystem's shared

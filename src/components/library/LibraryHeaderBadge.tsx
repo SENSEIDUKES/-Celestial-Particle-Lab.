@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * LibraryHeaderBadge — the reusable Library header identity block.
  *

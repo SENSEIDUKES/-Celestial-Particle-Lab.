@@ -23,8 +23,10 @@ import {
   createStorySeed,
   listStorySeeds,
   resetStorySeedRepository,
+  setStorySeedRepository,
   updateStorySeed,
   type StorySeedRecord,
+  type StorySeedRepository,
 } from './storySeedRepository';
 import {
   createStoryAdministrativeMetadata,
@@ -673,6 +675,21 @@ describe('Story Seed creator/story/world contract', () => {
 
     const [reloaded] = await listStorySeeds('creator-1');
     expect(reloaded.blueprint).toBeUndefined();
+  });
+
+  it('restores the Workshop repository after an injected preview adapter', async () => {
+    const injectedRepository: StorySeedRepository = {
+      async create() { throw new Error('Preview adapter is read-only.'); },
+      async update() { throw new Error('Preview adapter is read-only.'); },
+      async list() { return []; },
+      async importMany() { throw new Error('Preview adapter is read-only.'); },
+    };
+    setStorySeedRepository(injectedRepository);
+    expect(await listStorySeeds('creator-1')).toEqual([]);
+
+    resetStorySeedRepository();
+    const restored = await createStorySeed('creator-1', completeSeed());
+    expect((await listStorySeeds('creator-1')).map(record => record.id)).toEqual([restored.id]);
   });
 
   it('keeps the minimal administrative spine separate from Creator / Story / World', () => {
