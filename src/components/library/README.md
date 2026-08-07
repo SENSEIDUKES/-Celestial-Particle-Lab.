@@ -38,9 +38,11 @@ Reusable visual names use the `library-*` namespace:
   generation button uses it with a label naming what it creates (Manifest
   World Blueprint, Manifest Story). Behavior comes from `SEIButton`; shape
   and rhythm are shared with `LibraryButton` (now-exported `BASE`, `SIZES`,
-  `ICON_GLYPH_SIZE`), and the skin is the spectral portal → violet → gold rim
-  shared with `LibraryPanel` (now-exported `SPECTRAL_EDGE`) over obsidian
-  with a restrained spectrum glow that brightens on hover and while busy.
+  `ICON_GLYPH_SIZE`), and the skin echoes the Library header emblem: a gold
+  rim over gilded obsidian, the iridescent 1px conic edge shared with
+  `LibraryPanel` (now-exported `SPECTRAL_EDGE`), and the emblem's flowing
+  rainbow spectrum masked to a soft halo band just outside the button that
+  brightens on hover and while busy.
   First consumer: Story Seed (intake action bar + Blueprint review footer).
   Secondary actions stay on the quieter `LibraryButton` variants.
 
