@@ -24,11 +24,9 @@ export function ChapterGenerationFlowWorkspace() {
   const [rhythmScenarioId, setRhythmScenarioId] = useState<string>(RHYTHM_SCENARIOS[1].id);
   const [proseOverride, setProseOverride] = useState<CulturalProseOverride>('story-default');
 
-  // Real (ported) assembly logic + mock fixture data — no network/DB/LLM call
-  // happens in either path. Reference always reflects today's real 10-stage
-  // production flow (unaffected by the rhythm/prose controls below —
-  // Cultural Prose Style and Scene Ending Anchors do not exist in production
-  // yet). Development layers the two new systems on top, per the design brief.
+  // Both panes exercise the same real four-stage orchestration with local,
+  // deterministic provider adapters. The Development controls feed only the
+  // packet/planner inputs they own; neither path performs live side effects.
   const { stages: referenceStages, finalOutput: referenceOutput } = useMemo(
     () => assembleChapterGeneration(scenarioId),
     [scenarioId],
@@ -100,12 +98,11 @@ export function ChapterGenerationFlowWorkspace() {
       <p className="text-[10px] leading-relaxed text-white/40">
         Safe mock data only — no story persistence, database writes, R2 uploads, credit
         deductions, queues, notifications, or live model calls happen anywhere in this preview.
-        The context assembly, token budgeting, and prompt text are the real (ported) Light-Novels
-        generation-flow logic; only the final "Generated Chapter Output" stage is a hand-authored
-        mock standing in for an actual model response. Cultural Prose Style and Scene Ending
-        Anchors are a first (skeleton) implementation that exists only in the Development pane —
-        Original Reference always reflects today's real production flow, unaffected by the two
-        controls above.
+        Reference and Development share the same Assemble, Plan, Manifest, and Process pipeline.
+        Packet assembly uses the real ported context, budgeting, and prompt logic; deterministic
+        local planner, writer, and processor adapters stand in for the three normal model calls.
+        Development-only Cultural Prose and rhythm controls feed the packet and planner without
+        creating extra stages or calls.
       </p>
     </div>
   );

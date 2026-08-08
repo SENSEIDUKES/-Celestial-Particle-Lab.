@@ -5,11 +5,6 @@
  */
 import type { MockChapterGenerationScenario } from "../fixtures/mockGenerationData";
 import { buildChapterContract } from "../lib/chapterHandoff";
-import {
-  selectNextScenePath,
-  type FatePressureTier,
-  type ScenePathSelection,
-} from "../lib/sceneRhythm";
 import type { ChapterContract } from "../types";
 import type { LivingStoryState } from "./livingStoryState";
 
@@ -24,18 +19,12 @@ export interface ChapterMission {
   contract?: ChapterContract;
   /** Temporary director/user direction for this chapter only. */
   pacingDirective: string;
-  /** Development-only selected anchor, when enough rhythm state exists. */
-  selectedScenePath?: ScenePathSelection;
 }
 
-export interface ChapterMissionOptions {
-  fatePressureTier?: FatePressureTier;
-}
-
+/** Builds the current-chapter mission without making planning decisions. */
 export function chapterMissionFromScenario(
   scenario: MockChapterGenerationScenario,
   livingState: LivingStoryState,
-  options: ChapterMissionOptions = {},
 ): ChapterMission {
   const contract = buildChapterContract({
     chapterNumber: scenario.currentChapter.number,
@@ -51,12 +40,5 @@ export function chapterMissionFromScenario(
     fallbackSummary: FIRST_CHAPTER_FALLBACK_SUMMARY,
     contract,
     pacingDirective: scenario.pacingDirective,
-    selectedScenePath: options.fatePressureTier && livingState.scene.carriedAnchors
-      ? selectNextScenePath(
-          options.fatePressureTier,
-          livingState.scene.recentSceneTypes,
-          livingState.scene.carriedAnchors,
-        )
-      : undefined,
   };
 }

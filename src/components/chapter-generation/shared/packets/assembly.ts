@@ -2,12 +2,11 @@
  * Packet assembly and traceability for Chapter Generation 1.0.
  *
  * This module is the single internal boundary where the existing scenario
- * shape is reorganized into the four packages. The orchestrators still run
- * the same ported pipeline in the same order; packets only make ownership
- * explicit and testable.
+ * shape is reorganized into the four packages consumed by the four-stage
+ * Chapter Generation 1.0 pipeline.
  */
 import type { MockChapterGenerationScenario } from "../fixtures/mockGenerationData";
-import type { FatePressureTier, SceneType } from "../lib/sceneRhythm";
+import type { SceneType } from "../lib/sceneRhythm";
 import {
   chapterMissionFromScenario,
   type ChapterMission,
@@ -40,9 +39,9 @@ export interface ChapterGenerationPacket {
 
 export interface ChapterGenerationPacketOptions {
   recentSceneTypes?: SceneType[];
-  fatePressureTier?: FatePressureTier;
 }
 
+/** Projects one scenario into the four Pass 1 information contracts. */
 export function assembleChapterGenerationPacket(
   scenario: MockChapterGenerationScenario,
   options: ChapterGenerationPacketOptions = {},
@@ -51,9 +50,7 @@ export function assembleChapterGenerationPacket(
   const livingStoryState = livingStoryStateFromScenario(scenario, {
     recentSceneTypes: options.recentSceneTypes,
   });
-  const chapterMission = chapterMissionFromScenario(scenario, livingStoryState, {
-    fatePressureTier: options.fatePressureTier,
-  });
+  const chapterMission = chapterMissionFromScenario(scenario, livingStoryState);
 
   return {
     storyConstitution,
@@ -130,7 +127,7 @@ export const CHAPTER_GENERATION_PACKAGE_TRACE: readonly ChapterInstructionTrace[
   { id: "chapter-do-not-repeat", packageId: "chapterMission", source: "ChapterContract.doNotRepeat", description: "Canon events this chapter must not re-narrate." },
   { id: "chapter-completion-criteria", packageId: "chapterMission", source: "ChapterContract.completionCriteria", description: "Current chapter completion checks." },
   { id: "pacing-directive", packageId: "chapterMission", source: "scenario.pacingDirective", description: "Temporary AI Director pacing instruction.", rendererPackageId: "generationRules" },
-  { id: "next-scene-direction", packageId: "chapterMission", source: "selectNextScenePath", description: "Temporary selected scene anchor for this chapter.", rendererPackageId: "generationRules" },
+  { id: "next-scene-direction", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Chapter-specific scene path chosen by the planner from current anchors and rhythm." },
   { id: "fallback-opening-summary", packageId: "chapterMission", source: "FIRST_CHAPTER_FALLBACK_SUMMARY", description: "Opening requirement when no previous history exists." },
 
   // Generation Rules — permanent generator-owned instructions.
@@ -154,10 +151,10 @@ export const CHAPTER_GENERATION_PACKAGE_TRACE: readonly ChapterInstructionTrace[
   { id: "narrative-surface-hygiene", packageId: "generationRules", source: "CHAPTER_PROMPTS.system", description: "Permanent rules separating prose from UI/system surfaces." },
   { id: "glossary-block-renderer", packageId: "generationRules", source: "formatGlossaryForPrompt", description: "Permanent wrapper for glossary guidance data." },
   { id: "writing-style-renderer", packageId: "generationRules", source: "appendChapterWritingStyleInstruction", description: "Permanent wrapper for accessibility prose instructions." },
-  { id: "cultural-prose-renderer", packageId: "generationRules", source: "renderCulturalProseInstruction", description: "Permanent Development-only Cultural Prose block wrapper." },
-  { id: "fate-pressure-renderer", packageId: "generationRules", source: "getFatePressureBlock", description: "Permanent Fate Pressure directive blocks." },
-  { id: "pacing-block-renderer", packageId: "generationRules", source: "pacingBlock", description: "Permanent wrapper for temporary pacing direction." },
-  { id: "next-scene-block-renderer", packageId: "generationRules", source: "nextSceneDirectionBlock", description: "Permanent Development-only wrapper for the selected scene anchor." },
+  { id: "cultural-prose-renderer", packageId: "generationRules", source: "renderCulturalProseInstruction", description: "Permanent Cultural Prose instruction included in the Chapter Packet and writing call." },
+  { id: "fate-pressure-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.fateSurvival", description: "Structured chapter-specific Fate Survival decision made by the planner from packet settings." },
+  { id: "pacing-block-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.pacing", description: "Structured chapter-specific pacing decision made by the planner." },
+  { id: "next-scene-block-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Structured selected path passed directly from planning to manifestation." },
   { id: "thread-aging-renderer", packageId: "generationRules", source: "formatThreadForRouter", description: "Permanent age annotation applied to unresolved threads." },
   { id: "context-budgeting-rules", packageId: "generationRules", source: "assembleContext + CONTEXT_BUDGET_DEFAULTS", description: "Permanent context section order, caps, demotion, and omission behavior." },
   { id: "context-manifest-envelope", packageId: "generationRules", source: "buildContextManifestFromOutcomes", description: "Permanent context-manifest summary envelope." },
@@ -192,8 +189,8 @@ export const CHAPTER_GENERATION_PACKAGE_FLAGS: readonly ChapterPackageFlag[] = [
   {
     id: "workshop-inspection-only-modules",
     severity: "out-of-scope",
-    source: "development/chapterEffectsDirection.ts + stageTypes.ts",
-    message: "Inspection-only Workshop projections do not belong to any generation package and are retained unchanged.",
+    source: "stageTypes.ts + shared/pipeline/workshopModelCalls.ts",
+    message: "Inspection stage serialization and deterministic Workshop model adapters remain preview-only boundaries outside the four generation contracts.",
   },
   {
     id: "story-administrative-metadata",
@@ -205,7 +202,7 @@ export const CHAPTER_GENERATION_PACKAGE_FLAGS: readonly ChapterPackageFlag[] = [
     id: "legacy-context-engine-v1-prompt-branch",
     severity: "dead-field",
     source: "chapterPrompts.ts contextEngine === \"v1\" / !withCue branch",
-    message: "Both current orchestrators always use the v2 cue-enabled prompt branch; the retained v1 branch is not exercised by this replica.",
+    message: "Both current adapters use the v2 cue-enabled prompt branch; the retained v1 branch is not exercised by this replica.",
   },
   {
     id: "seed-world-rules-bridge",

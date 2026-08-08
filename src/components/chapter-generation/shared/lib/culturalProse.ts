@@ -11,9 +11,9 @@
  *   Japanese light novels -> Character comedy, Serious fantasy
  *   Korean web novels     -> Dungeon power fantasy, Romantic drama
  *
- * This is a Workshop/Development-only addition — no production code path
- * reads from this file yet. It's written to be easy to lift into
- * Light-Novels `src/server/` once approved (pure, no Workshop-only concerns).
+ * This remains a Workshop addition — both preview flows carry it in the
+ * Chapter Packet, while no production code path reads from this file yet.
+ * It is pure and portable into Light-Novels once approved.
  */
 
 export type CulturalProseStyleId =

@@ -1,33 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assembleChapterGeneration, type ScenarioId } from "../assembleGeneration";
-import {
-  assembleChapterGenerationDev,
-  type CulturalProseOverride,
-} from "../assembleGenerationDev";
-import baselineJson from "../fixtures/generationBehaviorBaseline.json";
-import {
-  ESTABLISHED_SCENARIO,
-  RHYTHM_SCENARIOS,
-  SCENARIOS,
-} from "../fixtures/mockGenerationData";
+import { ESTABLISHED_SCENARIO } from "../fixtures/mockGenerationData";
 import { buildChapterContract } from "../lib/chapterHandoff";
-import type { ChapterGenerationPackageId } from "./types";
+import type { ChapterInstructionOwnerId } from "./types";
 import {
   assembleChapterGenerationPacket,
   buildLegacyGenerationMemory,
 } from "./assembly";
-
-type BaselineCapture = {
-  stageCount: number;
-  stageKeys: string[];
-  stagesHash: string;
-  finalOutputHash: string;
-};
-
-const baseline = baselineJson as {
-  reference: Record<string, BaselineCapture>;
-  development: Record<string, BaselineCapture>;
-};
 
 const EXPECTED_TRACE_IDS = [
   "story-identity",
@@ -109,54 +87,10 @@ const EXPECTED_FLAG_IDS = [
   "seed-glossary-bridge",
 ] as const;
 
-const normalizeText = (value: string) => value
-  .replace(/"generatedAt":\s*"[^"]+"/g, '"generatedAt": "<generatedAt>"')
-  .replace(/"syncRevision":\s*"[^"]+"/g, '"syncRevision": "<syncRevision>"')
-  .replace(/"updatedAt":\s*"[^"]+"/g, '"updatedAt": "<updatedAt>"');
-
-const normalizeFinalOutput = (value: unknown) => JSON.parse(normalizeText(JSON.stringify(value)));
-const hash = (value: unknown) => {
-  const text = JSON.stringify(value);
-  let first = 0x811c9dc5;
-  let second = 0x01000193;
-  for (let index = 0; index < text.length; index += 1) {
-    const code = text.charCodeAt(index);
-    first = Math.imul(first ^ code, 0x01000193) >>> 0;
-    second = Math.imul(second ^ (code + (index & 0xff)), 0x85ebca6b) >>> 0;
-  }
-  return `${first.toString(16).padStart(8, "0")}${second.toString(16).padStart(8, "0")}`;
-};
-
-const captureAssembly = (result: { stages: {
-  key: string;
-  name: string;
-  description: string;
-  included: boolean;
-  tokenEstimate: number;
-  sizeChars: number;
-  format: string;
-  content: string;
-}[]; finalOutput: unknown }): BaselineCapture => ({
-  stageCount: result.stages.length,
-  stageKeys: result.stages.map(stage => stage.key),
-  stagesHash: hash(result.stages.map(stage => ({
-    key: stage.key,
-    name: stage.name,
-    description: stage.description,
-    included: stage.included,
-    tokenEstimate: stage.tokenEstimate,
-    sizeChars: stage.sizeChars,
-    format: stage.format,
-    content: normalizeText(stage.content),
-  }))),
-  finalOutputHash: hash(normalizeFinalOutput(result.finalOutput)),
-});
-
 describe("Chapter Generation packet assembly", () => {
   it("assembles all four packages from the existing scenario", () => {
     const packet = assembleChapterGenerationPacket(ESTABLISHED_SCENARIO, {
       recentSceneTypes: ["worldBuilding", "conflict", "progression"],
-      fatePressureTier: "Balanced",
     });
 
     expect(packet.storyConstitution.mainCharacterName).toBe("Wen Shu");
@@ -173,25 +107,26 @@ describe("Chapter Generation packet assembly", () => {
       previousHandoff: ESTABLISHED_SCENARIO.previousHandoff,
       recentFingerprints: ESTABLISHED_SCENARIO.recentFingerprints,
     }));
-    expect(packet.chapterMission.selectedScenePath).toBeDefined();
+    expect(packet.chapterMission).not.toHaveProperty("selectedScenePath");
     expect(packet.generationRules.prompts.system).toContain("OUTPUT FORMAT TARGET");
     expect(buildLegacyGenerationMemory(packet)).toEqual(ESTABLISHED_SCENARIO.memory);
   });
 
-  it("traces every tracked instruction exactly once into a valid package", () => {
+  it("traces every tracked instruction exactly once into a valid owner", () => {
     const packet = assembleChapterGenerationPacket(ESTABLISHED_SCENARIO);
-    const validPackages: ChapterGenerationPackageId[] = [
+    const validOwners: ChapterInstructionOwnerId[] = [
       "storyConstitution",
       "livingStoryState",
       "chapterMission",
       "generationRules",
+      "chapterPlan",
     ];
     const ids = packet.trace.map(entry => entry.id);
 
     expect(packet.trace).toHaveLength(65);
     expect(new Set(ids).size).toBe(ids.length);
     packet.trace.forEach(entry => {
-      expect(validPackages).toContain(entry.packageId);
+      expect(validOwners).toContain(entry.packageId);
       if (entry.rendererPackageId) expect(entry.rendererPackageId).toBe("generationRules");
     });
 
@@ -214,39 +149,5 @@ describe("Chapter Generation packet assembly", () => {
     expect(flags["legacy-context-engine-v1-prompt-branch"]?.severity).toBe("dead-field");
     expect(flags["seed-world-rules-bridge"]?.severity).toBe("needs-owner-decision");
     expect(flags["seed-glossary-bridge"]?.severity).toBe("needs-owner-decision");
-  });
-});
-
-describe("Chapter Generation behavior preservation", () => {
-  it("matches every Reference scenario to its pre-refactor normalized behavior hashes", () => {
-    expect(Object.keys(baseline.reference).sort()).toEqual(
-      Object.keys(SCENARIOS).sort(),
-    );
-
-    (Object.keys(SCENARIOS) as ScenarioId[]).forEach(scenarioId => {
-      expect(captureAssembly(assembleChapterGeneration(scenarioId)))
-        .toEqual(baseline.reference[scenarioId]);
-    });
-  });
-
-  it("matches every Development scenario/rhythm/prose combination to its normalized behavior hashes", () => {
-    const scenarioIds = Object.keys(SCENARIOS) as ScenarioId[];
-    const proseOverrides: CulturalProseOverride[] = [
-      "story-default",
-      "none",
-      "chinese-modern-progression",
-    ];
-
-    scenarioIds.forEach(scenarioId => {
-      RHYTHM_SCENARIOS.forEach(rhythmScenario => {
-        proseOverrides.forEach(proseOverride => {
-          const key = `${scenarioId}/${rhythmScenario.id}/${proseOverride}`;
-          expect(
-            captureAssembly(assembleChapterGenerationDev(scenarioId, rhythmScenario.id, proseOverride)),
-            key,
-          ).toEqual(baseline.development[key]);
-        });
-      });
-    });
   });
 });

@@ -6,9 +6,9 @@
  * centralized in `SCENE_RHYTHM_CONFIG` so they can be retuned later without
  * touching the selection algorithm.
  *
- * Workshop/Development-only for now — no production code path reads from
- * this file yet. Written to be easy to lift into Light-Novels `src/server/`
- * or `src/lib/` once approved.
+ * Workshop provider-adapter logic for now — both preview panes use it through
+ * the shared Stage 2 planner, while no production code path reads from this
+ * file yet. Written to be easy to lift into Light-Novels once approved.
  */
 import type { ChapterHandoff } from "../types";
 
