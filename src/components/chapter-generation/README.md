@@ -4,7 +4,7 @@
 - **Source location:** `src/server/routes/storyRouter.ts` (`POST /api/generate-chapter-stream`, verified on `main`), plus `src/server/generationContext.ts`, `src/server/contextBudgeter.ts`, `src/server/contextManifest.ts`, `src/server/entityCards.ts`, `src/server/helpers.ts`, `src/server/prompts.ts` (`PROMPTS.chapter`), `src/lib/codexContext.ts`, `src/lib/contextBlocks.ts`, `src/lib/chapterHandoff.ts`, `src/lib/chapterWritingStyle.ts`, `src/lib/glossary/formatter.ts`, `src/hooks/useChapterGeneration.ts`
 - **Workshop preview:** `?preview=chapter-generation-flow`
 - **Replica created:** 2026-07-31
-- **Last Workshop update:** 2026-07-31
+- **Last Workshop update:** 2026-08-08
 - **Last source comparison:** 2026-07-31
 - **Replica status:** under refinement — Reference is a faithful replica of production; Development additionally prototypes two not-yet-in-production systems and a prompt-inspection stage (see below)
 
@@ -36,6 +36,13 @@ shared/
   types.ts                    — trimmed ChapterContent/StoryBlock/ContextManifest/etc.
                                  types needed by the ported lib/ modules
   stageTypes.ts                — Workshop-only GenerationStage inspection model
+  packets/                      — Chapter Generation 1.0 internal information
+                                 packages and focused tests:
+    storyConstitution.ts         permanent story-owned Seed/Blueprint/settings data
+    livingStoryState.ts          evolving arc/chapter/history/Codex/thread state
+    chapterMission.ts            current-chapter objective/opening/restrictions/direction
+    generationRules.ts           permanent prompt, formatting, budgeting, and renderer rules
+    assembly.ts                  packet assembly, instruction trace, and explicit flags
   lib/                          — verbatim-or-near-verbatim ports of the PURE
                                  (no network/DB) Light-Novels generation-flow modules:
     helpers.ts                  estimateTokens, rankRelevantEntityCandidates,
@@ -62,6 +69,9 @@ shared/
                                  each now also carrying a `culturalProseStyleId` (or unset, to
                                  exercise the fallback) and a `worldBuildingSeed`; plus
                                  `RHYTHM_SCENARIOS` — 6 fixed Fate-Pressure/rhythm presets
+    generationBehaviorBaseline.json — normalized pre-refactor stage/final-output hashes
+                                 used by the packet tests to prove generation behavior stayed
+                                 byte-identical
   assembleGeneration.ts         REFERENCE orchestrator — orchestrates the above in
                                  storyRouter.ts's exact order, returns GenerationStage[] + a
                                  mock ChapterContent. Untouched by the Cultural Prose / Scene
@@ -121,6 +131,53 @@ Character / Codex Context, Chapter Instructions, System Prompt Rules, Final
 Generation Request, Generated Chapter Output) without rewriting or
 summarizing any of the underlying text — each stage's content is a direct
 slice or concatenation of the real assembled sections/prompt.
+
+## Chapter Generation 1.0 packet boundary
+
+`shared/packets/` is the first internal reorganization pass. It does not add
+a model call, rewrite a prompt, change a Workshop control, or regroup the
+visible stages. Both orchestrators now assemble a packet first, then feed the
+same ported pipeline from that packet:
+
+- **Story Constitution** (`storyConstitution.ts`) — permanent per-story data:
+  finalized Story Seed / Blueprint provenance, core premise, genre, story
+  tags, story style, style bible, trope rules, Cultural Prose setting,
+  accessibility prose setting, Fate Survival settings, permanent world rules,
+  power-system definition, destined ending, glossary data, and MC identity.
+  `storyConstitutionFromSeed()` is the canonical adapter from
+  `StorySeedInput` + `WorldBlueprint`; the older Workshop scenarios use
+  `storyConstitutionFromScenario()` so current output stays unchanged.
+- **Living Story State** (`livingStoryState.ts`) — evolving data: internal
+  arc/chapter position (`Arc 1 — Chapter 1/100` by default), context blocks,
+  previous ending/handoff, existing scene anchors, current power stage,
+  ability ledger, active/resolved threads, Codex records, fingerprints, and
+  recent scene rhythm.
+- **Chapter Mission** (`chapterMission.ts`) — this chapter only: number,
+  title, premise, deterministic `ChapterContract`, required opening,
+  do-not-repeat restrictions, fallback opening summary, pacing directive, and
+  (Development) selected next-scene path.
+- **Generation Rules** (`generationRules.ts`) — permanent generator-owned
+  rules: fixed system prompt, user-prompt template, output/effects/continuity
+  rules, glossary/style/prose/fate-pressure/pacing/next-scene renderers,
+  thread aging, context budgeting, context manifest, and response cleanup.
+
+`assembly.ts` returns a complete instruction trace plus explicit flags for
+items that must not be silently deleted or guessed: the dead fixture
+`fatePressure` field, chapter-writing-style ownership ambiguity, missing
+Story Seed Fate Survival pressure → generation tier bridge, missing Story
+Style → Cultural Prose bridge, missing Seed → world-rules/glossary bridges,
+the unexercised legacy Context Engine v1 prompt branch, Workshop-only
+inspection modules, and system-owned story administrative metadata. Genuine
+duplication removed in this pass is limited to the byte-identical Balanced
+Fate Pressure block and the duplicated pinned-premise,
+pacing/thread/next-scene helper wrappers; prompt strings still live in their
+existing ported modules.
+
+The focused packet tests live beside the contracts. `npm run
+test:chapter-generation` validates the four packages, Story Seed adapter,
+arc/chapter position, trace/flags, shared rule wrappers, and normalized
+pre-refactor behavior hashes for both Reference scenarios and all 36
+Development scenario/rhythm/prose combinations.
 
 ## Development-only additions: Cultural Prose Styles, Scene Ending Anchors, and Chapter Effects Direction
 
@@ -391,3 +448,11 @@ ordinary inspector-layout refinements, same as any other Workshop replica.
   validation command, and tightened long-instruction wrapping, stage layout,
   and the shared Workshop view switch for narrow mobile screens. Reference and
   production prompt behavior remain unchanged.
+- **2026-08-08:** Started Chapter Generation 1.0 packet organization. Added
+  internal Story Constitution, Living Story State, Chapter Mission, and
+  Generation Rules contracts; connected Story Constitution to the finalized
+  Story Seed + Blueprint contract; added arc-local chapter positions and a
+  complete instruction trace with explicit unresolved flags. Removed only
+  genuine helper duplication. Reference/Development prompt text, append order,
+  stage keys, stage order, and mock outputs are guarded by normalized
+  byte-preservation hashes and remain unchanged.
