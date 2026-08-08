@@ -71,7 +71,7 @@ export const OriginGenrePicker = ({ genre, onChange }: OriginGenrePickerProps) =
       <div className="mb-3 flex items-center justify-between gap-3">
         <p id="origin-genre-title" className={workspaceCompactLabelClass}>Genre <span className="text-[#D9B36C]">*</span></p>
         <button type="button" aria-expanded={isGenrePickerOpen} aria-controls="origin-genre-presets" onClick={() => setIsGenrePickerOpen(open => !open)}
-          className="inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-[#CDB271] transition-colors hover:text-[#E3C878]">
+          className="story-seed-touch-target inline-flex items-center gap-1 font-sc text-[10px] font-bold uppercase tracking-widest text-[#CDB271] transition-colors hover:text-[#E3C878]">
           {isGenrePickerOpen ? 'Close paths' : 'Pick a path'}<ChevronDown size={13} className={isGenrePickerOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
         </button>
       </div>

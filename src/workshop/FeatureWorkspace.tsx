@@ -14,6 +14,10 @@ export interface FeatureWorkspaceProps {
   controls?: React.ReactNode;
   /** Disable the Compare viewing mode for features where it doesn't make sense. Defaults to true. */
   allowCompare?: boolean;
+  /** Optional preload used by deferred reference panes before Reference or Compare is selected. */
+  onReferenceIntent?: () => void;
+  /** Optional notification for previews whose scripted state must follow pane remounts. */
+  onViewChange?: (view: WorkspaceView) => void;
 }
 
 /**
@@ -23,7 +27,15 @@ export interface FeatureWorkspaceProps {
  * a second homepage card — a "V2" is just a Development version inside this
  * shell, never a new entry point.
  */
-export function FeatureWorkspace({ entry, renderReference, renderDevelopment, controls, allowCompare = true }: FeatureWorkspaceProps) {
+export function FeatureWorkspace({
+  entry,
+  renderReference,
+  renderDevelopment,
+  controls,
+  allowCompare = true,
+  onReferenceIntent,
+  onViewChange,
+}: FeatureWorkspaceProps) {
   const [view, setView] = useState<WorkspaceView>('development');
   const [mobilePane, setMobilePane] = useState<'reference' | 'development'>('development');
 
@@ -41,8 +53,15 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
         <div className="mt-4 inline-flex max-w-full flex-wrap rounded-2xl border border-white/10 bg-white/5 p-1 gap-1 sm:rounded-full">
           <button
             type="button"
-            onClick={() => setView('reference')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
+            onPointerEnter={onReferenceIntent}
+            onPointerDown={onReferenceIntent}
+            onFocus={onReferenceIntent}
+            onClick={() => {
+              onReferenceIntent?.();
+              setView('reference');
+              onViewChange?.('reference');
+            }}
+            className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'reference' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -50,8 +69,11 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
           </button>
           <button
             type="button"
-            onClick={() => setView('development')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
+            onClick={() => {
+              setView('development');
+              onViewChange?.('development');
+            }}
+            className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'development' ? 'bg-cyan-500/20 text-cyan-100' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -60,8 +82,15 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
           {allowCompare && (
             <button
               type="button"
-              onClick={() => setView('compare')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
+              onPointerEnter={onReferenceIntent}
+              onPointerDown={onReferenceIntent}
+              onFocus={onReferenceIntent}
+              onClick={() => {
+                onReferenceIntent?.();
+                setView('compare');
+                onViewChange?.('compare');
+              }}
+              className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
                 view === 'compare' ? 'bg-violet-500/20 text-violet-100' : 'text-white/50 hover:text-white/80'
               }`}
             >
@@ -100,8 +129,14 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
             <div className="sticky top-0 z-[201] flex justify-center gap-2 py-2 bg-[#04060d]/95 backdrop-blur border-b border-white/10">
               <button
                 type="button"
-                onClick={() => setMobilePane('reference')}
-                className={`px-3 py-1 rounded-full text-[11px] uppercase tracking-widest ${
+                onPointerEnter={onReferenceIntent}
+                onPointerDown={onReferenceIntent}
+                onFocus={onReferenceIntent}
+                onClick={() => {
+                  onReferenceIntent?.();
+                  setMobilePane('reference');
+                }}
+                className={`workshop-touch-target px-3 py-1 rounded-full text-[11px] uppercase tracking-widest ${
                   mobilePane === 'reference' ? 'bg-white/15 text-white' : 'text-white/40'
                 }`}
               >
@@ -110,7 +145,7 @@ export function FeatureWorkspace({ entry, renderReference, renderDevelopment, co
               <button
                 type="button"
                 onClick={() => setMobilePane('development')}
-                className={`px-3 py-1 rounded-full text-[11px] uppercase tracking-widest ${
+                className={`workshop-touch-target px-3 py-1 rounded-full text-[11px] uppercase tracking-widest ${
                   mobilePane === 'development' ? 'bg-cyan-500/20 text-cyan-100' : 'text-white/40'
                 }`}
               >

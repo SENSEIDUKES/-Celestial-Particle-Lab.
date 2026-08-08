@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { BookOpen } from 'lucide-react';
 import type { StorySeedInput } from '../../shared/storySeedSchema';
 import { normalizeStoryStyle } from '../../shared/storyStyle';
@@ -20,43 +21,61 @@ interface OriginWorkspaceProps {
   updateSeed: UpdateSeed;
 }
 
+const ORIGIN_SECTION = getSeedSection('origin');
+
 /** Keeps all four Story essentials in one mobile-first creation flow. */
 export const OriginWorkspace = ({ seed, updateSeed }: OriginWorkspaceProps) => {
-  const section = getSeedSection('origin');
   const { premise, genre, storyTags, style } = storyRequired(seed);
   const identity = worldIdentity(seed);
   const selectedStyle = normalizeStoryStyle(style);
-  const originComplete = section.isFilled(seed);
+  const originComplete = ORIGIN_SECTION.isFilled(seed);
+  const updateTitle = useCallback(
+    (title: string) => updateSeed(patchWorldIdentity({ title })),
+    [updateSeed],
+  );
+  const updateStyle = useCallback(
+    (nextStyle: NonNullable<typeof selectedStyle>) => updateSeed(patchStoryRequired({ style: nextStyle })),
+    [updateSeed],
+  );
+  const updatePremise = useCallback(
+    (nextPremise: string) => updateSeed(patchStoryRequired({ premise: nextPremise })),
+    [updateSeed],
+  );
+  const updateGenre = useCallback(
+    (nextGenre: string) => updateSeed(patchStoryRequired({ genre: nextGenre })),
+    [updateSeed],
+  );
+  const titleField = useMemo(() => (
+    <LibraryTextBox
+      id="origin-story-title-input"
+      label="Story Title"
+      icon={BookOpen}
+      helpText="Optional — the Library will generate a title if you leave this blank."
+      value={identity.title || ''}
+      onChange={updateTitle}
+      placeholder="e.g., Ashes of the Ninth Meridian"
+    />
+  ), [identity.title, updateTitle]);
+  const styleSelector = useMemo(() => (
+    <OriginStyleSelector selectedStyle={selectedStyle} onSelect={updateStyle} />
+  ), [selectedStyle, updateStyle]);
+  const genrePicker = useMemo(() => (
+    <OriginGenrePicker genre={genre} onChange={updateGenre} />
+  ), [genre, updateGenre]);
 
   return (
-    <WorkspaceShell section={section} complete={originComplete}>
-      <LibraryTextBox
-        id="origin-story-title-input"
-        label="Story Title"
-        icon={BookOpen}
-        helpText="Optional — the Library will generate a title if you leave this blank."
-        value={identity.title || ''}
-        onChange={value => updateSeed(patchWorldIdentity({ title: value }))}
-        placeholder="e.g., Ashes of the Ninth Meridian"
-      />
+    <WorkspaceShell section={ORIGIN_SECTION} complete={originComplete}>
+      {titleField}
 
-      <OriginStyleSelector
-        selectedStyle={selectedStyle}
-        onSelect={style => updateSeed(patchStoryRequired({ style }))}
-      />
+      {styleSelector}
 
       <OriginPremiseAndTags
         premise={premise}
         storyTags={storyTags}
         selectedStyle={selectedStyle}
-        onPremiseChange={value => updateSeed(patchStoryRequired({ premise: value }))}
+        onPremiseChange={updatePremise}
         updateSeed={updateSeed}
-        genrePicker={(
-          <OriginGenrePicker
-            genre={genre}
-            onChange={value => updateSeed(patchStoryRequired({ genre: value }))}
-          />
-        )}
+        genrePicker={genrePicker}
       />
     </WorkspaceShell>
   );

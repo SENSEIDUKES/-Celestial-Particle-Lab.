@@ -12,8 +12,12 @@ interface StoryBankRecordsState {
 /**
  * Owns the Story Bank list lifecycle, including owner changes, stale request
  * cancellation, a distinct loading error, and an explicit retry boundary.
+ * Loading is deferred until the owning Story Bank view has been requested.
  */
-export const useStoryBankRecords = (ownerId: string | null): StoryBankRecordsState => {
+export const useStoryBankRecords = (
+  ownerId: string | null,
+  enabled = true,
+): StoryBankRecordsState => {
   const [records, setRecords] = useState<StorySeedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -24,7 +28,11 @@ export const useStoryBankRecords = (ownerId: string | null): StoryBankRecordsSta
   useEffect(() => {
     setRecords([]);
     setLoadError(null);
-    if (!ownerId) {
+    setIsLoading(false);
+  }, [ownerId]);
+
+  useEffect(() => {
+    if (!ownerId || !enabled) {
       setIsLoading(false);
       return;
     }
@@ -49,7 +57,7 @@ export const useStoryBankRecords = (ownerId: string | null): StoryBankRecordsSta
     return () => {
       cancelled = true;
     };
-  }, [ownerId, reloadVersion]);
+  }, [enabled, ownerId, reloadVersion]);
 
   return { records, setRecords, isLoading, loadError, reload };
 };

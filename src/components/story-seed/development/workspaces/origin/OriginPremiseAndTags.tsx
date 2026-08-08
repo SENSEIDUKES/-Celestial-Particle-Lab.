@@ -1,4 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react';
 import { ChevronDown, Feather, Search, Sparkles, Tag, Wand2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -27,6 +37,7 @@ const TAG_RECOMMENDED_COPY = 'Recommended: 4–8 tags.';
 const SEARCH_RESULT_LIMIT = 24;
 const STYLE_SUGGESTION_LIMIT = 10;
 const STYLE_SPECIFIC_SHARE = 6;
+const ALL_CURATED_PREMISE_EXAMPLES = Object.values(CURATED_PREMISE_EXAMPLES).flat();
 
 const SEMANTIC_TAGS = [
   { keywords: ['system', 'cheat', 'status', 'panel', 'attribute', 'litrpg'], tag: 'game systems' },
@@ -96,7 +107,7 @@ const CatalogTagChip = ({ entry, selected, onToggle, className = '' }: {
     onClick={() => onToggle(entry.label)}
     title={entry.category}
     style={selected ? undefined : categoryBorderStyle(entry.color)}
-    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-all ${tagChipClass(selected)} ${className}`}
+    className={`story-seed-touch-target flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-all ${tagChipClass(selected)} ${className}`}
   >
     <CategoryColorDot color={entry.color} />
     {selected ? '✓' : '+'} {entry.label}
@@ -137,6 +148,23 @@ const buildStyleSuggestions = (style: StoryStyle | undefined): StoryTagMetadata[
   return [...specificPicks, ...generalPicks];
 };
 
+const findGhostSuggestion = (premise: string, storyTags: string[]): string | null => {
+  if (!premise.trim() || storyTags.length >= TAG_LIMIT) return null;
+  const selectedTags = new Set(storyTags.map(tag => tag.toLowerCase()));
+  const isSelected = (tag: string) => selectedTags.has(tag.toLowerCase());
+  const lastWord = premise.split(/[\s,.;!?]+/).filter(Boolean).pop();
+  const prefixMatch = lastWord && lastWord.length >= 2
+    ? TAG_PRESETS.find(tag => tag.toLowerCase().startsWith(lastWord.toLowerCase()) && !isSelected(tag))
+    : undefined;
+  if (prefixMatch) return prefixMatch;
+  const lowerPremise = premise.toLowerCase();
+  const semanticMatch = SEMANTIC_TAGS.find(({ keywords, tag }) =>
+    !isSelected(tag) && keywords.some(keyword => lowerPremise.includes(keyword)))?.tag;
+  return semanticMatch && TAG_PRESETS.includes(semanticMatch)
+    ? semanticMatch
+    : TAG_PRESETS.find(tag => lowerPremise.includes(tag.toLowerCase()) && !isSelected(tag)) ?? null;
+};
+
 interface OriginPremiseAndTagsProps {
   premise: string;
   storyTags: string[];
@@ -154,78 +182,37 @@ export const OriginPremiseAndTags = ({
   updateSeed,
   genrePicker,
 }: OriginPremiseAndTagsProps) => {
-  const [ghostSuggestion, setGhostSuggestion] = useState<string | null>(null);
-  const [activeTagFamily, setActiveTagFamily] = useState<string | null>(null);
-  const [customTagInput, setCustomTagInput] = useState('');
-  const [tagSearch, setTagSearch] = useState('');
+  const [dismissedGhostKey, setDismissedGhostKey] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
   const [exampleIndex, setExampleIndex] = useState(0);
-  const styleSuggestions = useMemo(() => buildStyleSuggestions(selectedStyle), [selectedStyle]);
-  const tagSearchResults = useMemo(() => searchStoryTagCatalog(tagSearch), [tagSearch]);
-  const isTagSearchActive = tagSearch.trim().length > 0;
   const premiseBank = selectedStyle
     ? CURATED_PREMISE_EXAMPLES[selectedStyle]
-    : Object.values(CURATED_PREMISE_EXAMPLES).flat();
+    : ALL_CURATED_PREMISE_EXAMPLES;
   const premiseExample = premiseBank[exampleIndex % premiseBank.length];
+  const ghostSuggestionCandidate = useMemo(
+    () => findGhostSuggestion(premise, storyTags),
+    [premise, storyTags],
+  );
+  const ghostSuggestionKey = ghostSuggestionCandidate
+    ? `${premise}\u0000${ghostSuggestionCandidate}`
+    : null;
+  const ghostSuggestion = ghostSuggestionKey === dismissedGhostKey
+    ? null
+    : ghostSuggestionCandidate;
 
   useEffect(() => setExampleIndex(0), [selectedStyle]);
+  useEffect(() => setDismissedGhostKey(null), [storyTags]);
 
-  useEffect(() => {
-    if (!premise.trim() || storyTags.length >= TAG_LIMIT) {
-      setGhostSuggestion(null);
-      return;
-    }
-    const lastWord = premise.split(/[\s,.;!?]+/).filter(Boolean).pop();
-    const prefixMatch = lastWord && lastWord.length >= 2
-      ? TAG_PRESETS.find(tag => tag.toLowerCase().startsWith(lastWord.toLowerCase()) && !storyTags.includes(tag))
-      : undefined;
-    if (prefixMatch) {
-      setGhostSuggestion(prefixMatch);
-      return;
-    }
-    const lowerPremise = premise.toLowerCase();
-    const semanticMatch = SEMANTIC_TAGS.find(({ keywords, tag }) =>
-      !storyTags.includes(tag) && keywords.some(keyword => lowerPremise.includes(keyword)))?.tag;
-    setGhostSuggestion(
-      semanticMatch && TAG_PRESETS.includes(semanticMatch)
-        ? semanticMatch
-        : TAG_PRESETS.find(tag => lowerPremise.includes(tag.toLowerCase()) && !storyTags.includes(tag)) ?? null,
-    );
-  }, [premise, storyTags]);
-
-  const addTag = (tag: string) => {
-    if (storyTags.some(existing => existing.toLowerCase() === tag.toLowerCase())) return;
+  const addTag = useCallback((tag: string) => {
+    if (storyTags.some(existing => existing.toLowerCase() === tag.toLowerCase())) return false;
     if (storyTags.length >= TAG_LIMIT) {
       setTagLimitError(TAG_LIMIT_MESSAGE);
-      return;
+      return false;
     }
     setTagLimitError(null);
     updateSeed(updateStoryTags(previous => [...previous, tag]));
-  };
-
-  const toggleTag = (tag: string) => {
-    if (storyTags.includes(tag)) {
-      setTagLimitError(null);
-      updateSeed(updateStoryTags(previous => previous.filter(existing => existing !== tag)));
-    } else addTag(tag);
-  };
-
-  const addCustomTag = () => {
-    const tag = customTagInput.replace(/^\s*,|,\s*$/g, '').trim();
-    if (!tag) return;
-    if (storyTags.length >= TAG_LIMIT) {
-      setTagLimitError(TAG_LIMIT_MESSAGE);
-      return;
-    }
-    addTag(tag);
-    setCustomTagInput('');
-  };
-
-  const familyEntries = activeTagFamily
-    ? Array.from(new Set(CATEGORIZED_TAGS[activeTagFamily] || []))
-        .map(tag => getTagMetadata(tag))
-        .filter((entry): entry is StoryTagMetadata => Boolean(entry))
-    : [];
+    return true;
+  }, [storyTags, updateSeed]);
 
   return (
     <>
@@ -236,7 +223,10 @@ export const OriginPremiseAndTags = ({
         required
         maxLength={STORY_PREMISE_MAX_LENGTH}
         value={premise}
-        onChange={onPremiseChange}
+        onChange={value => {
+          setDismissedGhostKey(null);
+          onPremiseChange(value);
+        }}
         onKeyDown={event => {
           if (event.key !== 'Tab') return;
           if (!premise.trim()) {
@@ -246,8 +236,7 @@ export const OriginPremiseAndTags = ({
           }
           if (ghostSuggestion) {
             event.preventDefault();
-            addTag(ghostSuggestion);
-            setGhostSuggestion(null);
+            if (addTag(ghostSuggestion)) setDismissedGhostKey(ghostSuggestionKey);
           }
         }}
         rows={6}
@@ -259,7 +248,7 @@ export const OriginPremiseAndTags = ({
             onClick={() => setExampleIndex(index => (index + 1) % premiseBank.length)}
             aria-label="Show another example premise"
             title="Show another example premise"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-portal/35 bg-portal/10 text-portal transition-all hover:border-portal hover:bg-portal/15 hover:shadow-[0_0_12px_rgba(4,172,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-90"
+            className="story-seed-touch-target inline-flex h-8 w-8 items-center justify-center rounded-full border border-portal/35 bg-portal/10 text-portal transition-all hover:border-portal hover:bg-portal/15 hover:shadow-[0_0_12px_rgba(4,172,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-90"
           >
             <LibraryDragonCycleIcon size={17} />
           </button>
@@ -272,9 +261,11 @@ export const OriginPremiseAndTags = ({
               type="button"
               initial={{ opacity: 0, scale: 0.95, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 2 }}
               transition={{ duration: 0.2 }}
-              onClick={() => { addTag(ghostSuggestion); setGhostSuggestion(null); }}
+              onClick={() => {
+                if (addTag(ghostSuggestion)) setDismissedGhostKey(ghostSuggestionKey);
+              }}
               title="Click or press Tab to weave this tag into your Story Tags"
-              className="absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal sm:max-w-full"
+              className="story-seed-touch-target absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal sm:max-w-full"
             >
               <Sparkles size={11} className="animate-pulse text-portal" />
               <span className="truncate">Tab: {ghostSuggestion}</span>
@@ -285,6 +276,62 @@ export const OriginPremiseAndTags = ({
 
       {genrePicker}
 
+      <OriginTagEditor
+        storyTags={storyTags}
+        selectedStyle={selectedStyle}
+        updateSeed={updateSeed}
+        addTag={addTag}
+        tagLimitError={tagLimitError}
+        setTagLimitError={setTagLimitError}
+      />
+    </>
+  );
+};
+
+interface OriginTagEditorProps {
+  storyTags: string[];
+  selectedStyle?: StoryStyle;
+  updateSeed: UpdateSeed;
+  addTag: (tag: string) => boolean;
+  tagLimitError: string | null;
+  setTagLimitError: Dispatch<SetStateAction<string | null>>;
+}
+
+const OriginTagEditor = memo(({
+  storyTags,
+  selectedStyle,
+  updateSeed,
+  addTag,
+  tagLimitError,
+  setTagLimitError,
+}: OriginTagEditorProps) => {
+  const [activeTagFamily, setActiveTagFamily] = useState<string | null>(null);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
+  const styleSuggestions = useMemo(() => buildStyleSuggestions(selectedStyle), [selectedStyle]);
+  const tagSearchResults = useMemo(() => searchStoryTagCatalog(tagSearch), [tagSearch]);
+  const isTagSearchActive = tagSearch.trim().length > 0;
+
+  const toggleTag = (tag: string) => {
+    if (storyTags.includes(tag)) {
+      setTagLimitError(null);
+      updateSeed(updateStoryTags(previous => previous.filter(existing => existing !== tag)));
+    } else addTag(tag);
+  };
+
+  const addCustomTag = () => {
+    const tag = customTagInput.replace(/^\s*,|,\s*$/g, '').trim();
+    if (!tag) return;
+    if (addTag(tag)) setCustomTagInput('');
+  };
+
+  const familyEntries = useMemo(() => activeTagFamily
+    ? Array.from(new Set(CATEGORIZED_TAGS[activeTagFamily] || []))
+        .map(tag => getTagMetadata(tag))
+        .filter((entry): entry is StoryTagMetadata => Boolean(entry))
+    : [], [activeTagFamily]);
+
+  return (
       <section className="glass-panel space-y-4 p-4 sm:p-5" aria-labelledby="origin-tags-title">
         <div>
           <p id="origin-tags-title" className="flex items-center gap-2 font-sc text-[11px] font-bold uppercase tracking-widest text-signal"><Tag size={13} className="text-[#CDB271]" aria-hidden="true" />Story Tags</p>
@@ -345,7 +392,7 @@ export const OriginPremiseAndTags = ({
                   const isOpen = activeTagFamily === family;
                   return (
                     <button key={family} type="button" aria-expanded={isOpen} aria-controls="origin-family-tags" onClick={() => { setActiveTagFamily(current => current === family ? null : family); setTagSearch(''); }}
-                      className={`inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-full border px-3 py-1 font-sc text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${isOpen ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]' : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'}`}>
+                      className={`story-seed-touch-target inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-full border px-3 py-1 font-sc text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${isOpen ? 'border-portal/60 bg-portal/10 text-portal shadow-[0_0_10px_rgba(4,172,255,0.18)]' : 'border-[rgba(150,166,220,0.22)] bg-[#0d1126]/60 text-neutral-300 hover:border-[rgba(150,166,220,0.45)] hover:text-signal'}`}>
                       <CategoryColorDot color={CATEGORY_COLORS[family as StoryTagCategory]} />{family}<ChevronDown size={12} className={isOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
                     </button>
                   );
@@ -370,7 +417,7 @@ export const OriginPremiseAndTags = ({
           <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className={workspaceCompactLabelClass}>Your tags ({storyTags.length} / {TAG_LIMIT})</p>
             <span className="font-sans text-[11px] text-neutral-500">{TAG_RECOMMENDED_COPY}</span>
-            {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
+            {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="story-seed-compact-hit-target font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
           </div>
           {storyTags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -380,7 +427,7 @@ export const OriginPremiseAndTags = ({
                   <span key={tag} className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs">
                     {metadata && <CategoryColorDot color={metadata.color} />}
                     <span className="font-semibold">{tag}</span>
-                    <button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button>
+                    <button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="story-seed-compact-hit-target text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button>
                   </span>
                 );
               })}
@@ -388,6 +435,7 @@ export const OriginPremiseAndTags = ({
           ) : <p className="font-sans text-xs italic leading-relaxed text-neutral-600">No manual tags yet. Your origin will provide them when you manifest the blueprint.</p>}
         </div>
       </section>
-    </>
   );
-};
+});
+
+OriginTagEditor.displayName = 'OriginTagEditor';

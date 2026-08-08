@@ -167,7 +167,7 @@ export const LibraryTextArea = forwardRef<HTMLTextAreaElement, LibraryTextAreaPr
             aria-describedby={describedBy}
             data-complete={complete || undefined}
             data-invalid={isInvalid || undefined}
-            className={`glass-field ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${className}`}
+            className={`glass-field ${compact ? 'library-compact-field' : ''} ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${className}`}
             {...rest}
           />
           {children}

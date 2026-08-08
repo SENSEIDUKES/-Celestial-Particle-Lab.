@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Bookmark, Check, CircleHelp, CircleUserRound, List, Settings, Sprout, X } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
@@ -9,10 +9,10 @@ import {
   LibraryNavigationDrawer,
   LibraryPanel,
 } from '../../library';
-import type { SeedSectionId } from './seedSections';
+import { haveSameSeedSectionState, type SeedSectionId } from './seedSections';
 import type { SeedUpdate } from './seedState';
 import { buildStorySeedDrawerSections, storySeedDrawerProfile } from './StorySeedSelector';
-import { StorySeedSettings } from './StorySeedSettings';
+import { haveSameStorySeedSettings, StorySeedSettings } from './StorySeedSettings';
 
 interface StorySeedMobileNavigationProps {
   seed: StorySeedInput;
@@ -30,7 +30,7 @@ interface StorySeedMobileNavigationProps {
 }
 
 /** Mobile drawer, bottom navigation, and utility sheets as one shared owner. */
-export const StorySeedMobileNavigation = ({
+const StorySeedMobileNavigationComponent = ({
   seed,
   updateSeed,
   activeSection,
@@ -99,7 +99,7 @@ export const StorySeedMobileNavigation = ({
     };
   }, [mobileSheet]);
 
-  const toggleMobileSheet = (sheet: 'settings' | 'profile') => {
+  const toggleMobileSheet = useCallback((sheet: 'settings' | 'profile') => {
     setSelectorOpen(false);
     if (mobileSheet === sheet) {
       setMobileSheet(null);
@@ -109,9 +109,22 @@ export const StorySeedMobileNavigation = ({
       ? document.activeElement
       : null;
     setMobileSheet(sheet);
-  };
+  }, [mobileSheet]);
 
-  const bottomNavItems: LibraryBottomNavigationItem[] = [
+  const closeSelector = useCallback(() => setSelectorOpen(false), []);
+  const selectDrawerSection = useCallback((id: SeedSectionId) => {
+    onSelectSection(id);
+    setSelectorOpen(false);
+  }, [onSelectSection]);
+  const drawerProfile = useMemo(() => storySeedDrawerProfile(equippedTitle), [equippedTitle]);
+  const drawerSections = useMemo(
+    () => selectorOpen
+      ? buildStorySeedDrawerSections(seed, activeSection, selectDrawerSection)
+      : [],
+    [activeSection, seed, selectDrawerSection, selectorOpen],
+  );
+
+  const bottomNavItems = useMemo<LibraryBottomNavigationItem[]>(() => [
     {
       id: 'sections',
       label: 'Sections',
@@ -156,20 +169,17 @@ export const StorySeedMobileNavigation = ({
       active: mobileSheet === 'settings',
       onSelect: () => toggleMobileSheet('settings'),
     },
-  ];
+  ], [helpOpen, mobileSheet, onOpenHelp, onToggleStoryBank, selectorOpen, showStoryBank, toggleMobileSheet]);
 
   return (
     <>
       <LibraryNavigationDrawer
         open={selectorOpen}
-        onClose={() => setSelectorOpen(false)}
+        onClose={closeSelector}
         aria-label="Story Seed sections"
         closeLabel="Close sections"
-        profile={storySeedDrawerProfile(equippedTitle)}
-        sections={buildStorySeedDrawerSections(seed, activeSection, (id) => {
-          onSelectSection(id);
-          setSelectorOpen(false);
-        })}
+        profile={drawerProfile}
+        sections={drawerSections}
       />
 
       <LibraryBottomNavigation
@@ -188,7 +198,7 @@ export const StorySeedMobileNavigation = ({
               exit={{ opacity: 0 }}
               transition={{ duration: reduceMotion ? 0 : 0.2 }}
               onClick={() => setMobileSheet(null)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="story-seed-overlay-scrim absolute inset-0 bg-black/70 backdrop-blur-sm"
             />
             <motion.div
               initial={{ y: '100%' }}
@@ -204,7 +214,7 @@ export const StorySeedMobileNavigation = ({
             >
               <LibraryPanel
                 padding="none"
-                className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-b-none border-x-0 border-b-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
+                className="story-seed-overlay-panel max-h-[calc(100dvh-5rem)] overscroll-contain overflow-y-auto rounded-b-none border-x-0 border-b-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] [padding-left:env(safe-area-inset-left)] [padding-right:env(safe-area-inset-right)]"
               >
                 <div className="flex items-center justify-between gap-3 px-4 pt-3">
                   <p className="font-sc text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-500">
@@ -260,3 +270,20 @@ export const StorySeedMobileNavigation = ({
     </>
   );
 };
+
+export const StorySeedMobileNavigation = memo(
+  StorySeedMobileNavigationComponent,
+  (previous, next) => previous.updateSeed === next.updateSeed
+    && previous.activeSection === next.activeSection
+    && previous.equippedTitle === next.equippedTitle
+    && previous.showStoryBank === next.showStoryBank
+    && previous.helpOpen === next.helpOpen
+    && previous.isGenerating === next.isGenerating
+    && previous.savedFeedback === next.savedFeedback
+    && previous.onSelectSection === next.onSelectSection
+    && previous.onToggleStoryBank === next.onToggleStoryBank
+    && previous.onOpenHelp === next.onOpenHelp
+    && previous.onSaveDraft === next.onSaveDraft
+    && haveSameSeedSectionState(previous.seed, next.seed)
+    && haveSameStorySeedSettings(previous.seed, next.seed),
+);

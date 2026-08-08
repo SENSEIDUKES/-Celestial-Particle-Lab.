@@ -181,3 +181,97 @@
     animation: seed-help-voice-bar 0.9s ease-in-out infinite;
   }
 }
+
+/* Long Story Bank lists skip layout and paint work until a card approaches
+   the viewport. `auto` remembers the real height after first rendering, so
+   revisiting a card does not disturb scroll position. */
+.story-bank-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 18rem;
+}
+
+/* Coarse pointers identify the phone/tablet layouts where high-DPR backdrop
+   sampling and wide blurred shadows cost the most. The celestial gradients,
+   borders, and static glows remain intact; only invisible/redundant sampling
+   and continuous paint work are reduced. */
+@media (hover: none) and (pointer: coarse) {
+  nav[aria-label='Story Seed navigation'] {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+
+  nav[aria-label='Story Seed navigation'] > div {
+    background-color: rgba(8, 12, 20, 0.72) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(1.35) !important;
+    backdrop-filter: blur(12px) saturate(1.35) !important;
+  }
+
+  .story-seed-overlay-scrim,
+  .library-overlay-scrim {
+    background-color: rgba(0, 0, 0, 0.76) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .story-seed-overlay-panel {
+    background-color: rgba(8, 12, 20, 0.78) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(1.3) !important;
+    backdrop-filter: blur(8px) saturate(1.3) !important;
+  }
+
+  #creation-portal-root > [data-variant='default'],
+  .story-bank-surface {
+    background-color: rgba(8, 12, 20, 0.86) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 rgba(150, 195, 255, 0.06),
+      0 18px 48px rgba(0, 0, 0, 0.52),
+      0 0 34px rgba(4, 172, 255, 0.1),
+      0 0 64px rgba(212, 175, 55, 0.05) !important;
+  }
+
+  .story-seed-touch-target,
+  .story-bank-surface button[data-size='sm'] {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  #creation-portal-root .library-compact-field {
+    min-height: 2.75rem;
+  }
+
+  /* Compact text/icon actions keep their chip and flex-row footprint while a
+     generated hit layer supplies the full coarse-pointer target. */
+  #creation-portal-root .story-seed-compact-hit-target {
+    position: relative;
+  }
+
+  #creation-portal-root .story-seed-compact-hit-target::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    content: '';
+    transform: translate(-50%, -50%);
+  }
+
+  /* The static speaking halo still marks the active guidance line; removing
+     its large animated box-shadow avoids repainting the full card each frame. */
+  .seed-help-speaking {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .story-seed-overlay-scrim,
+  .library-overlay-scrim,
+  .story-seed-overlay-panel,
+  #creation-portal-root > [data-variant='default'],
+  .story-bank-surface {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

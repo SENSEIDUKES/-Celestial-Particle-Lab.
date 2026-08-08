@@ -1,5 +1,8 @@
 import {
+  lazy,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -55,11 +58,8 @@ import { FactionsWorkspace } from './workspaces/FactionsWorkspace';
 import { AbilitiesWorkspace } from './workspaces/AbilitiesWorkspace';
 import { PowerSystemWorkspace } from './workspaces/PowerSystemWorkspace';
 
-import { ImportPanel } from './ImportPanel';
 import { LibraryPanel, ManifestButton } from '../../library';
-import { BlueprintReview } from './BlueprintReview';
-import { StoryBank } from './StoryBank';
-import { StorySeedHelpMenu } from './StorySeedHelpMenu';
+import { DeferredStorySeedView } from './DeferredStorySeedView';
 import { StorySeedHeader } from './StorySeedHeader';
 import { StorySeedMobileNavigation } from './StorySeedMobileNavigation';
 import { useStoryBankRecords } from './useStoryBankRecords';
@@ -79,6 +79,33 @@ interface CreationModalProps {
  */
 const LOCAL_CREATOR_ID = 'local-workshop-creator';
 const INITIAL_CHAPTER_COUNT = 10;
+
+const useLatestCallback = <Args extends unknown[], Result>(
+  callback: (...args: Args) => Result,
+) => {
+  const callbackRef = useRef(callback);
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+  return useCallback((...args: Args) => callbackRef.current(...args), []);
+};
+
+const loadStorySeedSecondary = () => import('./StorySeedSecondary');
+const preloadStorySeedSecondary = () => {
+  void loadStorySeedSecondary().catch(() => undefined);
+};
+const BlueprintReview = lazy(() => loadStorySeedSecondary().then(module => ({
+  default: module.BlueprintReview,
+})));
+const ImportPanel = lazy(() => loadStorySeedSecondary().then(module => ({
+  default: module.ImportPanel,
+})));
+const StoryBank = lazy(() => loadStorySeedSecondary().then(module => ({
+  default: module.StoryBank,
+})));
+const StorySeedHelpMenu = lazy(() => loadStorySeedSecondary().then(module => ({
+  default: module.StorySeedHelpMenu,
+})));
 
 const mapCreationFailure = (failure: 'blueprint' | 'story'): string => failure === 'blueprint'
   ? 'The World Blueprint could not be generated. Please try again.'
@@ -113,23 +140,24 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // Stories manifested from a banked seed drive the Story Bank's "Novel
   // Manifested" card state (stories link back to their seed by `sourceSeedId`).
   const libraryStories = useAppStore(state => state.stories);
-  const manifestedSeedIds = new Set(
+  const manifestedSeedIds = useMemo(() => new Set(
     libraryStories
       .map(story => story.sourceSeedId)
       .filter((id): id is string => Boolean(id)),
-  );
+  ), [libraryStories]);
   const isGenerating = isGeneratingProp || storeIsGenerating;
   const [stage, setStage] = useState<'intake' | 'blueprint'>('intake');
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [blueprint, setBlueprint] = useState<WorldBlueprint | null>(null);
   const [currentSeed, setCurrentSeed] = useState<StorySeedRecord | null>(null);
+  const [storyBankRequestedOwnerId, setStoryBankRequestedOwnerId] = useState<string | null>(null);
   const {
     records: savedSeeds,
     setRecords: setSavedSeeds,
     isLoading: isLoadingSeeds,
     loadError: seedLoadError,
     reload: reloadSavedSeeds,
-  } = useStoryBankRecords(seedOwnerId);
+  } = useStoryBankRecords(seedOwnerId, storyBankRequestedOwnerId === seedOwnerId);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [authDissolving, setAuthDissolving] = useState(false);
   const wasAuthRef = useRef(false);
@@ -150,15 +178,16 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   // The `?` Help menu — one clean home for section guidance, opened from the
   // bottom navigation on mobile and the header Help button on desktop.
   const [helpOpen, setHelpOpen] = useState(false);
+  const [helpRequested, setHelpRequested] = useState(false);
 
   // The workspace edits the canonical Story Seed directly — there is no
   // separate flat view model between the form and the contract any more.
   const [seed, setSeed] = useState<StorySeedInput>(createEmptyStorySeedInput);
 
-  const setActiveSeed = (record: StorySeedRecord | null) => {
+  const setActiveSeed = useCallback((record: StorySeedRecord | null) => {
     currentSeedRef.current = record;
     setCurrentSeed(record);
-  };
+  }, []);
 
   useEffect(() => {
     const ownerChanged = previousSeedOwnerIdRef.current !== seedOwnerId;
@@ -172,17 +201,17 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     if (!seedOwnerId) {
       setActiveSeed(null);
     }
-  }, [seedOwnerId]);
+  }, [seedOwnerId, setActiveSeed]);
 
   // Always a functional update, so rapid successive edits (e.g. toggling two
   // tags in one task) can never lose a write to a stale render closure.
-  const updateSeed = (update: SeedUpdate) => setSeed(update);
-  const updateBlueprint = (update: SetStateAction<WorldBlueprint>) => {
+  const updateSeed = useCallback((update: SeedUpdate) => setSeed(update), []);
+  const updateBlueprint = useCallback((update: SetStateAction<WorldBlueprint>) => {
     setBlueprint(current => {
       if (!current) return current;
       return typeof update === 'function' ? update(current) : update;
     });
-  };
+  }, []);
 
   // Post-auth visual transition: once a gated guest signs in, keep the gate
   // mounted for STORY_AUTH_DISSOLVE_MS so StoryAuthGate's shell can dissolve
@@ -278,9 +307,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     if (artifacts.length === 0) return;
     const imported = seedOwnerId ? await importStorySeeds(seedOwnerId, artifacts) : [];
     if (imported.length > 0) {
+      const importedIds = new Set(imported.map(record => record.id));
       setSavedSeeds(previous => [
         ...imported,
-        ...previous.filter(record => !imported.some(item => item.id === record.id)),
+        ...previous.filter(record => !importedIds.has(record.id)),
       ]);
       setActiveSeed(imported[0]);
     } else {
@@ -322,6 +352,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
    * dossier is where a Blueprint is viewed and edited.
    */
   const handleUseSeed = (record: StorySeedRecord) => {
+    preloadStorySeedSecondary();
     loadSeedIntoWorkspace(record);
     setStage('blueprint');
     setShowStoryBank(false);
@@ -354,6 +385,10 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     // Write the inferred tags back so the creator sees exactly what is saved.
     if (seed.story.required.storyTags.length === 0) setSeed(seedInput);
     try {
+      // Blueprint review code downloads while the provider is generating, so
+      // the dossier is ready when the response arrives without burdening the
+      // initial Story Seed route.
+      preloadStorySeedSecondary();
       const generated = await onGenerateBlueprint(buildBlueprintGenerationPayload(seedInput));
       const bp = normalizeWorldBlueprint(generated, seedInput, {
         creator: currentUser?.displayName,
@@ -521,6 +556,30 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
     });
   };
 
+  const toggleStoryBank = useCallback(() => {
+    if (showStoryBank) {
+      setShowImportPanel(false);
+    } else {
+      setStoryBankRequestedOwnerId(seedOwnerId);
+      preloadStorySeedSecondary();
+    }
+    setShowStoryBank(open => !open);
+  }, [seedOwnerId, showStoryBank]);
+
+  const openHelp = useCallback(() => {
+    setHelpRequested(true);
+    preloadStorySeedSecondary();
+    setHelpOpen(true);
+  }, []);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
+  const selectMobileSection = useCallback((id: SeedSectionId) => {
+    setActiveSection(id);
+    setShowStoryBank(false);
+  }, []);
+  const requestSaveDraft = useLatestCallback(handleSaveDraft);
+  const requestStartStory = useLatestCallback(handleStartStoryClick);
+  const requestExportCurrentSeed = useLatestCallback(handleExportCurrentSeed);
+
   if ((!currentUser || authDissolving) && !LOCAL_ONLY_MODE) {
     return <StoryAuthGate />;
   }
@@ -533,16 +592,18 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
             {seedError || error}
           </div>
         )}
-        <BlueprintReview
-          blueprint={blueprint}
-          setBlueprint={updateBlueprint}
-          seed={seed}
-          updateSeed={updateSeed}
-          onBack={() => setStage('intake')}
-          onStartStory={handleStartStoryClick}
-          onExportSeed={handleExportCurrentSeed}
-          isGenerating={isGenerating}
-        />
+        <DeferredStorySeedView label="World Blueprint">
+          <BlueprintReview
+            blueprint={blueprint}
+            setBlueprint={updateBlueprint}
+            seed={seed}
+            updateSeed={updateSeed}
+            onBack={() => setStage('intake')}
+            onStartStory={requestStartStory}
+            onExportSeed={requestExportCurrentSeed}
+            isGenerating={isGenerating}
+          />
+        </DeferredStorySeedView>
       </>
     );
   }
@@ -552,15 +613,7 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
   const canGenerate = missing.length === 0 && !isGenerating;
   const ActiveWorkspace = STORY_SEED_WORKSPACES[activeSection];
 
-  // The Story Bank swap: opening it replaces the creation workspace below the
-  // shared header. Closing it also dismisses the Import panel, since Story
-  // Seed import/export now lives inside the Story Bank.
-  const toggleStoryBank = () => {
-    if (showStoryBank) setShowImportPanel(false);
-    setShowStoryBank(open => !open);
-  };
-
- return (
+  return (
     // `pb-24` clears the sticky Manifest strip at the end of scroll; on mobile
     // the in-flow bottom navigation occupies that space instead.
     <div className="mx-auto max-w-7xl pb-24 max-lg:pb-0" id="creation-portal-root">
@@ -572,34 +625,38 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         isGenerating={isGenerating}
         savedFeedback={savedFeedback}
         showStoryBank={showStoryBank}
-        onSaveDraft={handleSaveDraft}
+        onSaveDraft={requestSaveDraft}
         onToggleStoryBank={toggleStoryBank}
-        onOpenHelp={() => setHelpOpen(true)}
+        onOpenHelp={openHelp}
+        onStoryBankIntent={preloadStorySeedSecondary}
+        onHelpIntent={preloadStorySeedSecondary}
       />
 
       {showStoryBank && (
-        <StoryBank
-          seeds={savedSeeds}
-          isLoading={isLoadingSeeds}
-          loadError={seedLoadError}
-          onRetryLoad={reloadSavedSeeds}
-          manifestedSeedIds={manifestedSeedIds}
-          isGenerating={isGenerating}
-          onToggleImport={() => setShowImportPanel(open => !open)}
-          importPanel={(
-            <ImportPanel
-              show={showImportPanel}
-              onClose={() => setShowImportPanel(false)}
-              onImport={handleImport}
-            />
-          )}
-          onExportAll={handleExportAllSeeds}
-          onEditSeed={handleEditSeed}
-          onOpenBlueprint={handleUseSeed}
-          onUseSeed={handleUseSeed}
-          onExportSeed={handleExportSavedSeed}
-          onManifest={handleManifestSeed}
-        />
+        <DeferredStorySeedView label="Story Bank">
+          <StoryBank
+            seeds={savedSeeds}
+            isLoading={isLoadingSeeds}
+            loadError={seedLoadError}
+            onRetryLoad={reloadSavedSeeds}
+            manifestedSeedIds={manifestedSeedIds}
+            isGenerating={isGenerating}
+            onToggleImport={() => setShowImportPanel(open => !open)}
+            importPanel={(
+              <ImportPanel
+                show={showImportPanel}
+                onClose={() => setShowImportPanel(false)}
+                onImport={handleImport}
+              />
+            )}
+            onExportAll={handleExportAllSeeds}
+            onEditSeed={handleEditSeed}
+            onOpenBlueprint={handleUseSeed}
+            onUseSeed={handleUseSeed}
+            onExportSeed={handleExportSavedSeed}
+            onManifest={handleManifestSeed}
+          />
+        </DeferredStorySeedView>
       )}
 
       {(seedError || error) && (
@@ -723,23 +780,24 @@ export default function CreationModal({ onStartStory, onGenerateBlueprint, isGen
         helpOpen={helpOpen}
         isGenerating={isGenerating}
         savedFeedback={savedFeedback}
-        onSelectSection={(id) => {
-          setActiveSection(id);
-          setShowStoryBank(false);
-        }}
+        onSelectSection={selectMobileSection}
         onToggleStoryBank={toggleStoryBank}
-        onOpenHelp={() => setHelpOpen(true)}
-        onSaveDraft={handleSaveDraft}
+        onOpenHelp={openHelp}
+        onSaveDraft={requestSaveDraft}
       />
 
       {/* Story Seed Help — the `?` guidance menu shared by the mobile bottom
           navigation and the desktop header button. */}
-      <StorySeedHelpMenu
-        open={helpOpen}
-        onClose={() => setHelpOpen(false)}
-        page="story-seed"
-        title="Story Seed Help"
-      />
+      {helpRequested && (
+        <DeferredStorySeedView label="Story Seed Help" variant="modal">
+          <StorySeedHelpMenu
+            open={helpOpen}
+            onClose={closeHelp}
+            page="story-seed"
+            title="Story Seed Help"
+          />
+        </DeferredStorySeedView>
+      )}
     </div>
   );
 }

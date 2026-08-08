@@ -6,7 +6,7 @@
 - **Replica created:** 2026-08-01
 - **Last Workshop update:** 2026-08-07
 - **Last source comparison:** 2026-08-06
-- **Lifecycle status:** finalized Workshop feature; foundation refactored and ready for the dedicated optimization pass
+- **Lifecycle status:** finalized Workshop feature; refactored, optimized, and ready for production transfer
 
 The source path still exists in the adjacent local Light-Novels checkout. It
 was not compared again during the 2026-08-07 refactor, so `lastCompared`
@@ -39,6 +39,8 @@ provenance separate from generated story direction.
 ```text
 development/
   CreationModal.tsx               flow controller and generation boundaries
+  DeferredStorySeedView.tsx       secondary-view loading and error boundaries
+  StorySeedSecondary.ts           deferred Help, Bank, import, and Blueprint entry
   StorySeedHeader.tsx             desktop identity and utility actions
   StorySeedMobileNavigation.tsx   mobile drawer, navigation, and sheets
   StorySeedSettings.tsx           one Settings body for desktop and mobile
@@ -47,7 +49,7 @@ development/
   useStoryBankRecords.ts          list, loading, error, cancellation, retry
   StorySeedHelpMenu.tsx           Help modal and audio lifecycle
   BlueprintReview.tsx             editable Blueprint dossier coordinator
-  blueprint/                      dossier primitives, collections, copy format
+  blueprint/                      memoized review sections, collections, copy format
   workspaces/                     Origin, ARC, and World editors
   workspaces/origin/              Style, Genre, and premise/tag responsibilities
   seedSections.ts                 visible navigation plus required-input gate
@@ -92,8 +94,14 @@ media/persistence infrastructure.
 - `shared/workshopStorySeedStorage.ts` is the only localStorage adapter.
 - `storySeedRepository.ts` is the swappable persistence port.
 - Preview fixtures are under `src/workshop/previews/story-seed/`.
+- The Workshop loads preview routes and the locked Story Seed reference on
+  demand. Those `App`, `DeferredWorkspace`, and `FeatureWorkspace` boundaries
+  are Workshop shell concerns, not production feature code.
 - Help audio requests the finalized Library Lines endpoint; written guidance
   remains available when a topic intentionally has no audio.
+- The auth backdrop uses the local optimized poster under
+  `public/story-seed/`; its video is deferred and is skipped for reduced
+  motion, data saver, and slow connections.
 - Mock generation returns a deterministic Blueprint and never starts chapter
   generation.
 
@@ -134,14 +142,16 @@ reach into React internals or bypass form state.
 When this finalized feature is approved for production transfer:
 
 1. Copy the required files from `development/`, including the `blueprint/`,
-   `workspaces/`, and `workspaces/origin/` folders plus `story-seed.css`.
+   `workspaces/`, and `workspaces/origin/` folders plus `story-seed.css` and
+   `public/story-seed/library-auth-backdrop.jpg` when transferring the auth
+   gate.
 2. Reuse the supporting Library primitives already owned by
    `src/components/library/`.
 3. Transfer only the shared domain modules needed by the production owner.
 4. Replace `shared/stubs.ts` and `workshopStorySeedStorage.ts` with the real
    app store, auth, repository, and generation integrations.
-5. Keep Workshop navigation, preview controls, fixtures, and scenario
-   adapters behind.
+5. Keep Workshop navigation, preview controls, route-loading boundaries,
+   fixtures, and scenario adapters behind.
 6. After production integration, refresh `reference/`, update
    `source.lastCompared`, and begin the next Workshop cycle from the newly
    synchronized source.
@@ -165,8 +175,33 @@ World, Settings persistence, Help audio, navigation, auth, Story Bank actions,
 Blueprint editing, generation loading/error, and Story Bank loading, empty,
 error, and populated states.
 
+Measured against the merged refactor baseline on the same production build
+harness:
+
+- Initial Story Seed JavaScript fell from 1,320,541 raw / 356,819 gzip bytes
+  to a 577,518 raw / 176,559 gzip byte direct static closure (56.27% raw and
+  50.52% gzip reductions). The old large-chunk warning is gone; the largest
+  emitted chunk is 319.10 kB.
+- Slow-4G plus 4x-CPU DOMContentLoaded averaged 2,489.7 ms before and
+  1,146.3 ms after (53.96% faster).
+- Ten-character Origin input automation averaged 1,757 ms before and 1,314 ms
+  after (25.2% faster); warm direct Origin and Blueprint commits both measured
+  about 0.6 ms median after isolation.
+- Initial Story Bank storage reads fell from one to zero; the first open still
+  performs exactly one load.
+- All seven lazy Workshop routes and the nested locked Story Seed reference
+  render without loading-boundary, console, or page errors.
+
 ## Concise Workshop history
 
+- **2026-08-07:** Completed the dedicated measured optimization pass over the
+  finalized foundation. Deferred Workshop previews and secondary Story Seed
+  experiences, removed eager Story Bank reads and heavyweight remote auth
+  imagery, isolated Origin tags and Blueprint dossier sections from unrelated
+  renders, stabilized navigation callbacks and comparisons, hardened audio and
+  timer cleanup, and reduced coarse-pointer blur/shadow/animation work. The
+  visual, naming, state, persistence, generation, and accessibility contracts
+  remain unchanged.
 - **2026-08-07:** Refactored the finalized feature without changing its UI or
   generation contract. Removed the obsolete separate Story Settings preview,
   six superseded standalone seed workspaces, stale versioned preview records,

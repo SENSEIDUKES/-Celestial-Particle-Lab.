@@ -54,6 +54,9 @@ export function LibraryHeaderBadge({
       <img
         src={emblemSrc}
         alt={emblemAlt}
+        width={48}
+        height={48}
+        decoding="async"
         referrerPolicy="no-referrer"
         className="relative z-10 h-full w-full rounded-full object-cover ring-1 ring-gold-accent/60 shadow-[0_0_14px_rgba(212,175,55,0.45),0_0_34px_rgba(4,172,255,0.18)] transition-shadow duration-300 group-hover/emblem:shadow-[0_0_20px_rgba(212,175,55,0.65),0_0_52px_rgba(124,92,255,0.34)]"
       />
@@ -67,7 +70,7 @@ export function LibraryHeaderBadge({
           href={emblemHref}
           title={emblemLinkLabel ?? `${title} home`}
           aria-label={emblemLinkLabel ?? `${title} home`}
-          className="shrink-0 rounded-full"
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full"
         >
           {emblem}
         </a>

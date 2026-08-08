@@ -28,10 +28,24 @@ export const STORY_AUTH_DISSOLVE_MS = 900;
 
 const BACKDROP_VIDEO_URL =
   'https://pub-e482c2dbbb984c3c87ecdd8ae3a92183.r2.dev/LIBRARY/videos/VIDEO/Library%20Auth%20(Backdrop%20Video).mp4';
-const BACKDROP_IMAGE_URL =
-  'https://pub-e482c2dbbb984c3c87ecdd8ae3a92183.r2.dev/LIBRARY/images/LIBRARY%20BACKDROPS/Library%20Auth%20(Backdrop).png';
-const CELESTIAL_LIBRARY_EMBLEM_URL =
-  'https://pub-e482c2dbbb984c3c87ecdd8ae3a92183.r2.dev/LIBRARY/images/CELESTIAL%20LIBRARY%20ICON.jpg';
+const BACKDROP_IMAGE_URL = '/story-seed/library-auth-backdrop.jpg';
+const CELESTIAL_LIBRARY_EMBLEM_URL = '/favicon.jpg';
+
+interface StorySeedNetworkInformation extends EventTarget {
+  effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
+  saveData?: boolean;
+}
+
+type NavigatorWithConnection = Navigator & {
+  connection?: StorySeedNetworkInformation;
+};
+
+const canLoadCinematicBackdrop = () => {
+  if (typeof navigator === 'undefined') return false;
+  const connection = (navigator as NavigatorWithConnection).connection;
+  return !connection?.saveData
+    && !['slow-2g', '2g', '3g'].includes(connection?.effectiveType ?? '');
+};
 
 type AuthProviderId = 'google' | 'apple' | 'email';
 type EmailMode = 'signin' | 'create';
@@ -105,6 +119,7 @@ export default function StoryAuthGate() {
   const currentUser = useAppStore(state => state.currentUser);
   const prefersReducedMotion = useReducedMotion();
   const [videoReady, setVideoReady] = useState(false);
+  const [videoAllowed, setVideoAllowed] = useState(false);
   const [dissolving, setDissolving] = useState(false);
   const [pendingProvider, setPendingProvider] = useState<AuthProviderId | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -119,6 +134,41 @@ export default function StoryAuthGate() {
   useEffect(() => {
     if (currentUser) setDissolving(true);
   }, [currentUser]);
+
+  // Let the local poster paint first, and keep the 14 MB cinematic backdrop
+  // off reduced-motion, data-saver, and constrained mobile connections. A
+  // connection change tears the video down promptly instead of continuing a
+  // download that is no longer appropriate for the device.
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVideoReady(false);
+      setVideoAllowed(false);
+      return;
+    }
+
+    const connection = typeof navigator === 'undefined'
+      ? undefined
+      : (navigator as NavigatorWithConnection).connection;
+    let deferredStart: number | undefined;
+
+    const updateVideoAllowance = () => {
+      if (deferredStart !== undefined) window.clearTimeout(deferredStart);
+      setVideoReady(false);
+      if (!canLoadCinematicBackdrop()) {
+        setVideoAllowed(false);
+        return;
+      }
+
+      deferredStart = window.setTimeout(() => setVideoAllowed(true), 180);
+    };
+
+    updateVideoAllowance();
+    connection?.addEventListener('change', updateVideoAllowance);
+    return () => {
+      if (deferredStart !== undefined) window.clearTimeout(deferredStart);
+      connection?.removeEventListener('change', updateVideoAllowance);
+    };
+  }, [prefersReducedMotion]);
 
   const runSignIn = async (provider: AuthProviderId, action: () => Promise<unknown>) => {
     setAuthError(null);
@@ -180,19 +230,20 @@ export default function StoryAuthGate() {
         src={BACKDROP_IMAGE_URL}
         alt=""
         aria-hidden="true"
-        referrerPolicy="no-referrer"
+        decoding="async"
+        fetchPriority="high"
         className="absolute inset-0 w-full h-full object-cover object-[62%_40%] select-none pointer-events-none"
       />
 
       {/* Layer 2: motion backdrop, fades in only once it is actually playing */}
-      {!prefersReducedMotion && (
+      {videoAllowed && (
         <video
           src={BACKDROP_VIDEO_URL}
           autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster={BACKDROP_IMAGE_URL}
           tabIndex={-1}
           aria-hidden="true"
@@ -227,7 +278,9 @@ export default function StoryAuthGate() {
             <img
               src={CELESTIAL_LIBRARY_EMBLEM_URL}
               alt="Celestial Library"
-              referrerPolicy="no-referrer"
+              width={56}
+              height={56}
+              decoding="async"
               className="h-14 w-14 rounded-full object-cover ring-1 ring-[#D4AF37]/45 shadow-[0_0_24px_rgba(212,175,55,0.25)]"
             />
 
