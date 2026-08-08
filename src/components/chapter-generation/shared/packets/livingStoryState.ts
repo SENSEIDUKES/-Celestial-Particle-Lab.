@@ -1,0 +1,110 @@
+/**
+ * Living Story State — story-owned data that changes as chapters are written.
+ * Permanent world rules and Story Seed settings intentionally live in the
+ * Story Constitution instead of being duplicated here.
+ */
+import type { MockChapterGenerationScenario } from "../fixtures/mockGenerationData";
+import { deriveSceneAnchors, type SceneAnchors, type SceneType } from "../lib/sceneRhythm";
+import type {
+  ChapterHandoff,
+  ContextBlock,
+  SceneFingerprint,
+} from "../types";
+import type { ArcChapterPosition } from "./types";
+
+export interface LivingStoryCharacterState {
+  currentPowerStage: string;
+  abilities: unknown[];
+}
+
+export interface LivingStoryThreads {
+  unresolved: Array<{ description: string; originChapter: number }>;
+  resolved: string[];
+}
+
+export interface LivingStoryCodex {
+  characters: Record<string, unknown>[];
+  factions: Record<string, unknown>[];
+  locations: Record<string, unknown>[];
+  artifacts: Record<string, unknown>[];
+}
+
+export interface LivingStorySceneState {
+  worldBuildingSeed: string;
+  recentSceneTypes: SceneType[];
+  carriedAnchors?: SceneAnchors;
+}
+
+export interface LivingStoryState {
+  position: ArcChapterPosition;
+  contextBlocks: ContextBlock[];
+  previousHandoff?: ChapterHandoff;
+  recentFingerprints: SceneFingerprint[];
+  characterState: LivingStoryCharacterState;
+  threads: LivingStoryThreads;
+  codex: LivingStoryCodex;
+  scene: LivingStorySceneState;
+}
+
+/** Formats the internal arc-local position used by packet assembly. */
+export function createArcChapterPosition(
+  chapterNumber: number,
+  chaptersInArc: number = 100,
+): ArcChapterPosition {
+  if (!Number.isInteger(chapterNumber) || chapterNumber < 1) {
+    throw new Error("chapterNumber must be a positive integer.");
+  }
+  if (!Number.isInteger(chaptersInArc) || chaptersInArc < 1) {
+    throw new Error("chaptersInArc must be a positive integer.");
+  }
+
+  const arcNumber = Math.floor((chapterNumber - 1) / chaptersInArc) + 1;
+  const chapterInArc = ((chapterNumber - 1) % chaptersInArc) + 1;
+  return {
+    arcNumber,
+    chapterInArc,
+    chaptersInArc,
+    display: `Arc ${arcNumber} — Chapter ${chapterInArc}/${chaptersInArc}`,
+  };
+}
+
+export interface LivingStoryStateOptions {
+  recentSceneTypes?: SceneType[];
+}
+
+/** Projects the evolving half of the current Workshop scenario. */
+export function livingStoryStateFromScenario(
+  scenario: MockChapterGenerationScenario,
+  options: LivingStoryStateOptions = {},
+): LivingStoryState {
+  return {
+    position: createArcChapterPosition(scenario.currentChapter.number),
+    contextBlocks: scenario.contextBlocks,
+    previousHandoff: scenario.previousHandoff,
+    recentFingerprints: scenario.recentFingerprints,
+    characterState: {
+      currentPowerStage: scenario.memory.currentPowerStage,
+      abilities: scenario.memory.abilities,
+    },
+    threads: {
+      unresolved: scenario.memory.unresolvedPlotThreads,
+      resolved: scenario.memory.resolvedPlotThreads,
+    },
+    codex: {
+      characters: scenario.memory.characters,
+      factions: scenario.memory.factions,
+      locations: scenario.memory.locations,
+      artifacts: scenario.memory.artifacts,
+    },
+    scene: {
+      worldBuildingSeed: scenario.worldBuildingSeed,
+      recentSceneTypes: [...(options.recentSceneTypes ?? [])],
+      carriedAnchors: scenario.previousHandoff
+        ? deriveSceneAnchors({
+            handoff: scenario.previousHandoff,
+            worldBuildingSeed: scenario.worldBuildingSeed,
+          })
+        : undefined,
+    },
+  };
+}
