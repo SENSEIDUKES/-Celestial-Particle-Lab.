@@ -24,24 +24,10 @@ import type { ChapterContent, ChapterHandoff, StoryBlock } from "./types";
 import type { GenerationStage } from "./stageTypes";
 import type { ScenarioId } from "./assembleGeneration";
 import { SCENARIOS, RHYTHM_SCENARIOS } from "./fixtures/mockGenerationData";
-import { CHAPTER_PROMPTS } from "./lib/chapterPrompts";
-import {
-  anchorTextFromBlocks,
-  formatMainCharacterState,
-  latestHistoryText,
-  prepareGenerationContext,
-} from "./lib/generationContext";
-import { buildContextManifestFromOutcomes } from "./lib/contextManifest";
-import { estimateTokens, formatAbilityLedgerForPrompt } from "./lib/helpers";
-import { appendChapterWritingStyleInstruction } from "./lib/chapterWritingStyle";
-import { formatGlossaryForPrompt } from "./lib/glossaryFormatter";
-import { buildChapterContract } from "./lib/chapterHandoff";
 import { buildChapterEffectsDirection } from "../development/chapterEffectsDirection";
-import { getFatePressureBlock } from "./lib/fatePressureBlocks";
 import {
   CulturalProseStyleId,
   describeCulturalProseSelection,
-  renderCulturalProseInstruction,
   resolveCulturalProseSelection,
 } from "./lib/culturalProse";
 import {
@@ -50,8 +36,11 @@ import {
   SceneAnchors,
   SceneType,
   ScenePathSelection,
-  selectNextScenePath,
 } from "./lib/sceneRhythm";
+import {
+  assembleChapterGenerationPacket,
+  buildLegacyGenerationMemory,
+} from "./packets";
 
 /** `'story-default'` reads the story's own setting; `'none'` forces the fallback. */
 export type CulturalProseOverride = CulturalProseStyleId | "story-default" | "none";
@@ -83,34 +72,6 @@ interface AssembledGenerationDev {
   finalOutput: ChapterGenerationDevOutput;
 }
 
-const pacingBlock = (pacingDirective: string) => pacingDirective
-  ? `
-
-=========================================
-AI DIRECTOR PACING INSTRUCTION
-=========================================
-${pacingDirective}
-=========================================`
-  : "";
-
-const nextSceneDirectionBlock = (selection: ScenePathSelection | undefined) => selection
-  ? `
-
-=========================================
-NEXT SCENE DIRECTION (selected: ${selection.type.toUpperCase()})
-=========================================
-Anchor: "${selection.anchor}"
-Use this as a concrete forward direction for where this chapter's scene(s) should head. Do not simply recreate the previous chapter's scene type or beat.
-=========================================`
-  : "";
-
-const formatThreadForRouter = (thread: { description: string; originChapter: number }, currentChapterNum: number) => {
-  const age = currentChapterNum - thread.originChapter;
-  return age >= 1
-    ? `${thread.description} (Thread open for ${age} chapter${age > 1 ? "s" : ""} — pay it off or deepen it!)`
-    : thread.description;
-};
-
 export function assembleChapterGenerationDev(
   scenarioId: ScenarioId,
   rhythmScenarioId: string,
@@ -118,43 +79,51 @@ export function assembleChapterGenerationDev(
 ): AssembledGenerationDev {
   const scenario = SCENARIOS[scenarioId];
   const rhythmScenario = RHYTHM_SCENARIOS.find(r => r.id === rhythmScenarioId) ?? RHYTHM_SCENARIOS[0];
-  const { mcName, genre, storyTags, customPremise, styleBible, tropeRules, memory, currentChapter, contextBlocks } = scenario;
-  const currentChapterNum = currentChapter.number;
+  const packet = assembleChapterGenerationPacket(scenario, {
+    recentSceneTypes: rhythmScenario.recentSceneTypes,
+    fatePressureTier: rhythmScenario.fatePressure,
+  });
+  const {
+    storyConstitution,
+    livingStoryState,
+    chapterMission,
+    generationRules,
+  } = packet;
+  const memory = buildLegacyGenerationMemory(packet);
+  const currentChapterNum = chapterMission.number;
 
   // ── Same base context assembly as the reference flow (unchanged pipeline) ──
-  const formattedThreads = memory.unresolvedPlotThreads.map(t => formatThreadForRouter(t, currentChapterNum));
+  const formattedThreads = memory.unresolvedPlotThreads.map(
+    t => generationRules.renderers.threadForRouter(t, currentChapterNum),
+  );
   const baseMemory = {
     powerSystem: memory.powerSystem,
     currentPowerStage: memory.currentPowerStage,
     worldRules: memory.worldRules,
-    abilities: formatAbilityLedgerForPrompt(memory.abilities),
+    abilities: generationRules.renderers.abilityLedger(memory.abilities),
     unresolvedPlotThreads: formattedThreads,
   };
-  const chapterContract = buildChapterContract({
-    chapterNumber: currentChapterNum,
-    premise: currentChapter.premise,
-    previousHandoff: scenario.previousHandoff,
-    recentFingerprints: scenario.recentFingerprints,
-  });
-  const lastSummary = latestHistoryText(contextBlocks);
-  const preparedContext = prepareGenerationContext({
+  const chapterContract = chapterMission.contract;
+  const lastSummary = generationRules.context.latestHistoryText(livingStoryState.contextBlocks);
+  const preparedContext = generationRules.context.prepareGenerationContext({
     engine: "v2",
     memory,
     baseMemory,
-    blocks: contextBlocks,
+    blocks: livingStoryState.contextBlocks,
     legacyPastSummaries: [],
-    fallbackSummary: "This is the very first chapter of the story arc! Set the scene dramatically.",
+    fallbackSummary: chapterMission.fallbackSummary,
     threads: formattedThreads,
     worldRules: baseMemory.worldRules,
     pinned: {
-      premise: [
-        `Chapter ${currentChapterNum}: ${currentChapter.title || ""}`,
-        `Goal: ${currentChapter.premise || ""}`,
-        genre ? `Genre/style: ${genre}` : "",
-        customPremise ? `Core premise: ${customPremise}` : "",
-      ].filter(Boolean).join("\n"),
-      mcStateCard: formatMainCharacterState({
-        mcName,
+      premise: generationRules.renderers.pinnedPremise({
+        chapterNumber: currentChapterNum,
+        title: chapterMission.title,
+        premise: chapterMission.premise,
+        genre: storyConstitution.genre,
+        corePremise: storyConstitution.corePremise,
+      }),
+      mcStateCard: generationRules.renderers.mainCharacterState({
+        mcName: storyConstitution.mainCharacterName,
         powerSystem: baseMemory.powerSystem,
         currentPowerStage: baseMemory.currentPowerStage,
         abilities: memory.abilities,
@@ -164,58 +133,72 @@ export function assembleChapterGenerationDev(
     },
     chapterContract,
     ranking: {
-      mcName,
+      mcName: storyConstitution.mainCharacterName,
       lastSummary,
-      currentContext: currentChapter.premise || "",
-      bonusContexts: [memory.unresolvedPlotThreads.map(t => t.description).join(" "), customPremise],
-      anchorText: anchorTextFromBlocks(contextBlocks),
+      currentContext: chapterMission.premise || "",
+      bonusContexts: [
+        memory.unresolvedPlotThreads.map(t => t.description).join(" "),
+        storyConstitution.corePremise,
+      ],
+      anchorText: generationRules.context.anchorTextFromBlocks(livingStoryState.contextBlocks),
     },
   });
   const budgetedContext = preparedContext.budgetedContext!;
   const { memoryJsonStr } = preparedContext;
 
-  const systemInstruction = CHAPTER_PROMPTS.system;
-  const userPrompt = CHAPTER_PROMPTS.userPrompt(
-    currentChapter.number, currentChapter.title, currentChapter.premise,
-    mcName, genre, customPremise, memoryJsonStr, "", true,
-    styleBible, tropeRules, storyTags, "v2",
+  const systemInstruction = generationRules.prompts.system;
+  const userPrompt = generationRules.prompts.userPrompt(
+    chapterMission.number,
+    chapterMission.title,
+    chapterMission.premise,
+    storyConstitution.mainCharacterName,
+    storyConstitution.genre,
+    storyConstitution.corePremise,
+    memoryJsonStr,
+    "",
+    true,
+    storyConstitution.styleBible,
+    storyConstitution.tropeRules,
+    storyConstitution.storyTags,
+    "v2",
   );
 
   // ── New: Cultural Prose Style resolution ────────────────────────────────
   const resolvedStyleId = proseOverride === "story-default"
-    ? scenario.culturalProseStyleId
+    ? storyConstitution.culturalProseStyleId
     : proseOverride === "none" ? undefined : proseOverride;
   const proseSource = proseOverride === "story-default"
-    ? (scenario.culturalProseStyleId ? "story-setting" as const : "fallback" as const)
+    ? (storyConstitution.culturalProseStyleId ? "story-setting" as const : "fallback" as const)
     : proseOverride === "none" ? "fallback" as const : "workshop-override" as const;
   const proseSelection = resolveCulturalProseSelection(resolvedStyleId, proseSource);
-  const proseBlock = proseSelection.style ? `\n\n${renderCulturalProseInstruction(proseSelection.style)}` : "";
+  const proseBlock = proseSelection.style
+    ? `\n\n${generationRules.renderers.culturalProse(proseSelection.style)}`
+    : "";
 
   // ── New: Scene Ending Anchors carried IN from the previous chapter ──────
-  const availableAnchors = scenario.previousHandoff
-    ? deriveSceneAnchors({ handoff: scenario.previousHandoff, worldBuildingSeed: scenario.worldBuildingSeed })
-    : undefined;
+  const availableAnchors = livingStoryState.scene.carriedAnchors;
 
   // ── New: Scene Rhythm Tracker picks one of the available anchors ───────
-  const selection = availableAnchors
-    ? selectNextScenePath(rhythmScenario.fatePressure, rhythmScenario.recentSceneTypes, availableAnchors)
-    : undefined;
+  const selection = chapterMission.selectedScenePath;
   const sceneTypeUsed: SceneType = selection?.type ?? "worldBuilding";
 
   // ── Assemble the real final prompt, in storyRouter.ts's append order plus
   // the two new blocks (prose style right after chapter-writing-style,
   // next-scene direction last — both additive, neither touches existing text) ──
-  const glossaryRules = formatGlossaryForPrompt(scenario.glossaryEntries);
-  let finalUserPrompt = appendChapterWritingStyleInstruction(userPrompt, scenario.chapterWritingStyle);
+  const glossaryRules = generationRules.renderers.glossary(storyConstitution.glossaryEntries);
+  let finalUserPrompt = generationRules.renderers.writingStyle(
+    userPrompt,
+    storyConstitution.accessibilityStyle,
+  );
   if (glossaryRules) {
     finalUserPrompt = `${glossaryRules}\n\n${finalUserPrompt}`;
   }
   finalUserPrompt += proseBlock;
-  finalUserPrompt += pacingBlock(scenario.pacingDirective);
-  finalUserPrompt += getFatePressureBlock(rhythmScenario.fatePressure);
-  finalUserPrompt += nextSceneDirectionBlock(selection);
+  finalUserPrompt += generationRules.renderers.pacing(chapterMission.pacingDirective);
+  finalUserPrompt += generationRules.renderers.fatePressure(rhythmScenario.fatePressure);
+  finalUserPrompt += generationRules.renderers.nextSceneDirection(selection);
 
-  const contextManifest = buildContextManifestFromOutcomes({
+  const contextManifest = generationRules.context.buildContextManifestFromOutcomes({
     route: "generate-chapter-stream",
     chapterNumber: currentChapterNum,
     systemInstruction,
@@ -239,15 +222,18 @@ export function assembleChapterGenerationDev(
   ]);
   const storyContextContent = [genreRulesContent, allContextSections].filter(Boolean).join("\n\n");
 
-  const styleInstructionAddition = appendChapterWritingStyleInstruction("", scenario.chapterWritingStyle).trim();
+  const styleInstructionAddition = generationRules.renderers.writingStyle(
+    "",
+    storyConstitution.accessibilityStyle,
+  ).trim();
   const chapterEffectsDirectionContent = buildChapterEffectsDirection(systemInstruction, afterBlob);
   const finalInstructionsContent = [
     afterBlob,
     styleInstructionAddition,
     proseBlock.trim(),
-    pacingBlock(scenario.pacingDirective).trim(),
-    getFatePressureBlock(rhythmScenario.fatePressure).trim(),
-    nextSceneDirectionBlock(selection).trim(),
+    generationRules.renderers.pacing(chapterMission.pacingDirective).trim(),
+    generationRules.renderers.fatePressure(rhythmScenario.fatePressure).trim(),
+    generationRules.renderers.nextSceneDirection(selection).trim(),
     chapterEffectsDirectionContent,
   ].filter(Boolean).join("\n\n");
 
@@ -280,7 +266,7 @@ export function assembleChapterGenerationDev(
       storyContextContent,
       "text",
       storyContextContent.trim().length > 0,
-      estimateTokens(storyContextContent),
+      generationRules.output.estimateTokens(storyContextContent),
     ),
     stage(
       "cultural-prose",
@@ -289,16 +275,16 @@ export function assembleChapterGenerationDev(
       describeCulturalProseSelection(proseSelection),
       "text",
       Boolean(proseSelection.style),
-      estimateTokens(proseBlock),
+      generationRules.output.estimateTokens(proseBlock),
     ),
     stage(
       "fate-pressure",
       "Fate Pressure",
       `This story's active Fate Pressure tier (from the selected rhythm scenario: "${rhythmScenario.label}") and the exact directive block it appends.`,
-      getFatePressureBlock(rhythmScenario.fatePressure).trim(),
+      generationRules.renderers.fatePressure(rhythmScenario.fatePressure).trim(),
       "text",
       true,
-      estimateTokens(getFatePressureBlock(rhythmScenario.fatePressure)),
+      generationRules.output.estimateTokens(generationRules.renderers.fatePressure(rhythmScenario.fatePressure)),
     ),
     stage(
       "scene-rhythm",
@@ -311,7 +297,7 @@ export function assembleChapterGenerationDev(
       }, null, 2),
       "json",
       rhythmScenario.recentSceneTypes.length > 0,
-      estimateTokens(JSON.stringify(rhythmScenario.recentSceneTypes)),
+      generationRules.output.estimateTokens(JSON.stringify(rhythmScenario.recentSceneTypes)),
     ),
     stage(
       "available-anchors",
@@ -322,7 +308,7 @@ export function assembleChapterGenerationDev(
         : JSON.stringify({ available: false, reason: "No previous chapter handoff — this is the first chapter of the story, so there are no carried-over anchors yet." }, null, 2),
       "json",
       Boolean(availableAnchors),
-      estimateTokens(JSON.stringify(availableAnchors ?? {})),
+      generationRules.output.estimateTokens(JSON.stringify(availableAnchors ?? {})),
     ),
     stage(
       "selected-path",
@@ -333,7 +319,7 @@ export function assembleChapterGenerationDev(
         : JSON.stringify({ selected: false, reason: "No anchors were available to select from; this chapter opens without a directional carry-over." }, null, 2),
       "json",
       Boolean(selection),
-      estimateTokens(JSON.stringify(selection ?? {})),
+      generationRules.output.estimateTokens(JSON.stringify(selection ?? {})),
     ),
     stage(
       "chapter-effects-direction",
@@ -342,7 +328,7 @@ export function assembleChapterGenerationDev(
       chapterEffectsDirectionContent,
       "text",
       chapterEffectsDirectionContent.trim().length > 0,
-      estimateTokens(chapterEffectsDirectionContent),
+      generationRules.output.estimateTokens(chapterEffectsDirectionContent),
     ),
     stage(
       "final-instructions",
@@ -351,7 +337,7 @@ export function assembleChapterGenerationDev(
       finalInstructionsContent,
       "text",
       true,
-      estimateTokens(finalInstructionsContent),
+      generationRules.output.estimateTokens(finalInstructionsContent),
     ),
     stage(
       "generated-output",
@@ -360,7 +346,7 @@ export function assembleChapterGenerationDev(
       JSON.stringify(finalOutput, null, 2),
       "json",
       true,
-      estimateTokens(JSON.stringify(finalOutput)),
+      generationRules.output.estimateTokens(JSON.stringify(finalOutput)),
     ),
     stage(
       "next-anchors",
@@ -369,7 +355,7 @@ export function assembleChapterGenerationDev(
       JSON.stringify(finalOutput.nextSceneAnchors, null, 2),
       "json",
       true,
-      estimateTokens(JSON.stringify(finalOutput.nextSceneAnchors)),
+      generationRules.output.estimateTokens(JSON.stringify(finalOutput.nextSceneAnchors)),
     ),
   ];
 
