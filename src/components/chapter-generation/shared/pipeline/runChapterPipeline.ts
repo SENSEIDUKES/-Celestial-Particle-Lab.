@@ -11,6 +11,7 @@ import type {
   ChapterPacket,
 } from "./types";
 
+/** Serializes one pipeline result for the unchanged Workshop inspector. */
 const stage = (
   key: ChapterPipelineStageKey,
   name: string,
@@ -30,6 +31,7 @@ const stage = (
   };
 };
 
+/** Returns whether processing found an issue severe enough to permit repair. */
 const hasSeriousFinding = (findings: ChapterProcessingFinding[]) =>
   findings.some(finding => finding.severity === "serious");
 
@@ -62,7 +64,7 @@ export function runChapterPipeline(input: RunChapterPipelineInput): ChapterPipel
   });
   modelCalls.push("manifest");
 
-  const processingResult = model.processResult({
+  const initialProcessingResult = model.processResult({
     chapterPacket,
     chapterPlan,
     manifestedChapter,
@@ -70,12 +72,12 @@ export function runChapterPipeline(input: RunChapterPipelineInput): ChapterPipel
   modelCalls.push("process");
 
   const seriousIssueFound = hasSeriousFinding([
-    ...processingResult.continuityFindings,
-    ...processingResult.repetitionFindings,
+    ...initialProcessingResult.continuityFindings,
+    ...initialProcessingResult.repetitionFindings,
   ]);
   const shouldRepair = Boolean(
     seriousIssueFound
-    && processingResult.repairRecommended
+    && initialProcessingResult.repairRecommended
     && model.repairChapter,
   );
   const repairedChapter = shouldRepair
@@ -83,12 +85,21 @@ export function runChapterPipeline(input: RunChapterPipelineInput): ChapterPipel
         chapterPacket,
         chapterPlan,
         manifestedChapter,
-        processingResult,
+        processingResult: initialProcessingResult,
       })
     : undefined;
   if (repairedChapter) modelCalls.push("repair");
 
   const chapterForOutput: ChapterContent = repairedChapter ?? manifestedChapter;
+  const processingResult = repairedChapter
+    ? model.processResult({
+        chapterPacket,
+        chapterPlan,
+        manifestedChapter: repairedChapter,
+      })
+    : initialProcessingResult;
+  if (repairedChapter) modelCalls.push("process");
+
   const finalOutput: ChapterContent = {
     ...chapterForOutput,
     contextManifest: chapterPacket.contextManifest,
@@ -118,7 +129,7 @@ export function runChapterPipeline(input: RunChapterPipelineInput): ChapterPipel
     stage(
       "process-result",
       "Process Result",
-      "One structured processing call proposes anchors, state and thread changes, mission/continuity findings, and the next handoff without committing story state. Repair remains conditional inside this stage.",
+      "One structured processing call proposes anchors, state and thread changes, mission/continuity findings, and the next handoff without committing story state. Repaired content is processed once more so its proposal stays aligned.",
       {
         ...processingResult,
         repairApplied: Boolean(repairedChapter),

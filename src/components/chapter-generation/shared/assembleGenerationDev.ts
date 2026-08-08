@@ -15,6 +15,9 @@ import type { ChapterContent, ChapterHandoff, StoryBlock } from "./types";
 
 export type { CulturalProseOverride } from "./pipeline";
 
+const WORKSHOP_RESULT_TIMESTAMP_MS = Date.parse("2026-07-31T12:00:00.000Z");
+
+/** Runs the Development fixture and its owned controls through the shared pipeline. */
 export function assembleChapterGenerationDev(
   scenarioId: ScenarioId,
   rhythmScenarioId: string,
@@ -39,20 +42,20 @@ export function assembleChapterGenerationDev(
       planChapter: buildWorkshopChapterPlan,
       manifestChapter: ({ chapterPlan }) => buildMockManifestedChapterDev({
         scenario,
-        sceneTypeUsed: chapterPlan.selectedScenePath?.type ?? "worldBuilding",
+        sceneTypeUsed: chapterPlan.resolvedSceneType,
       }),
       processResult: modelInput => buildWorkshopProcessingResult(
         modelInput,
         buildMockProcessingHandoffDev(
           scenario,
-          modelInput.chapterPlan.selectedScenePath?.type ?? "worldBuilding",
+          modelInput.chapterPlan.resolvedSceneType,
         ),
       ),
-      repairChapter: ({ manifestedChapter }) => manifestedChapter,
     },
   });
 }
 
+/** Produces the deterministic Development writing-call fixture. */
 function buildMockManifestedChapterDev(input: {
   scenario: (typeof SCENARIOS)[ScenarioId];
   sceneTypeUsed: SceneType;
@@ -89,7 +92,7 @@ function buildMockManifestedChapterDev(input: {
         },
       ];
   const generatedContent = blocks.map(block => block.text).join("\n\n");
-  const now = Date.now();
+  const now = WORKSHOP_RESULT_TIMESTAMP_MS;
 
   return {
     storyId: "workshop-mock-story-01",

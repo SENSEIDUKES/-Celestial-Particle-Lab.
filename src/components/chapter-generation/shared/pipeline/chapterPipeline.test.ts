@@ -100,15 +100,14 @@ describe("four-stage Chapter Generation pipeline", () => {
     ).stages.map(stage => stage.key)).toEqual(expectedKeys);
   });
 
-  it("assembles Stage 1 without crossing any model boundary", () => {
-    const calls = makeModel();
+  it("assembles a complete, serializable Stage 1 packet without a model dependency", () => {
     const packet = buildPacket();
+    const clonedPacket = structuredClone(packet);
 
     expect(packet.arcChapterPosition.display).toBe("Arc 1 — Chapter 6/100");
-    expect(calls.planChapter).not.toHaveBeenCalled();
-    expect(calls.manifestChapter).not.toHaveBeenCalled();
-    expect(calls.processResult).not.toHaveBeenCalled();
-    expect(calls.repairChapter).not.toHaveBeenCalled();
+    expect(packet.version).toBe(1);
+    expect(clonedPacket).toEqual(packet);
+    expect(JSON.stringify(packet)).not.toContain("planChapter");
   });
 
   it("uses one planning, writing, and processing call on the normal path", () => {
@@ -168,6 +167,7 @@ describe("four-stage Chapter Generation pipeline", () => {
       pressure: "immortal",
     });
     expect(run.chapterPlan.selectedScenePath?.type).toBe("conflict");
+    expect(run.chapterPlan.resolvedSceneType).toBe("conflict");
     expect(run.chapterPlan.effects.map(effect => effect.kind)).toContain("scene-music");
     expect(run.chapterPlan.rhythmResponse.selectedPressureTier).toBe("Hardcore");
     expect(calls.planChapter).toHaveBeenCalledTimes(1);
@@ -180,12 +180,23 @@ describe("four-stage Chapter Generation pipeline", () => {
       configured: true,
       applies: false,
     });
+    expect(quieterPlan.resolvedSceneType).toBe("worldBuilding");
     expect(quieterPlan.effects.map(effect => effect.kind)).toContain("world-card");
+
+    const unconfiguredPlan = buildWorkshopChapterPlan({
+      chapterPacket: assembleChapterPacket(
+        assembleChapterGenerationPacket(ESTABLISHED_SCENARIO),
+      ),
+      planningSignals: {},
+    });
+    expect(unconfiguredPlan.fateSurvival.configured).toBe(false);
+    expect(unconfiguredPlan.fateSurvival).not.toHaveProperty("visibility");
+    expect(unconfiguredPlan.fateSurvival).not.toHaveProperty("pressure");
   });
 
   it("sources new anchors and proposed state changes from result processing", () => {
     const packet = buildPacket();
-    const originalState = JSON.parse(JSON.stringify(packet.livingStoryState));
+    const originalState = structuredClone(packet.livingStoryState);
     const calls = makeModel();
     const run = runChapterPipeline({ chapterPacket: packet, model: calls.model });
 
@@ -200,7 +211,7 @@ describe("four-stage Chapter Generation pipeline", () => {
 
   it("keeps Living Story State immutable across retries", () => {
     const packet = buildPacket();
-    const originalState = JSON.parse(JSON.stringify(packet.livingStoryState));
+    const originalState = structuredClone(packet.livingStoryState);
 
     runChapterPipeline({ chapterPacket: packet, model: makeModel().model });
     runChapterPipeline({ chapterPacket: packet, model: makeModel().model });
@@ -226,18 +237,22 @@ describe("four-stage Chapter Generation pipeline", () => {
       model: warningCalls.model,
     });
     expect(warningRun.modelCalls).toEqual(["plan", "manifest", "process"]);
+    expect(warningRun.repairApplied).toBe(false);
     expect(warningCalls.repairChapter).not.toHaveBeenCalled();
 
     const seriousCalls = makeModel();
-    seriousCalls.processResult.mockImplementation((input: ProcessChapterInput): ChapterProcessingResult => ({
-      ...buildWorkshopProcessingResult(input, GENERATED_HANDOFF),
-      continuityFindings: [{
-        severity: "serious",
-        code: "canon-break",
-        message: "The chapter contradicts the required opening state.",
-      }],
-      repairRecommended: true,
-    }));
+    seriousCalls.processResult
+      .mockImplementationOnce((input: ProcessChapterInput): ChapterProcessingResult => ({
+        ...buildWorkshopProcessingResult(input, GENERATED_HANDOFF),
+        continuityFindings: [{
+          severity: "serious",
+          code: "canon-break",
+          message: "The chapter contradicts the required opening state.",
+        }],
+        repairRecommended: true,
+      }))
+      .mockImplementationOnce((input: ProcessChapterInput) =>
+        buildWorkshopProcessingResult(input, GENERATED_HANDOFF));
     seriousCalls.repairChapter.mockImplementation(({ manifestedChapter }) => ({
       ...manifestedChapter,
       generatedContent: `${manifestedChapter.generatedContent} [repaired]`,
@@ -247,8 +262,18 @@ describe("four-stage Chapter Generation pipeline", () => {
       model: seriousCalls.model,
     });
 
-    expect(seriousRun.modelCalls).toEqual(["plan", "manifest", "process", "repair"]);
+    expect(seriousRun.modelCalls).toEqual([
+      "plan",
+      "manifest",
+      "process",
+      "repair",
+      "process",
+    ]);
+    expect(seriousRun.repairApplied).toBe(true);
     expect(seriousCalls.repairChapter).toHaveBeenCalledTimes(1);
+    expect(seriousCalls.processResult).toHaveBeenCalledTimes(2);
+    expect(seriousCalls.processResult.mock.calls[1][0].manifestedChapter.generatedContent)
+      .toContain("[repaired]");
     expect(seriousRun.finalOutput.generatedContent).toContain("[repaired]");
   });
 

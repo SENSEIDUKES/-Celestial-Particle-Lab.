@@ -87,11 +87,14 @@ Normal path:
 
 Conditional path:
 
-4. `repairChapter`, only after a serious processing finding
+1. `repairChapter`, only after a serious processing finding
+2. `processResult` again for the repaired chapter, so anchors and proposed state match the repaired text
 
 Stage 1 and all permanent story rules make no model call. The Workshop adapters
-implement these provider-shaped boundaries locally so previewing never consumes
-credits, performs network requests, or writes story data.
+implement these call contracts synchronously and locally so previewing never
+consumes credits, performs network requests, or writes story data. Production
+adapters should preserve the same inputs and outputs behind their asynchronous
+provider boundary rather than importing the synchronous Workshop runner unchanged.
 
 ## What the former steps became
 
@@ -126,8 +129,9 @@ shared/
   pipeline/
     assembleChapterPacket.ts   pure Stage 1 assembly
     chapterEffectRules.ts      permanent seven-category effect rules
+    index.ts                   portable pipeline exports
     runChapterPipeline.ts      shared four-stage orchestration
-    types.ts                   packet, plan, processing, and provider boundaries
+    types.ts                   packet, plan, processing, and Workshop call contracts
     workshopModelCalls.ts      deterministic preview planning/processing adapters
   lib/                         ported context, prompt, handoff, and formatting helpers
 reference/
@@ -173,11 +177,35 @@ ownership of anchors/proposed state, retry immutability, and model-visible posit
 - **2026-07-31:** Created the Reference replica and Development fork from the inspected production flow.
 - **2026-08-08:** Pass 1 introduced Story Constitution, Living Story State, Chapter Mission, and Generation Rules with a complete 65-ID trace and nine explicit unresolved flags.
 - **2026-08-08:** Pass 1 centralized shared packet-backed context assembly across both generation adapters.
-- **2026-08-08:** Pass 2 replaced both ten-step orchestrators with one real four-stage pipeline and three normal provider boundaries plus conditional repair.
+- **2026-08-08:** Pass 2 replaced both ten-step orchestrators with one real four-stage pipeline and three normal call boundaries plus conditional repair/reprocessing.
 
 ## Transfer notes
 
-Transfer the contracts and `shared/pipeline/` provider boundaries into the production
-generation service, then wire actual structured model providers at
-`ChapterGenerationModelCalls`. Keep `workshopModelCalls.ts`, fixtures, inspectors,
-preview controls, and `GenerationStage` serialization in the Workshop.
+Copy or adapt these exact portable files into the source application's generation
+service:
+
+- `src/components/chapter-generation/shared/packets/assemblePacketContext.ts`
+- `src/components/chapter-generation/shared/packets/assembly.ts`
+- `src/components/chapter-generation/shared/packets/chapterMission.ts`
+- `src/components/chapter-generation/shared/packets/generationRules.ts`
+- `src/components/chapter-generation/shared/packets/index.ts`
+- `src/components/chapter-generation/shared/packets/livingStoryState.ts`
+- `src/components/chapter-generation/shared/packets/storyConstitution.ts`
+- `src/components/chapter-generation/shared/packets/types.ts`
+- `src/components/chapter-generation/shared/pipeline/assembleChapterPacket.ts`
+- `src/components/chapter-generation/shared/pipeline/chapterEffectRules.ts`
+- `src/components/chapter-generation/shared/pipeline/index.ts`
+- `src/components/chapter-generation/shared/pipeline/runChapterPipeline.ts`
+- `src/components/chapter-generation/shared/pipeline/types.ts`
+
+Reuse the source application's existing context, prompt, handoff, Story Seed, and
+chapter types for the imported `shared/lib/*` and `shared/types.ts` dependencies.
+Implement the three model calls and optional repair through the production service's
+async provider client while retaining these structured inputs and outputs.
+
+Do not copy
+`src/components/chapter-generation/shared/pipeline/workshopModelCalls.ts`,
+`src/components/chapter-generation/shared/assembleGeneration.ts`,
+`src/components/chapter-generation/shared/assembleGenerationDev.ts`,
+`src/components/chapter-generation/shared/stageTypes.ts`, fixtures, inspectors,
+preview controls, or `GenerationStage` serialization; those are Workshop-only.

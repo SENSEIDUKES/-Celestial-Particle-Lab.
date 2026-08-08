@@ -21,6 +21,7 @@ export interface ChapterMission {
   pacingDirective: string;
 }
 
+/** Builds the current-chapter mission without making planning decisions. */
 export function chapterMissionFromScenario(
   scenario: MockChapterGenerationScenario,
   livingState: LivingStoryState,

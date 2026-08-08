@@ -24,6 +24,7 @@ import {
   formatAbilityLedgerForPrompt,
 } from "../lib/helpers";
 
+/** Adds deterministic thread-age guidance used by context assembly. */
 export const formatThreadForRouter = (
   thread: { description: string; originChapter: number },
   currentChapterNum: number,
@@ -34,6 +35,7 @@ export const formatThreadForRouter = (
     : thread.description;
 };
 
+/** Renders the protected chapter premise block. */
 export const pinnedPremiseBlock = (input: {
   chapterNumber: number;
   title: string;
@@ -75,6 +77,7 @@ export interface GenerationRules {
   };
 }
 
+/** References the canonical prompt, renderer, context, and output rule owners. */
 export function buildGenerationRules(): GenerationRules {
   return {
     prompts: {

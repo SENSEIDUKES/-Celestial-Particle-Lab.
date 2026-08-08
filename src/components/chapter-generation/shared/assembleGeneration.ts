@@ -11,8 +11,11 @@ import {
   type ChapterPipelineRun,
 } from "./pipeline";
 
+const WORKSHOP_RESULT_TIMESTAMP_MS = Date.parse("2026-07-31T12:00:00.000Z");
+
 export type ScenarioId = "opening" | "established";
 
+/** Runs the Reference fixture through the shared four-stage Workshop pipeline. */
 export function assembleChapterGeneration(scenarioId: ScenarioId): ChapterPipelineRun {
   const scenario = SCENARIOS[scenarioId];
   const chapterPacket = assembleChapterPacket(
@@ -28,11 +31,11 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): ChapterPipeli
         modelInput,
         buildMockProcessingHandoff(scenario),
       ),
-      repairChapter: ({ manifestedChapter }) => manifestedChapter,
     },
   });
 }
 
+/** Produces the deterministic Reference writing-call fixture. */
 function buildMockManifestedChapter(
   scenario: MockChapterGenerationScenario,
 ): ChapterContent {
@@ -127,7 +130,7 @@ function buildMockManifestedChapter(
 
   const generatedContent = blocks.map(block => block.text).join("\n\n");
 
-  const now = Date.now();
+  const now = WORKSHOP_RESULT_TIMESTAMP_MS;
 
   return {
     storyId: "workshop-mock-story-01",

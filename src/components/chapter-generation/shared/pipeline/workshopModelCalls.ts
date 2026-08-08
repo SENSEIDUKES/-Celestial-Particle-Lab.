@@ -19,6 +19,7 @@ import type {
   ProcessChapterInput,
 } from "./types";
 
+/** Selects chapter effects from the permanent packet rules for one planned scene type. */
 const planEffects = (sceneType: SceneType): ChapterEffectSelection[] => {
   const shared: ChapterEffectSelection[] = [
     {
@@ -63,6 +64,7 @@ const planEffects = (sceneType: SceneType): ChapterEffectSelection[] => {
   return shared;
 };
 
+/** Deterministically simulates the structured Stage 2 planning call. */
 export function buildWorkshopChapterPlan(input: PlanChapterInput): ChapterPlan {
   const { chapterPacket, planningSignals } = input;
   const pressureTier = planningSignals.fatePressureTier
@@ -92,11 +94,16 @@ export function buildWorkshopChapterPlan(input: PlanChapterInput): ChapterPlan {
         ?? "No carried ending anchors are available, so establish the chapter from its mission and current state.",
     },
     selectedScenePath,
+    resolvedSceneType: sceneType,
     fateSurvival: {
       configured: Boolean(fateSettings),
       applies: fateApplies,
-      visibility: fateSettings?.visibility ?? "none",
-      pressure: fateSettings?.pressure ?? "immortal",
+      ...(fateSettings
+        ? {
+            visibility: fateSettings.visibility,
+            pressure: fateSettings.pressure,
+          }
+        : {}),
       approach: fateApplies && fateSettings
         ? `Apply ${fateSettings.pressure} survival pressure with ${fateSettings.visibility} reader visibility only where this chapter's choices earn it.`
         : fateSettings?.enabled
@@ -133,13 +140,14 @@ export function buildWorkshopChapterPlan(input: PlanChapterInput): ChapterPlan {
   };
 }
 
+/** Deterministically simulates Stage 4 inspection and proposed-state output. */
 export function buildWorkshopProcessingResult(
   input: ProcessChapterInput,
   nextChapterHandoff: ChapterHandoff,
 ): ChapterProcessingResult {
   const { chapterPacket, chapterPlan, manifestedChapter } = input;
   const currentState = chapterPacket.livingStoryState;
-  const sceneType = chapterPlan.selectedScenePath?.type ?? "worldBuilding";
+  const sceneType = chapterPlan.resolvedSceneType;
   const newAnchors = deriveSceneAnchors({
     handoff: nextChapterHandoff,
     worldBuildingSeed: currentState.scene.worldBuildingSeed,

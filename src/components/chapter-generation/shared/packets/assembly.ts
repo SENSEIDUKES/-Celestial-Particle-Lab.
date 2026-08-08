@@ -41,6 +41,7 @@ export interface ChapterGenerationPacketOptions {
   recentSceneTypes?: SceneType[];
 }
 
+/** Projects one scenario into the four Pass 1 information contracts. */
 export function assembleChapterGenerationPacket(
   scenario: MockChapterGenerationScenario,
   options: ChapterGenerationPacketOptions = {},
@@ -126,7 +127,7 @@ export const CHAPTER_GENERATION_PACKAGE_TRACE: readonly ChapterInstructionTrace[
   { id: "chapter-do-not-repeat", packageId: "chapterMission", source: "ChapterContract.doNotRepeat", description: "Canon events this chapter must not re-narrate." },
   { id: "chapter-completion-criteria", packageId: "chapterMission", source: "ChapterContract.completionCriteria", description: "Current chapter completion checks." },
   { id: "pacing-directive", packageId: "chapterMission", source: "scenario.pacingDirective", description: "Temporary AI Director pacing instruction.", rendererPackageId: "generationRules" },
-  { id: "next-scene-direction", packageId: "chapterMission", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Chapter-specific scene path chosen by the planner from current anchors and rhythm." },
+  { id: "next-scene-direction", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Chapter-specific scene path chosen by the planner from current anchors and rhythm." },
   { id: "fallback-opening-summary", packageId: "chapterMission", source: "FIRST_CHAPTER_FALLBACK_SUMMARY", description: "Opening requirement when no previous history exists." },
 
   // Generation Rules — permanent generator-owned instructions.
@@ -151,9 +152,9 @@ export const CHAPTER_GENERATION_PACKAGE_TRACE: readonly ChapterInstructionTrace[
   { id: "glossary-block-renderer", packageId: "generationRules", source: "formatGlossaryForPrompt", description: "Permanent wrapper for glossary guidance data." },
   { id: "writing-style-renderer", packageId: "generationRules", source: "appendChapterWritingStyleInstruction", description: "Permanent wrapper for accessibility prose instructions." },
   { id: "cultural-prose-renderer", packageId: "generationRules", source: "renderCulturalProseInstruction", description: "Permanent Cultural Prose instruction included in the Chapter Packet and writing call." },
-  { id: "fate-pressure-renderer", packageId: "generationRules", source: "Stage 2 ChapterPlan.fateSurvival", description: "Structured chapter-specific Fate Survival decision made by the planner from packet settings." },
-  { id: "pacing-block-renderer", packageId: "generationRules", source: "Stage 2 ChapterPlan.pacing", description: "Structured chapter-specific pacing decision made by the planner." },
-  { id: "next-scene-block-renderer", packageId: "generationRules", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Structured selected path passed directly from planning to manifestation." },
+  { id: "fate-pressure-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.fateSurvival", description: "Structured chapter-specific Fate Survival decision made by the planner from packet settings." },
+  { id: "pacing-block-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.pacing", description: "Structured chapter-specific pacing decision made by the planner." },
+  { id: "next-scene-block-renderer", packageId: "chapterPlan", source: "Stage 2 ChapterPlan.selectedScenePath", description: "Structured selected path passed directly from planning to manifestation." },
   { id: "thread-aging-renderer", packageId: "generationRules", source: "formatThreadForRouter", description: "Permanent age annotation applied to unresolved threads." },
   { id: "context-budgeting-rules", packageId: "generationRules", source: "assembleContext + CONTEXT_BUDGET_DEFAULTS", description: "Permanent context section order, caps, demotion, and omission behavior." },
   { id: "context-manifest-envelope", packageId: "generationRules", source: "buildContextManifestFromOutcomes", description: "Permanent context-manifest summary envelope." },

@@ -12,6 +12,11 @@ export type ChapterGenerationPackageId =
   | "chapterMission"
   | "generationRules";
 
+/** A Pass 1 packet package or the structured Stage 2 planning output. */
+export type ChapterInstructionOwnerId =
+  | ChapterGenerationPackageId
+  | "chapterPlan";
+
 /**
  * Internal arc-local chapter position. The current Workshop stories use a
  * 100-chapter arc unless a future story contract supplies a different size.
@@ -27,7 +32,7 @@ export interface ArcChapterPosition {
 /** Traceability for one existing generation input or instruction. */
 export interface ChapterInstructionTrace {
   id: string;
-  packageId: ChapterGenerationPackageId;
+  packageId: ChapterInstructionOwnerId;
   source: string;
   description: string;
   /**

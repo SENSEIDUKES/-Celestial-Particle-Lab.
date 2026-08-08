@@ -18,6 +18,7 @@ export interface AssembledPacketContext {
   baseUserPrompt: string;
 }
 
+/** Rebuilds the identical ported context and prompt foundation for either flow. */
 export function assemblePacketContext(
   packet: ChapterGenerationPacket,
 ): AssembledPacketContext {

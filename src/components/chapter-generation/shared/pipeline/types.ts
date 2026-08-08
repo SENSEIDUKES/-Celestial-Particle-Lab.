@@ -69,8 +69,10 @@ export interface ChapterPlanningSignals {
 export interface ChapterFateDecision {
   configured: boolean;
   applies: boolean;
-  visibility: "full" | "partial" | "none";
-  pressure: "heaven" | "immortal" | "mortal";
+  /** Present only when Fate Survival is configured for the story. */
+  visibility?: "full" | "partial" | "none";
+  /** Present only when Fate Survival is configured for the story. */
+  pressure?: "heaven" | "immortal" | "mortal";
   approach: string;
 }
 
@@ -99,6 +101,8 @@ export interface ChapterPlan {
     direction: string;
   };
   selectedScenePath?: ScenePathSelection;
+  /** The selected path type, or the planner's explicit fallback when none exists. */
+  resolvedSceneType: SceneType;
   fateSurvival: ChapterFateDecision;
   effects: ChapterEffectSelection[];
   sceneProgression: Array<{
@@ -162,7 +166,11 @@ export interface RepairChapterInput extends ProcessChapterInput {
   processingResult: ChapterProcessingResult;
 }
 
-/** Provider boundary: three normal calls and one optional repair call. */
+/**
+ * Synchronous Workshop inspection boundary: three normal deterministic calls,
+ * plus optional repair and reprocessing. Production services should preserve
+ * these contracts behind their own asynchronous provider adapter.
+ */
 export interface ChapterGenerationModelCalls {
   planChapter(input: PlanChapterInput): ChapterPlan;
   manifestChapter(input: ManifestChapterInput): ChapterContent;

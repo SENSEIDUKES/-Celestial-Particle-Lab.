@@ -8,6 +8,7 @@ interface InstructionBoundary {
   end?: string;
 }
 
+/** Extracts one existing prompt instruction without rewriting its content. */
 function extractInstructionBlock(source: string, boundary: InstructionBoundary): string {
   const startIndex = source.indexOf(boundary.start);
   if (startIndex < 0) return "";
@@ -20,10 +21,12 @@ function extractInstructionBlock(source: string, boundary: InstructionBoundary):
   return source.slice(startIndex, endIndex).trim();
 }
 
+/** Labels a non-empty extracted effect-rule section. */
 function section(name: string, instruction: string): string {
   return instruction ? `${name}\n${instruction}` : "";
 }
 
+/** Collects all seven permanent effect categories carried by the Chapter Packet. */
 export function buildChapterEffectRules(
   systemInstruction: string,
   baseUserPrompt: string,

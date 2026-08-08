@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ESTABLISHED_SCENARIO } from "../fixtures/mockGenerationData";
 import { buildChapterContract } from "../lib/chapterHandoff";
-import type { ChapterGenerationPackageId } from "./types";
+import type { ChapterInstructionOwnerId } from "./types";
 import {
   assembleChapterGenerationPacket,
   buildLegacyGenerationMemory,
@@ -112,20 +112,21 @@ describe("Chapter Generation packet assembly", () => {
     expect(buildLegacyGenerationMemory(packet)).toEqual(ESTABLISHED_SCENARIO.memory);
   });
 
-  it("traces every tracked instruction exactly once into a valid package", () => {
+  it("traces every tracked instruction exactly once into a valid owner", () => {
     const packet = assembleChapterGenerationPacket(ESTABLISHED_SCENARIO);
-    const validPackages: ChapterGenerationPackageId[] = [
+    const validOwners: ChapterInstructionOwnerId[] = [
       "storyConstitution",
       "livingStoryState",
       "chapterMission",
       "generationRules",
+      "chapterPlan",
     ];
     const ids = packet.trace.map(entry => entry.id);
 
     expect(packet.trace).toHaveLength(65);
     expect(new Set(ids).size).toBe(ids.length);
     packet.trace.forEach(entry => {
-      expect(validPackages).toContain(entry.packageId);
+      expect(validOwners).toContain(entry.packageId);
       if (entry.rendererPackageId) expect(entry.rendererPackageId).toBe("generationRules");
     });
 
