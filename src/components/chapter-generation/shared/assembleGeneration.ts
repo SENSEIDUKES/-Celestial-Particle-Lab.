@@ -19,7 +19,7 @@ import type { MockChapterGenerationScenario } from "./fixtures/mockGenerationDat
 import { SCENARIOS } from "./fixtures/mockGenerationData";
 import {
   assembleChapterGenerationPacket,
-  buildLegacyGenerationMemory,
+  assemblePacketContext,
 } from "./packets";
 
 export type ScenarioId = "opening" | "established";
@@ -34,97 +34,19 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
   const packet = assembleChapterGenerationPacket(scenario);
   const {
     storyConstitution,
-    livingStoryState,
     chapterMission,
     generationRules,
   } = packet;
-  const memory = buildLegacyGenerationMemory(packet);
   const currentChapterNum = chapterMission.number;
-
-  // 1. Mirror storyRouter.ts's thread-aging pass.
-  const formattedThreads = memory.unresolvedPlotThreads.map(
-    t => generationRules.renderers.threadForRouter(t, currentChapterNum),
-  );
-
-  // 2. Mirror storyRouter.ts's baseMemory construction.
-  const baseMemory = {
-    powerSystem: memory.powerSystem,
-    currentPowerStage: memory.currentPowerStage,
-    worldRules: memory.worldRules,
-    abilities: generationRules.renderers.abilityLedger(memory.abilities),
-    unresolvedPlotThreads: formattedThreads,
-  };
-
-  // 3. Chapter Contract (Context Engine 2.5) — deterministic, client-built in
-  // production before the request is even sent; packet assembly builds it the
-  // same way and exposes it as this chapter's mission.
-  const chapterContract = chapterMission.contract;
-
-  const lastSummary = generationRules.context.latestHistoryText(livingStoryState.contextBlocks);
-
-  // 4. Real context assembly + token budgeting (prepareGenerationContext ->
-  // assembleContext), exactly as storyRouter.ts calls it.
-  const preparedContext = generationRules.context.prepareGenerationContext({
-    engine: "v2",
-    memory,
-    baseMemory,
-    blocks: livingStoryState.contextBlocks,
-    legacyPastSummaries: [],
-    fallbackSummary: chapterMission.fallbackSummary,
-    threads: formattedThreads,
-    worldRules: baseMemory.worldRules,
-    pinned: {
-      premise: generationRules.renderers.pinnedPremise({
-        chapterNumber: currentChapterNum,
-        title: chapterMission.title,
-        premise: chapterMission.premise,
-        genre: storyConstitution.genre,
-        corePremise: storyConstitution.corePremise,
-      }),
-      mcStateCard: generationRules.renderers.mainCharacterState({
-        mcName: storyConstitution.mainCharacterName,
-        powerSystem: baseMemory.powerSystem,
-        currentPowerStage: baseMemory.currentPowerStage,
-        abilities: memory.abilities,
-        destinedEnding: memory.destinedEnding,
-        resolvedPlotThreads: memory.resolvedPlotThreads,
-      }),
-    },
+  const {
     chapterContract,
-    ranking: {
-      mcName: storyConstitution.mainCharacterName,
-      lastSummary,
-      currentContext: chapterMission.premise || "",
-      bonusContexts: [
-        memory.unresolvedPlotThreads.map(t => t.description).join(" "),
-        storyConstitution.corePremise,
-      ],
-      anchorText: generationRules.context.anchorTextFromBlocks(livingStoryState.contextBlocks),
-    },
-  });
-
-  const budgetedContext = preparedContext.budgetedContext!;
-  const { memoryJsonStr } = preparedContext;
-
-  // 5. System instruction (fixed) + user prompt (real PROMPTS.chapter.userPrompt).
-  const systemInstruction = generationRules.prompts.system;
-  const userPrompt = generationRules.prompts.userPrompt(
-    chapterMission.number,
-    chapterMission.title,
-    chapterMission.premise,
-    storyConstitution.mainCharacterName,
-    storyConstitution.genre,
-    storyConstitution.corePremise,
+    budgetedContext,
     memoryJsonStr,
-    "",
-    true,
-    storyConstitution.styleBible,
-    storyConstitution.tropeRules,
-    storyConstitution.storyTags,
-    "v2",
-  );
+    systemInstruction,
+    baseUserPrompt: userPrompt,
+  } = assemblePacketContext(packet);
 
-  // 6. Glossary rules + chapter writing style + pacing + fate pressure, in the
+  // Glossary rules + chapter writing style + pacing + fate pressure, in the
   // exact append order storyRouter.ts uses.
   const glossaryRules = generationRules.renderers.glossary(storyConstitution.glossaryEntries);
   let finalUserPrompt = generationRules.renderers.writingStyle(
@@ -137,7 +59,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
   finalUserPrompt += generationRules.renderers.pacing(chapterMission.pacingDirective);
   finalUserPrompt += generationRules.renderers.fatePressure("Balanced");
 
-  // 7. Context manifest — the same real budgeting-outcome summary streamed to
+  // Context manifest — the same real budgeting-outcome summary streamed to
   // the client as the first SSE event in production.
   const contextManifest = generationRules.context.buildContextManifestFromOutcomes({
     route: "generate-chapter-stream",

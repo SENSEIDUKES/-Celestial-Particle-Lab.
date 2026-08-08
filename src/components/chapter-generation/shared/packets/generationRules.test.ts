@@ -27,7 +27,7 @@ describe("Generation Rules packet", () => {
     expect(rules.context.budgetDefaults.totalBudgetTokens).toBe(24_000);
   });
 
-  it("keeps the shared pacing wrapper byte-identical", () => {
+  it("keeps the shared pacing wrapper output unchanged", () => {
     expect(pacingBlock("Keep it tense.")).toBe(`
 
 =========================================

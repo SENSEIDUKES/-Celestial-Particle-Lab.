@@ -43,6 +43,7 @@ shared/
     chapterMission.ts            current-chapter objective/opening/restrictions/direction
     generationRules.ts           permanent prompt, formatting, budgeting, and renderer rules
     assembly.ts                  packet assembly, instruction trace, and explicit flags
+    assemblePacketContext.ts     shared Reference/Development packet context foundation
   lib/                          — verbatim-or-near-verbatim ports of the PURE
                                  (no network/DB) Light-Novels generation-flow modules:
     helpers.ts                  estimateTokens, rankRelevantEntityCandidates,
@@ -71,7 +72,7 @@ shared/
                                  `RHYTHM_SCENARIOS` — 6 fixed Fate-Pressure/rhythm presets
     generationBehaviorBaseline.json — normalized pre-refactor stage/final-output hashes
                                  used by the packet tests to prove generation behavior stayed
-                                 byte-identical
+                                 aligned with the normalized behavior baseline
   assembleGeneration.ts         REFERENCE orchestrator — orchestrates the above in
                                  storyRouter.ts's exact order, returns GenerationStage[] + a
                                  mock ChapterContent. Untouched by the Cultural Prose / Scene
@@ -136,8 +137,11 @@ slice or concatenation of the real assembled sections/prompt.
 
 `shared/packets/` is the first internal reorganization pass. It does not add
 a model call, rewrite a prompt, change a Workshop control, or regroup the
-visible stages. Both orchestrators now assemble a packet first, then feed the
-same ported pipeline from that packet:
+visible stages. Both orchestrators now assemble a packet first, then use
+`assemblePacketContext()` for their identical legacy-memory rebuild, thread
+formatting, chapter contract, context preparation, fixed system instruction,
+and base user prompt. Flow-specific prompt additions stay in their existing
+orchestrators:
 
 - **Story Constitution** (`storyConstitution.ts`) — permanent per-story data:
   finalized Story Seed / Blueprint provenance, core premise, genre, story
@@ -168,7 +172,7 @@ Story Seed Fate Survival pressure → generation tier bridge, missing Story
 Style → Cultural Prose bridge, missing Seed → world-rules/glossary bridges,
 the unexercised legacy Context Engine v1 prompt branch, Workshop-only
 inspection modules, and system-owned story administrative metadata. Genuine
-duplication removed in this pass is limited to the byte-identical Balanced
+duplication removed in the initial pass was limited to the exact Balanced
 Fate Pressure block and the duplicated pinned-premise,
 pacing/thread/next-scene helper wrappers; prompt strings still live in their
 existing ported modules.
@@ -452,7 +456,9 @@ ordinary inspector-layout refinements, same as any other Workshop replica.
   internal Story Constitution, Living Story State, Chapter Mission, and
   Generation Rules contracts; connected Story Constitution to the finalized
   Story Seed + Blueprint contract; added arc-local chapter positions and a
-  complete instruction trace with explicit unresolved flags. Removed only
-  genuine helper duplication. Reference/Development prompt text, append order,
-  stage keys, stage order, and mock outputs are guarded by normalized
-  byte-preservation hashes and remain unchanged.
+  complete instruction trace with explicit unresolved flags. Centralized the
+  shared packet-backed context foundation while keeping Development-only prose,
+  rhythm, anchor selection, and next-scene behavior in its orchestrator.
+  Reference/Development prompt text, append order, stage keys, stage order,
+  and mock outputs are guarded by normalized behavior hashes and remain
+  unchanged.

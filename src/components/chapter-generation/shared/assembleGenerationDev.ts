@@ -39,7 +39,7 @@ import {
 } from "./lib/sceneRhythm";
 import {
   assembleChapterGenerationPacket,
-  buildLegacyGenerationMemory,
+  assemblePacketContext,
 } from "./packets";
 
 /** `'story-default'` reads the story's own setting; `'none'` forces the fallback. */
@@ -89,79 +89,14 @@ export function assembleChapterGenerationDev(
     chapterMission,
     generationRules,
   } = packet;
-  const memory = buildLegacyGenerationMemory(packet);
   const currentChapterNum = chapterMission.number;
-
-  // ── Same base context assembly as the reference flow (unchanged pipeline) ──
-  const formattedThreads = memory.unresolvedPlotThreads.map(
-    t => generationRules.renderers.threadForRouter(t, currentChapterNum),
-  );
-  const baseMemory = {
-    powerSystem: memory.powerSystem,
-    currentPowerStage: memory.currentPowerStage,
-    worldRules: memory.worldRules,
-    abilities: generationRules.renderers.abilityLedger(memory.abilities),
-    unresolvedPlotThreads: formattedThreads,
-  };
-  const chapterContract = chapterMission.contract;
-  const lastSummary = generationRules.context.latestHistoryText(livingStoryState.contextBlocks);
-  const preparedContext = generationRules.context.prepareGenerationContext({
-    engine: "v2",
-    memory,
-    baseMemory,
-    blocks: livingStoryState.contextBlocks,
-    legacyPastSummaries: [],
-    fallbackSummary: chapterMission.fallbackSummary,
-    threads: formattedThreads,
-    worldRules: baseMemory.worldRules,
-    pinned: {
-      premise: generationRules.renderers.pinnedPremise({
-        chapterNumber: currentChapterNum,
-        title: chapterMission.title,
-        premise: chapterMission.premise,
-        genre: storyConstitution.genre,
-        corePremise: storyConstitution.corePremise,
-      }),
-      mcStateCard: generationRules.renderers.mainCharacterState({
-        mcName: storyConstitution.mainCharacterName,
-        powerSystem: baseMemory.powerSystem,
-        currentPowerStage: baseMemory.currentPowerStage,
-        abilities: memory.abilities,
-        destinedEnding: memory.destinedEnding,
-        resolvedPlotThreads: memory.resolvedPlotThreads,
-      }),
-    },
+  const {
     chapterContract,
-    ranking: {
-      mcName: storyConstitution.mainCharacterName,
-      lastSummary,
-      currentContext: chapterMission.premise || "",
-      bonusContexts: [
-        memory.unresolvedPlotThreads.map(t => t.description).join(" "),
-        storyConstitution.corePremise,
-      ],
-      anchorText: generationRules.context.anchorTextFromBlocks(livingStoryState.contextBlocks),
-    },
-  });
-  const budgetedContext = preparedContext.budgetedContext!;
-  const { memoryJsonStr } = preparedContext;
-
-  const systemInstruction = generationRules.prompts.system;
-  const userPrompt = generationRules.prompts.userPrompt(
-    chapterMission.number,
-    chapterMission.title,
-    chapterMission.premise,
-    storyConstitution.mainCharacterName,
-    storyConstitution.genre,
-    storyConstitution.corePremise,
+    budgetedContext,
     memoryJsonStr,
-    "",
-    true,
-    storyConstitution.styleBible,
-    storyConstitution.tropeRules,
-    storyConstitution.storyTags,
-    "v2",
-  );
+    systemInstruction,
+    baseUserPrompt: userPrompt,
+  } = assemblePacketContext(packet);
 
   // ── New: Cultural Prose Style resolution ────────────────────────────────
   const resolvedStyleId = proseOverride === "story-default"

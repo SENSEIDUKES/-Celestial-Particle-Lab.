@@ -28,6 +28,86 @@ const baseline = baselineJson as {
   development: Record<string, BaselineCapture>;
 };
 
+const EXPECTED_TRACE_IDS = [
+  "story-identity",
+  "style-bible",
+  "trope-rules",
+  "story-style",
+  "cultural-prose-setting",
+  "accessibility-style-setting",
+  "fate-survival-settings",
+  "permanent-world-rules",
+  "power-system-definition",
+  "destined-ending",
+  "glossary-guidance-data",
+  "arc-chapter-position",
+  "current-power-stage",
+  "ability-ledger",
+  "active-threads-data",
+  "resolved-threads",
+  "codex-characters",
+  "codex-factions",
+  "codex-locations",
+  "codex-artifacts",
+  "previous-ending-anchor",
+  "recent-chapter-blocks",
+  "rag-memories",
+  "arc-summaries",
+  "previous-handoff",
+  "recent-fingerprints",
+  "carried-scene-anchors",
+  "recent-scene-rhythm",
+  "chapter-number-title-premise",
+  "chapter-contract-objective",
+  "chapter-required-opening",
+  "chapter-starting-state",
+  "chapter-do-not-repeat",
+  "chapter-completion-criteria",
+  "pacing-directive",
+  "next-scene-direction",
+  "fallback-opening-summary",
+  "fixed-system-prompt",
+  "user-prompt-template",
+  "pinned-premise-template",
+  "main-character-state-renderer",
+  "history-anchor-selection",
+  "style-directive-template",
+  "author-context-authority",
+  "immediate-continuation-rule",
+  "chapter-length-expansion-directives",
+  "ndjson-output-structure",
+  "story-block-metadata-format",
+  "system-event-format",
+  "world-card-format",
+  "music-atmosphere-cue-format",
+  "beast-event-format",
+  "content-safety-protocols",
+  "anti-drift-continuity",
+  "narrative-surface-hygiene",
+  "glossary-block-renderer",
+  "writing-style-renderer",
+  "cultural-prose-renderer",
+  "fate-pressure-renderer",
+  "pacing-block-renderer",
+  "next-scene-block-renderer",
+  "thread-aging-renderer",
+  "context-budgeting-rules",
+  "context-manifest-envelope",
+  "response-cleanup-rules",
+] as const;
+
+const EXPECTED_FLAG_IDS = [
+  "fixture-fate-pressure-field",
+  "chapter-writing-style-ownership",
+  "fate-pressure-vocabulary-bridge",
+  "story-style-cultural-prose-bridge",
+  "workshop-inspection-only-modules",
+  "story-administrative-metadata",
+  "legacy-context-engine-v1-prompt-branch",
+  "seed-world-rules-bridge",
+  "seed-glossary-bridge",
+] as const;
+
 const normalizeText = (value: string) => value
   .replace(/"generatedAt":\s*"[^"]+"/g, '"generatedAt": "<generatedAt>"')
   .replace(/"syncRevision":\s*"[^"]+"/g, '"syncRevision": "<syncRevision>"')
@@ -114,28 +194,17 @@ describe("Chapter Generation packet assembly", () => {
       if (entry.rendererPackageId) expect(entry.rendererPackageId).toBe("generationRules");
     });
 
-    expect(ids).toEqual(expect.arrayContaining([
-      "story-identity",
-      "fate-survival-settings",
-      "arc-chapter-position",
-      "previous-ending-anchor",
-      "codex-characters",
-      "chapter-contract-objective",
-      "pacing-directive",
-      "fixed-system-prompt",
-      "pinned-premise-template",
-      "main-character-state-renderer",
-      "history-anchor-selection",
-      "ndjson-output-structure",
-      "context-budgeting-rules",
-    ]));
+    expect([...ids].sort()).toEqual([...EXPECTED_TRACE_IDS].sort());
   });
 
   it("retains unresolved or foreign items as explicit flags", () => {
     const packet = assembleChapterGenerationPacket(ESTABLISHED_SCENARIO);
+    const flagIds = packet.flags.map(flag => flag.id);
     const flags = Object.fromEntries(packet.flags.map(flag => [flag.id, flag]));
 
     expect(packet.flags).toHaveLength(9);
+    expect(new Set(flagIds).size).toBe(flagIds.length);
+    expect([...flagIds].sort()).toEqual([...EXPECTED_FLAG_IDS].sort());
     expect(flags["fixture-fate-pressure-field"]?.severity).toBe("dead-field");
     expect(flags["chapter-writing-style-ownership"]?.severity).toBe("needs-owner-decision");
     expect(flags["fate-pressure-vocabulary-bridge"]?.severity).toBe("needs-owner-decision");
@@ -148,7 +217,7 @@ describe("Chapter Generation packet assembly", () => {
 });
 
 describe("Chapter Generation behavior preservation", () => {
-  it("keeps every Reference scenario byte-identical to the pre-refactor baseline", () => {
+  it("matches every Reference scenario to its pre-refactor normalized behavior hashes", () => {
     (Object.entries(baseline.reference) as [ScenarioId, BaselineCapture][]).forEach(
       ([scenarioId, expected]) => {
         expect(captureAssembly(assembleChapterGeneration(scenarioId))).toEqual(expected);
@@ -156,7 +225,7 @@ describe("Chapter Generation behavior preservation", () => {
     );
   });
 
-  it("keeps every Development scenario/rhythm/prose combination byte-identical", () => {
+  it("matches every Development scenario/rhythm/prose combination to its normalized behavior hashes", () => {
     const scenarioIds: ScenarioId[] = ["opening", "established"];
     const proseOverrides: CulturalProseOverride[] = [
       "story-default",
