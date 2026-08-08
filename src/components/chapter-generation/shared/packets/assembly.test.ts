@@ -8,6 +8,7 @@ import baselineJson from "../fixtures/generationBehaviorBaseline.json";
 import {
   ESTABLISHED_SCENARIO,
   RHYTHM_SCENARIOS,
+  SCENARIOS,
 } from "../fixtures/mockGenerationData";
 import { buildChapterContract } from "../lib/chapterHandoff";
 import type { ChapterGenerationPackageId } from "./types";
@@ -218,15 +219,18 @@ describe("Chapter Generation packet assembly", () => {
 
 describe("Chapter Generation behavior preservation", () => {
   it("matches every Reference scenario to its pre-refactor normalized behavior hashes", () => {
-    (Object.entries(baseline.reference) as [ScenarioId, BaselineCapture][]).forEach(
-      ([scenarioId, expected]) => {
-        expect(captureAssembly(assembleChapterGeneration(scenarioId))).toEqual(expected);
-      },
+    expect(Object.keys(baseline.reference).sort()).toEqual(
+      Object.keys(SCENARIOS).sort(),
     );
+
+    (Object.keys(SCENARIOS) as ScenarioId[]).forEach(scenarioId => {
+      expect(captureAssembly(assembleChapterGeneration(scenarioId)))
+        .toEqual(baseline.reference[scenarioId]);
+    });
   });
 
   it("matches every Development scenario/rhythm/prose combination to its normalized behavior hashes", () => {
-    const scenarioIds: ScenarioId[] = ["opening", "established"];
+    const scenarioIds = Object.keys(SCENARIOS) as ScenarioId[];
     const proseOverrides: CulturalProseOverride[] = [
       "story-default",
       "none",
