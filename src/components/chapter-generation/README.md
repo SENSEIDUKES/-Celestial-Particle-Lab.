@@ -1,464 +1,183 @@
 # Chapter Generation
 
-- **Source repository:** SENSEIDUKES/Light-Novels
-- **Source location:** `src/server/routes/storyRouter.ts` (`POST /api/generate-chapter-stream`, verified on `main`), plus `src/server/generationContext.ts`, `src/server/contextBudgeter.ts`, `src/server/contextManifest.ts`, `src/server/entityCards.ts`, `src/server/helpers.ts`, `src/server/prompts.ts` (`PROMPTS.chapter`), `src/lib/codexContext.ts`, `src/lib/contextBlocks.ts`, `src/lib/chapterHandoff.ts`, `src/lib/chapterWritingStyle.ts`, `src/lib/glossary/formatter.ts`, `src/hooks/useChapterGeneration.ts`
+- **Source repository:** `SENSEIDUKES/Light-Novels`
+- **Source location:** `src/server/routes/storyRouter.ts` and its chapter-context, prompt, handoff, formatting, and glossary dependencies
 - **Workshop preview:** `?preview=chapter-generation-flow`
 - **Replica created:** 2026-07-31
 - **Last Workshop update:** 2026-08-08
 - **Last source comparison:** 2026-07-31
-- **Replica status:** under refinement — Reference is a faithful replica of production; Development additionally prototypes two not-yet-in-production systems and a prompt-inspection stage (see below)
+- **Replica status:** Pass 2 four-stage pipeline implemented; provider calls remain deterministic Workshop adapters
 
-## What this is
+## Purpose
 
-Unlike every other Workshop entry, Chapter Generation isn't a visual page or
-component — it's a backend pipeline (context assembly, token budgeting,
-prompt construction, LLM call, structured output). This replica exposes that
-*flow* rather than a screen: it runs the real (ported) assembly and budgeting
-logic from Light-Novels against safe local mock story data, and lets you step
-through exactly what generation receives, in what order, and what shape it
-returns.
+This Workshop entry exposes the Chapter Generation 1.0 backend flow against safe
+local fixtures. It uses the ported context assembly, budgeting, prompt, contract,
+and formatting logic while replacing live provider and persistence boundaries with
+deterministic adapters. The inspector UI is intentionally unchanged.
 
-**Reference and Development now genuinely diverge**, unlike most Workshop
-replicas where Development starts as an inert copy of Reference. Reference's
-`ChapterGenerationInspector.tsx` is still a byte-for-byte copy of
-Development's (the *component* is generic — it just renders whatever
-`GenerationStage[]` + `ChapterContent` it's given), but the Workspace now
-feeds each pane a **different orchestrator**: Reference always runs
-`assembleGeneration.ts` (today's real 10-stage production flow, completely
-unchanged from the first pass). Development runs the new
-`assembleGenerationDev.ts`, which layers Cultural Prose Styles and Scene
-Ending Anchors on top and exposes the 10-step flow described below.
+Reference and Development now run the same shared pipeline foundation. Development
+still owns its Cultural Prose override and rhythm/Fate-pressure preview controls,
+but those controls feed packet assembly or planning rather than creating additional
+generation steps.
 
-## Folder layout
+## Four actual stages
 
-```
+### 1. Assemble Chapter Packet
+
+`assembleChapterPacket()` is pure code assembly and makes no model call. It builds
+one model-visible packet containing:
+
+- Story Constitution, excluding the unresolved legacy Fate-pressure vocabulary bridge
+- Living Story State
+- Chapter Mission and contract
+- Generation Rules and consolidated permanent writing/formatting instructions
+- existing anchors and budgeted relevant context
+- Cultural Prose, accessibility, glossary, world, narration, and effect rules
+- the explicit arc/chapter position, for example `Arc 1 — Chapter 6/100`
+
+Permanent Story Seed choices and story rules belong here automatically. They are
+not independent generation stages or calls.
+
+### 2. Plan Chapter
+
+One structured planning call receives the complete Chapter Packet and decides all
+chapter-specific direction together:
+
+- response to recent scene rhythm
+- interpretation and selection of an existing ending anchor
+- Fate Survival application for this chapter
+- appropriate chapter effects
+- scene progression and pacing
+- intended ending and next-chapter handoff target
+
+The result is one `ChapterPlan`. The canonical Fate Survival configuration stays
+in the packet; Development's preview pressure tier is an explicit planning signal.
+No unapproved Story Seed pressure mapping is inferred.
+
+### 3. Manifest Chapter
+
+One writing call receives the complete Chapter Packet, the `ChapterPlan`, and the
+consolidated permanent writing and formatting instructions. It returns only the
+manifested `ChapterContent`. It does not generate anchors, mutate story state, or
+advance the chapter counter.
+
+### 4. Process Result
+
+One structured processing call inspects the manifested chapter and returns:
+
+- new anchors
+- character and world-state changes
+- completed, changed, and unresolved threads
+- mission completion evidence
+- continuity and repetition findings
+- the next-chapter handoff
+- a proposed next `LivingStoryState`
+
+The proposed state is a cloned candidate for later approval. The input state and
+chapter position remain unchanged across normal runs and retries. A separate repair
+call is allowed only when processing reports a serious finding and recommends repair.
+
+## Model-call boundaries
+
+Normal path:
+
+1. `planChapter`
+2. `manifestChapter`
+3. `processResult`
+
+Conditional path:
+
+4. `repairChapter`, only after a serious processing finding
+
+Stage 1 and all permanent story rules make no model call. The Workshop adapters
+implement these provider-shaped boundaries locally so previewing never consumes
+credits, performs network requests, or writes story data.
+
+## What the former steps became
+
+| Former responsibility | Four-stage owner |
+| --- | --- |
+| Premise | Stage 1 relevant context and Chapter Mission |
+| Story Seed and World Blueprint | Stage 1 Story Constitution |
+| Genre rules | Stage 1 permanent Generation Rules; consumed directly by Stage 3 |
+| Current arc | Stage 1 Living Story State and model-visible arc/chapter position |
+| Recent chapter/history | Stage 1 budgeted relevant context |
+| Character and Codex state | Stage 1 Living Story State |
+| Chapter instructions | Permanent rules in Stage 1; chapter-specific pacing, Fate, effects, and direction in Stage 2 |
+| System prompt | Stage 1 consolidated permanent instructions; consumed directly by Stage 3 |
+| Final generation request | Stage 3 manifest call input |
+| Generated chapter output | Stage 3 manifested chapter, then Stage 4 structured inspection/proposal |
+| Development Cultural Prose | Stage 1 packet setting |
+| Development rhythm and available anchors | Stage 1 state, interpreted in Stage 2 |
+| Development selected path and effect direction | Stage 2 `ChapterPlan` |
+| Development new anchors and next-scene behavior | Stage 4 processing result |
+
+The former ten-step arrays no longer execute beneath these names. The generic
+`GenerationStage[]` adapter exists only to display the four results in the existing
+inspector.
+
+## Layout
+
+```text
 shared/
-  types.ts                    — trimmed ChapterContent/StoryBlock/ContextManifest/etc.
-                                 types needed by the ported lib/ modules
-  stageTypes.ts                — Workshop-only GenerationStage inspection model
-  packets/                      — Chapter Generation 1.0 internal information
-                                 packages and focused tests:
-    storyConstitution.ts         permanent story-owned Seed/Blueprint/settings data
-    livingStoryState.ts          evolving arc/chapter/history/Codex/thread state
-    chapterMission.ts            current-chapter objective/opening/restrictions/direction
-    generationRules.ts           permanent prompt, formatting, budgeting, and renderer rules
-    assembly.ts                  packet assembly, instruction trace, and explicit flags
-    assemblePacketContext.ts     shared Reference/Development packet context foundation
-  lib/                          — verbatim-or-near-verbatim ports of the PURE
-                                 (no network/DB) Light-Novels generation-flow modules:
-    helpers.ts                  estimateTokens, rankRelevantEntityCandidates,
-                                 formatAbilityLedgerForPrompt, cleanChapterResponse, ...
-    codexContext.ts              normalizeCodexSurface/Aliases, strip*CodexFields
-    contextBlocks.ts             ACTIVE_CONTEXT_ENGINE, contextBlocksToLegacyStrings
-    entityCards.ts               renderEntityCard (full/brief Codex card rendering)
-    chapterHandoff.ts            buildChapterContract, renderChapterContractLines
-    contextBudgeter.ts           assembleContext (the 24k-token v2 section allocator)
-    generationContext.ts         prepareGenerationContext, formatMainCharacterState
-                                 (v2-only — the v1 legacy branch was dropped, see below)
-    contextManifest.ts           buildContextManifestFromOutcomes (v2 only)
-    chapterWritingStyle.ts       appendChapterWritingStyleInstruction
-    glossaryFormatter.ts         formatGlossaryForPrompt (generation-mode projection only)
-    chapterPrompts.ts            PROMPTS.chapter.system + .userPrompt, copied verbatim
-    fatePressureBlocks.ts        NEW — all 4 Fate Pressure tiers, verbatim (assembleGeneration.ts
-                                 only ever needed "Balanced"; the Scene Rhythm Tracker needs all 4)
-    culturalProse.ts             NEW — Cultural Prose Style catalog + instruction renderer
-                                 (not in production yet — see "Development-only additions" below)
-    sceneRhythm.ts                NEW — Scene Ending Anchors + Scene Rhythm Tracker
-                                  (not in production yet — see "Development-only additions" below)
-  fixtures/
-    mockGenerationData.ts       two safe mock story scenarios (opening / established chapter),
-                                 each now also carrying a `culturalProseStyleId` (or unset, to
-                                 exercise the fallback) and a `worldBuildingSeed`; plus
-                                 `RHYTHM_SCENARIOS` — 6 fixed Fate-Pressure/rhythm presets
-    generationBehaviorBaseline.json — normalized pre-refactor stage/final-output hashes
-                                 used by the packet tests to prove generation behavior stayed
-                                 aligned with the normalized behavior baseline
-  assembleGeneration.ts         REFERENCE orchestrator — orchestrates the above in
-                                 storyRouter.ts's exact order, returns GenerationStage[] + a
-                                 mock ChapterContent. Untouched by the Cultural Prose / Scene
-                                 Rhythm work; still mirrors today's real production flow exactly.
-  assembleGenerationDev.ts      NEW — DEVELOPMENT-ONLY orchestrator. Runs the same real context-
-                                 assembly modules as assembleGeneration.ts, then layers Cultural
-                                 Prose Style + Scene Ending Anchors on top and groups everything
-                                  into the 10-step development flow (see below).
-
+  assembleGeneration.ts       Reference adapter
+  assembleGenerationDev.ts    Development adapter and preview-only controls
+  packets/                     Pass 1 contracts, trace, flags, and context assembly
+  pipeline/
+    assembleChapterPacket.ts   pure Stage 1 assembly
+    chapterEffectRules.ts      permanent seven-category effect rules
+    runChapterPipeline.ts      shared four-stage orchestration
+    types.ts                   packet, plan, processing, and provider boundaries
+    workshopModelCalls.ts      deterministic preview planning/processing adapters
+  lib/                         ported context, prompt, handoff, and formatting helpers
 reference/
-  ChapterGenerationInspector.tsx  — untouched, locked; fed by assembleGeneration.ts only
+  ChapterGenerationInspector.tsx
 development/
-  ChapterGenerationInspector.tsx  — identical component to reference/ (it's a generic
-                                  GenerationStage[] + ChapterContent viewer); fed by
-                                  assembleGenerationDev.ts, which is where the new systems live
-  chapterEffectsDirection.ts      — Development-only projection that extracts complete existing
-                                  media/effects prompt blocks for inspection; never transfer
-
-scripts/
-  validateChapterEffectsDirection.ts — focused seven-category extraction regression check
-
-workshop/previews/chapter-generation-flow/
-  ChapterGenerationFlowWorkspace.tsx — story scenario, rhythm/Fate-Pressure scenario, and
-                                 Cultural Prose Style override controls, feeding both
-                                 orchestrators independently + the Reference/Development/Compare shell
+  ChapterGenerationInspector.tsx
 ```
 
-## What was copied (real, running logic)
+## Preserved and intentionally changed behavior
 
-The context-assembly and prompt-construction pipeline is not reimplemented or
-summarized — it is the actual production functions, copied into `shared/lib/`
-and run against mock input, exactly like `storyRouter.ts` runs them against a
-real Story document:
+The ported context preparation, contract, prompt, accessibility, Cultural Prose,
+glossary, and effect-formatting owners remain the packet's source of truth. Their
+normalized text behavior is preserved when the same inputs reach them.
 
-1. Thread aging + `baseMemory` construction (power system, current power
-   stage, world rules, ability ledger, aged unresolved plot threads).
-2. `buildChapterContract` (Context Engine 2.5 — deterministic, no LLM call).
-3. `prepareGenerationContext` → entity ranking (`rankRelevantEntityCandidates`)
-   → `renderEntityCard` (full + brief tiers) → `assembleContext` (the 24k-token
-   v2 section budget allocator: premise/MC-state, chapter contract, anchor,
-   most-recent chapter, pinned + relevance-ranked entity cards, active plot
-   threads, older recent chapters, RAG memories, arc summaries — in that
-   order, with real demote-to-brief / drop-when-over-budget behavior).
-4. `PROMPTS.chapter.system` (fixed) and `PROMPTS.chapter.userPrompt(...)` (the
-   real template function, fed the real assembled context blob).
-5. Glossary rules (`formatGlossaryForPrompt`) prepended, chapter writing style
-   (`appendChapterWritingStyleInstruction`) appended, AI Director pacing
-   directive appended, Fate Pressure ("Balanced") block appended — in the
-   exact order `storyRouter.ts` appends them.
-6. `buildContextManifestFromOutcomes` — the same token-budget breakdown
-   streamed to the client as the first SSE event in production.
+The old ten-stage normalized behavior hashes are intentionally not a compatibility
+target: the stage topology, structured plan, processing result, and call boundaries
+changed by design in Pass 2. No prompt content was rewritten to simulate the new
+architecture.
 
-`assembleGeneration.ts` groups this real output into the ten
-"Generation Order" stages named in the design brief (Premise, Story Seed /
-World Context, Genre Rules, Current Arc Context, Recent Chapter Context,
-Character / Codex Context, Chapter Instructions, System Prompt Rules, Final
-Generation Request, Generated Chapter Output) without rewriting or
-summarizing any of the underlying text — each stage's content is a direct
-slice or concatenation of the real assembled sections/prompt.
+## Workshop boundaries
 
-## Chapter Generation 1.0 packet boundary
+- No live model, database, persistence, R2, credit, queue, or notification call runs.
+- No real `LivingStoryState` update or chapter advancement is committed.
+- No unresolved Story Seed world-rule, glossary, style, or Fate vocabulary mapping is inferred.
+- No UI redesign or real chapter-testing section is included in this pass.
+- Compatibility fields on final `ChapterContent` are attached only at the external
+  inspector boundary from Stage 1 contracts and Stage 4 processing output.
 
-`shared/packets/` is the first internal reorganization pass. It does not add
-a model call, rewrite a prompt, change a Workshop control, or regroup the
-visible stages. Both orchestrators now assemble a packet first, then use
-`assemblePacketContext()` for their identical legacy-memory rebuild, thread
-formatting, chapter contract, context preparation, fixed system instruction,
-and base user prompt. Flow-specific prompt additions stay in their existing
-orchestrators:
+## Validation
 
-- **Story Constitution** (`storyConstitution.ts`) — permanent per-story data:
-  finalized Story Seed / Blueprint provenance, core premise, genre, story
-  tags, story style, style bible, trope rules, Cultural Prose setting,
-  accessibility prose setting, Fate Survival settings, permanent world rules,
-  power-system definition, destined ending, glossary data, and MC identity.
-  `storyConstitutionFromSeed()` is the canonical adapter from
-  `StorySeedInput` + `WorldBlueprint`; the older Workshop scenarios use
-  `storyConstitutionFromScenario()` so current output stays unchanged.
-- **Living Story State** (`livingStoryState.ts`) — evolving data: internal
-  arc/chapter position (`Arc 1 — Chapter 1/100` by default), context blocks,
-  previous ending/handoff, existing scene anchors, current power stage,
-  ability ledger, active/resolved threads, Codex records, fingerprints, and
-  recent scene rhythm.
-- **Chapter Mission** (`chapterMission.ts`) — this chapter only: number,
-  title, premise, deterministic `ChapterContract`, required opening,
-  do-not-repeat restrictions, fallback opening summary, pacing directive, and
-  (Development) selected next-scene path.
-- **Generation Rules** (`generationRules.ts`) — permanent generator-owned
-  rules: fixed system prompt, user-prompt template, output/effects/continuity
-  rules, glossary/style/prose/fate-pressure/pacing/next-scene renderers,
-  thread aging, context budgeting, context manifest, and response cleanup.
+- `npm run test:chapter-generation`
+- `npm run test:story-seed`
+- `npx tsc --noEmit --pretty false`
+- `npm run build`
+- `npm run validate:chapter-effects`
 
-`assembly.ts` returns a complete instruction trace plus explicit flags for
-items that must not be silently deleted or guessed: the dead fixture
-`fatePressure` field, chapter-writing-style ownership ambiguity, missing
-Story Seed Fate Survival pressure → generation tier bridge, missing Story
-Style → Cultural Prose bridge, missing Seed → world-rules/glossary bridges,
-the unexercised legacy Context Engine v1 prompt branch, Workshop-only
-inspection modules, and system-owned story administrative metadata. Genuine
-duplication removed in the initial pass was limited to the exact Balanced
-Fate Pressure block and the duplicated pinned-premise,
-pacing/thread/next-scene helper wrappers; prompt strings still live in their
-existing ported modules.
-
-The focused packet tests live beside the contracts. `npm run
-test:chapter-generation` validates the four packages, Story Seed adapter,
-arc/chapter position, trace/flags, shared rule wrappers, and normalized
-pre-refactor behavior hashes for both Reference scenarios and all 36
-Development scenario/rhythm/prose combinations.
-
-## Development-only additions: Cultural Prose Styles, Scene Ending Anchors, and Chapter Effects Direction
-
-This Development pane contains two skeleton systems that do **not exist in
-Light-Novels production yet**—Cultural Prose Styles and Scene Ending Anchors—
-plus one Workshop-only inspection projection, Chapter Effects Direction.
-`assembleGeneration.ts` / Reference are completely unaffected. Only the two
-skeleton systems are written for possible later transfer into Light-Novels;
-Chapter Effects Direction remains Development-only and must not be transferred.
-See "Exact files needed for transfer" below.
-
-### 1. Cultural Prose Styles (`lib/culturalProse.ts`)
-
-A dedicated prose-voice input, ported **verbatim** from the approved
-research at `LIBRARY CORE/LIBRARY/INFO/SEN - EAST ASIAN PROSE .docx`
-(extracted 2026-07-31 — that file is a binary `.docx`, so it was unzipped
-and its `word/document.xml` converted to plain text to read it; no style
-names or trait wording were invented). The doc defines six leaf styles
-under three traditions, each combining tradition-level traits with
-style-specific traits:
-
-| Tradition | Style | Catalog id |
-| --- | --- | --- |
-| Chinese cultivation | Classical worldbuilding | `chinese-classical-worldbuilding` |
-| Chinese cultivation | Modern progression | `chinese-modern-progression` |
-| Japanese light novels | Character comedy | `japanese-character-comedy` |
-| Japanese light novels | Serious fantasy | `japanese-serious-fantasy` |
-| Korean web novels | Dungeon power fantasy | `korean-dungeon-power-fantasy` |
-| Korean web novels | Romantic drama | `korean-romantic-drama` |
-
-`renderCulturalProseInstruction()` turns a style's trait bullets into its
-own clearly-headed `CULTURAL PROSE STYLE: ...` block — appended to the final
-prompt as a **dedicated, separate block** (right after the chapter-writing-
-style append, before pacing/Fate Pressure), never merged into the STYLE
-DIRECTIVE / genre wording, per the design brief. A story's
-`culturalProseStyleId` is opt-in (`fixtures/mockGenerationData.ts`'s
-"opening" scenario leaves it unset to exercise the fallback path — no block
-is added, generation falls back to genre/style-bible alone — the
-"established" scenario sets `chinese-classical-worldbuilding`). The
-Workshop's "Cultural Prose Style override" control lets you force any
-catalog style (or explicit "None") regardless of the story's own setting,
-to test all six; `describeCulturalProseSelection()` is what the Workshop's
-"Cultural Prose Style" step shows (chosen style, exact instruction text,
-source, fallback behavior).
-
-### 2. Scene Ending Anchors + Scene Rhythm Tracker (`lib/sceneRhythm.ts`)
-
-At the end of each chapter, three concrete next-scene candidates
-(`worldBuilding` / `conflict` / `progression`) are derived from that
-chapter's real (ported) `ChapterHandoff` via `deriveSceneAnchors()` —
-`conflict` reuses `handoff.endState.openTension` and `progression` reuses
-`handoff.nextImmediateAction` (both already produced by Context Engine 2.5,
-so two of the three anchors are structurally real, not invented text); only
-`worldBuilding` needs a dedicated seed (`worldBuildingSeed` on the story
-fixture — a concrete unexplored story element, e.g. "what the shrine
-actually was before it was buried").
-
-`selectNextScenePath()` then picks one anchor for the *next* chapter,
-weighted by Fate Pressure tier and constrained by recent-scene-type
-repetition rules — every tunable value lives in `SCENE_RHYTHM_CONFIG`
-(base weights per tier, max-consecutive-repeats, max-occurrences-in-a-4-
-scene-window, and a deterministic tie-break order), so retuning never
-touches the selection algorithm itself. The selection is deliberately
-deterministic (not randomized) — every choice is fully explainable from
-`recentSceneTypes` + `fatePressure` alone, which is what makes it
-inspectable: the "Selected Next-Scene Path" Workshop step shows the chosen
-type, the winning anchor text, which types (if any) were repetition-
-blocked, and a human-readable `reason` string.
-
-The chosen anchor is injected into the real prompt as its own
-`NEXT SCENE DIRECTION` block (appended last, after Fate Pressure), and
-`sceneTypeUsed` on the mock output records which anchor "directed" this
-(mocked) generation — that's what the *next* Workshop call's Scene Rhythm
-Tracker input would read.
-
-**Known skeleton-level simplification:** the mock chapter prose itself does
-not yet dynamically rewrite per selected scene type — it's the same short
-mock body per story scenario regardless of which anchor was chosen (the
-mechanism — selection, injection into the prompt, and rhythm persistence —
-is fully real and functional; only the actual prose *generation* is mocked,
-consistent with the rest of this replica). Refining that is future work,
-not part of this skeleton pass.
-
-### 3. Chapter Effects Direction (`development/chapterEffectsDirection.ts`)
-
-The Development flow now inserts **Chapter Effects Direction** after
-**Selected Next-Scene Path** and before **Final Chapter Instructions**. It
-groups the exact, already-active chapter-prompt rules for narration and
-dialogue metadata, beast sound cues, World Card audio and visual cues, system
-panel visual cues, scene music, atmosphere, and narrative cue payloads.
-
-This is an inspection projection only: it uses stable neighboring prompt
-boundaries to extract each complete existing rule block, then repeats that
-same output inside **Final Chapter Instructions**. It does not add a director,
-select a track, sound, voice, or asset, change Reader-side media behavior, or
-change the actual assembled `finalUserPrompt`.
-
-`npm run validate:chapter-effects` exercises the real ported prompt and checks
-representative opening and later details from all seven categories. The
-Development inspector also stacks stage status below stage copy on narrow
-screens, allows long schema text to wrap within the viewport, and relies on
-the shared Workshop view switch wrapping instead of widening the page.
-
-The Development order is now: Story and Chapter Context, Cultural Prose
-Style, Fate Pressure, Recent Scene Rhythm, Available Scene Ending Anchors,
-Selected Next-Scene Path, Chapter Effects Direction, Final Chapter
-Instructions, Generated Chapter Output, and Newly Generated Anchors.
-
-## What was mocked
-
-- **Story data** — two hand-authored scenarios in `fixtures/mockGenerationData.ts`
-  ("Chapter 1 — Story Opening", no prior chapters/contract-history, most
-  context sections empty/"Not included"; "Chapter 6 — Established Arc", full
-  memory/entities/threads/recent-chapter/RAG/arc-summary/handoff data, all
-  sections populated).
-- **Glossary retrieval** — `formatGlossaryForPrompt` (the real projection/
-  formatting function) is copied verbatim, but its input is a small
-  hand-picked list of glossary entries rather than the full 396-entry
-  registry + `retrieveGlossaryEntries` scoring engine (`src/lib/glossary/
-  retrieve.ts` + registry — not ported; out of scope for an inspection tool).
-- **Fate Pressure** — the Reference flow (`assembleGeneration.ts`) only ever
-  reproduces the "Balanced" branch's block text (its mock scenario is fixed
-  to Balanced). All four tiers (Relaxed/Balanced/Hardcore/Dao Master) are now
-  ported verbatim in `lib/fatePressureBlocks.ts`, since the Development
-  flow's Scene Rhythm Tracker needs Fate Pressure as an input — see
-  "Development-only additions" above.
-- **Context Engine v1** — `generationContext.ts`/`contextManifest.ts` port only
-  the "v2" branch, matching Light-Novels' `ACTIVE_CONTEXT_ENGINE = "v2"`
-  (`contextBlocks.ts`) — production no longer routes new generation through v1.
-- **The actual LLM call** — `routeTextGenerationStream(...)` is never invoked.
-  The "Generated Chapter Output" stage and the Final Output panel show a
-  hand-authored mock `ChapterContent` (blocks, system panels, cuePayload,
-  handoff, contract, real contextManifest) matching the real production
-  shape, clearly labeled "Mock — not a live model call."
-- **Everything persistence/side-effect related** — story persistence
-  (`storyStorage`), database writes, R2 uploads, credit deductions
-  (`awardQi`), queues, and notifications are simply never called anywhere in
-  this replica; there is no code path that could reach them.
-
-## Preview states
-
-- **Mock Story Scenario** — **Chapter 1 — Story Opening** / **Chapter 6 —
-  Established Arc**. Feeds both Reference and Development.
-- **Scene Rhythm / Fate Pressure Scenario** (Development only) — six fixed
-  validation presets, one per case named in the design brief: *Low Fate
-  Pressure*, *Balanced Fate Pressure*, *High Fate Pressure*, *Several Recent
-  Conflict Scenes*, *Several Repeated Progression Scenes*, *No Previous
-  Rhythm or Anchors*. Independent of the story scenario toggle — "No
-  Previous Rhythm or Anchors" is most representative paired with "Chapter 1"
-  (which also has no previous handoff to derive carried-over anchors from).
-- **Cultural Prose Style override** (Development only) — "Story Default"
-  (reads the active story scenario's own setting), "None (fallback)", or any
-  of the six catalog styles, to exercise all of them regardless of which
-  story is active.
-- Reference / Development / Compare (via `FeatureWorkspace`, shared with
-  every other Workshop entry) — Compare mode now visibly shows the two flows
-  diverging (Reference's 10 stages vs. Development's 10 differently grouped
-  stages), which is expected.
-
-## Reusable Workshop dependencies
-
-- `FeatureWorkspace` + the `chapter-generation-flow` manifest entry (category `other`)
-- Existing `@theme` tokens in `src/styles.css` (`jade-accent`, etc.)
-- `lucide-react` (already installed)
-
-## Production dependencies intentionally excluded
-
-- Firebase / Postgres / `storyStorage` persistence
-- Cloudflare R2 uploads
-- `awardQi` / `scanChapterForArtifacts` / `unlockCosmicArtifact` credit and
-  artifact side effects
-- `routeTextGenerationStream` / the AI router / any real model call
-- `retrieveGlossaryEntries` + the full glossary registry (see "What was mocked")
-- Context Engine v1 branch (`truncateContextIfNeeded`'s prose-memory path,
-  `buildContextManifest` non-outcomes variant)
-- `parseChapterStream`, `runContinuityPass`, `extractChapterMetadata`,
-  `validateChapterHandoff`, `persistGeneratedChapter` (the post-stream client
-  pipeline stages in `src/hooks/chapterPipeline/`) — this replica models the
-  request-construction half of generation, not the post-processing half
-
-## Known differences from the source
-
-- Stage grouping ("Story Seed / World Context", "Recent Chapter Context",
-  "Character / Codex Context", etc.) is a Workshop-only presentation layer —
-  production has no such named stages; it has ordered prompt sections. The
-  grouping is a direct, unmodified concatenation of the real assembled
-  sections, chosen to match the names in the design brief.
-- `WorldCardEvent.rarity` is typed as `string` here instead of production's
-  `CosmicArtifact["rarity"]` reference — `CosmicArtifact` wasn't otherwise
-  needed and porting it just for one field type wasn't worth the added surface.
-- The mock scenarios are original (not pulled from a real story); they exist
-  to exercise every section's included/omitted/demoted states realistically.
-- **Cultural Prose Styles and Scene Ending Anchors do not exist in
-  Light-Novels production at all yet.** They are a first (skeleton)
-  implementation, Development-only, per the design brief. Reference is
-  unaffected and continues to reflect exactly what production does today.
-
-## Exact files needed for transfer
-
-Most of this replica (the Reference-flow ports) exists purely for
-inspection, as before — resynchronize those by re-copying the relevant
-`shared/lib/` files from their verified source paths and updating **Last
-source comparison** if the underlying Light-Novels logic changes.
-
-The two Development-only systems are different: they were explicitly built
-"compatible with later transfer back into Light-Novels" once approved.
-When that happens:
-
-- `shared/lib/culturalProse.ts` → new file, e.g. `src/server/culturalProse.ts`
-  or `src/lib/culturalProse.ts` (pure, no Workshop-only concerns — transfers
-  as-is). Wire `renderCulturalProseInstruction()`'s output into
-  `storyRouter.ts`'s `finalUserPrompt` assembly, and add a
-  `culturalProseStyleId` field to the story/request schema.
-- `shared/lib/sceneRhythm.ts` → new file, e.g. `src/lib/sceneRhythm.ts`
-  (pure, no Workshop-only concerns — transfers as-is). Wire
-  `deriveSceneAnchors()` into the metadata-extraction pass (alongside
-  `buildChapterContract`, which already runs there) to produce next-chapter
-  anchors from each chapter's real `ChapterHandoff`; wire `selectNextScenePath()`
-  into `storyRouter.ts` before prompt assembly; persist `recentSceneTypes`
-  and the current `SceneAnchors` on the story record (see
-  `ChapterGenerationDevOutput` in `assembleGenerationDev.ts` for the minimal
-  field shape: `culturalProseStyle`, `sceneRhythm`, `selectedScenePath`,
-  `nextSceneAnchors`, `sceneTypeUsed`).
-- `shared/lib/fatePressureBlocks.ts` — not a new production file; it's a
-  refactor-only extraction of text that already exists inline in
-  `storyRouter.ts`. Transferring means replacing that inline text with a
-  call to `getFatePressureBlock()` (or just leaving production as-is and
-  treating this file as Workshop-only plumbing — either is fine).
-- `development/chapterEffectsDirection.ts` is Workshop-only inspection
-  plumbing. Do not transfer it into Light-Novels as a new media/director
-  layer; it intentionally only groups instructions that already exist there.
-- `shared/assembleGenerationDev.ts` and `shared/fixtures/mockGenerationData.ts`'s
-  `RHYTHM_SCENARIOS` are Workshop-only orchestration/fixtures — never transfer.
-
-## Lifecycle
-
-Reference is a locked, faithful comparison point (untouched by this pass).
-Development now has a real approval lifecycle for the two new systems:
-prototype and refine here against safe mock data (current state) → once the
-Cultural Prose Style and Scene Rhythm mechanisms are approved, transfer the
-two `lib/` files per the section above and wire them into `storyRouter.ts`
-→ resynchronize Reference from the newly-integrated production code,
-record the new comparison date. Until then, Development also still absorbs
-ordinary inspector-layout refinements, same as any other Workshop replica.
+Focused pipeline tests cover the four stage keys, Stage 1 purity, normal and repair
+call counts, permanent-rule behavior, planning ownership of Fate/effects, processing
+ownership of anchors/proposed state, retry immutability, and model-visible position.
 
 ## Workshop history
 
-- **2026-07-31:** Added Cultural Prose Styles (`lib/culturalProse.ts`,
-  catalog ported verbatim from `LIBRARY CORE/LIBRARY/INFO/SEN - EAST ASIAN
-  PROSE .docx`) and Scene Ending Anchors + Scene Rhythm Tracker
-  (`lib/sceneRhythm.ts`) as first-pass, Development-only systems. New
-  `assembleGenerationDev.ts` orchestrator exposes the 9-step development
-  flow (Story and chapter context, Cultural Prose Style, Fate Pressure,
-  Recent Scene Rhythm, Available Scene Ending Anchors, Selected Next-Scene
-  Path, Final Chapter Instructions, Generated Chapter Output, Newly
-  generated anchors for the following chapter). `assembleGeneration.ts` /
-  Reference are unchanged. Added 6 fixed Scene Rhythm validation scenarios
-  and a Cultural Prose Style override control to the Workspace.
-- **2026-07-31:** Added the Development-only **Chapter Effects Direction**
-  step between Selected Next-Scene Path and Final Chapter Instructions. It
-  consolidates existing Chapter prompt instructions for music, atmosphere,
-  audio cues, World Cards, narration/dialogue metadata, and visual cues, and
-  repeats the same inspection output inside Final Chapter Instructions.
-  Reference and the actual `finalUserPrompt` assembly remain unchanged.
-- **2026-07-31:** Replaced single-line matching with stable prompt-boundary
-  extraction so every effects category exposes its complete existing rule
-  block. Moved the helper into `development/`, added the focused seven-category
-  validation command, and tightened long-instruction wrapping, stage layout,
-  and the shared Workshop view switch for narrow mobile screens. Reference and
-  production prompt behavior remain unchanged.
-- **2026-08-08:** Started Chapter Generation 1.0 packet organization. Added
-  internal Story Constitution, Living Story State, Chapter Mission, and
-  Generation Rules contracts; connected Story Constitution to the finalized
-  Story Seed + Blueprint contract; added arc-local chapter positions and a
-  complete instruction trace with explicit unresolved flags. Centralized the
-  shared packet-backed context foundation while keeping Development-only prose,
-  rhythm, anchor selection, and next-scene behavior in its orchestrator.
-  Reference/Development prompt text, append order, stage keys, stage order,
-  and mock outputs are guarded by normalized behavior hashes and remain
-  unchanged.
+- **2026-07-31:** Created the Reference replica and Development fork from the inspected production flow.
+- **2026-08-08:** Pass 1 introduced Story Constitution, Living Story State, Chapter Mission, and Generation Rules with a complete 65-ID trace and nine explicit unresolved flags.
+- **2026-08-08:** Pass 1 centralized shared packet-backed context assembly across both generation adapters.
+- **2026-08-08:** Pass 2 replaced both ten-step orchestrators with one real four-stage pipeline and three normal provider boundaries plus conditional repair.
+
+## Transfer notes
+
+Transfer the contracts and `shared/pipeline/` provider boundaries into the production
+generation service, then wire actual structured model providers at
+`ChapterGenerationModelCalls`. Keep `workshopModelCalls.ts`, fixtures, inspectors,
+preview controls, and `GenerationStage` serialization in the Workshop.

@@ -1,9 +1,9 @@
 /**
  * Shared vocabulary for the Chapter Generation 1.0 information packages.
  *
- * The four packages are an internal organization boundary only: they group
- * the data and rules the existing orchestrators already use without changing
- * prompt text, prompt order, stage output, or the Workshop UI.
+ * The four packages are the internal information boundary consumed by the
+ * four-stage pipeline. They retain the ported prompt owners and Workshop UI
+ * while making packet, plan, manifestation, and processing ownership explicit.
  */
 
 export type ChapterGenerationPackageId =

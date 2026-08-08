@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { buildChapterEffectsDirection } from "../src/components/chapter-generation/development/chapterEffectsDirection.ts";
 import { CHAPTER_PROMPTS } from "../src/components/chapter-generation/shared/lib/chapterPrompts.ts";
+import { buildChapterEffectRules } from "../src/components/chapter-generation/shared/pipeline/chapterEffectRules.ts";
 
 const finalChapterInstructions = CHAPTER_PROMPTS.userPrompt(
   6,
@@ -18,7 +18,10 @@ const finalChapterInstructions = CHAPTER_PROMPTS.userPrompt(
   "v2",
 );
 
-const direction = buildChapterEffectsDirection(CHAPTER_PROMPTS.system, finalChapterInstructions);
+const rules = buildChapterEffectRules(
+  CHAPTER_PROMPTS.system,
+  finalChapterInstructions,
+);
 
 const representativeDetails = [
   ["narration and dialogue metadata", "OUTPUT FORMAT TARGET:", "DO NOT output direct voice IDs."],
@@ -31,8 +34,8 @@ const representativeDetails = [
 ] as const;
 
 for (const [category, openingDetail, laterDetail] of representativeDetails) {
-  assert.ok(direction.includes(openingDetail), `${category} is missing its opening instruction.`);
-  assert.ok(direction.includes(laterDetail), `${category} is missing a representative later detail.`);
+  assert.ok(rules.includes(openingDetail), `${category} is missing its opening instruction.`);
+  assert.ok(rules.includes(laterDetail), `${category} is missing a representative later detail.`);
 }
 
-console.log("Chapter Effects Direction contains complete representative details for all seven effect categories.");
+console.log("The Chapter Packet contains complete permanent rules for all seven effect categories.");

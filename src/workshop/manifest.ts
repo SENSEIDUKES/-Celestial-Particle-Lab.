@@ -64,9 +64,9 @@ export const workshopEntries: WorkshopEntry[] = [
   {
     id: 'chapter-generation-flow',
     title: 'Chapter Generation',
-    description: 'Inspection tool for the chapter-generation pipeline — the exact assembly order of context/prompt inputs, the assembled text at each stage, and the final structured ChapterContent output. Development additionally prototypes Cultural Prose Styles and Scene Ending Anchors.',
+    description: 'Inspection tool for the real four-stage chapter-generation pipeline: assemble one packet, plan once, manifest once, then process anchors and proposed state. Development preserves its Cultural Prose and rhythm controls without adding calls.',
     category: 'other',
-    version: 'v1.1',
+    version: 'v2.0',
     source: {
       repository: 'SENSEIDUKES/Light-Novels',
       path: 'src/server/routes/storyRouter.ts',

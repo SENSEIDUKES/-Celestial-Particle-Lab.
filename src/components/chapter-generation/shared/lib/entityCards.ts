@@ -208,7 +208,7 @@ const fitFullText = (
     const targetLength = Math.max(minimumLength, current.length - overflow);
     // Cast: `fields[key]` under a generic `keyof FullCardFields` write widens to the
     // `name: string` member, rejecting `string | undefined` even though every call site
-    // here is behavior-identical to production. Workshop-tsconfig-only cast.
+    // here preserves production's normalized behavior. Workshop-tsconfig-only cast.
     (fields as Record<keyof FullCardFields, string | undefined>)[key] = targetLength > 0
       ? truncateText(current, targetLength)
       : undefined;

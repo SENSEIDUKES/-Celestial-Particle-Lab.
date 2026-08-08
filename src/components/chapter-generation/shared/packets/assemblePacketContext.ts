@@ -1,7 +1,7 @@
 /**
  * Builds the packet-backed context foundation shared by the Reference and
- * Development chapter-generation flows. Flow-specific prompt additions stay
- * in their orchestrators so this boundary contains only identical work.
+ * Development chapter-generation flows. Packet settings and planning signals
+ * stay at their owning boundaries so this helper contains only identical work.
  */
 import type { BudgetedContext } from "../lib/contextBudgeter";
 import type { ChapterContract } from "../types";

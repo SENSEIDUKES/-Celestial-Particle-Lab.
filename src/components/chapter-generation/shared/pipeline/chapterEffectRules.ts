@@ -1,7 +1,6 @@
 /**
- * Development-only Workshop projection of the existing Chapter prompt's
- * media/effects-related instructions. It deliberately reads from the ported
- * production prompt instead of introducing a second set of direction rules.
+ * Projects the existing chapter prompt's media/effects instructions into one
+ * permanent rules block carried by every Chapter Packet.
  */
 
 interface InstructionBoundary {
@@ -9,7 +8,6 @@ interface InstructionBoundary {
   end?: string;
 }
 
-/** Extract one complete prompt block between stable neighboring instructions. */
 function extractInstructionBlock(source: string, boundary: InstructionBoundary): string {
   const startIndex = source.indexOf(boundary.start);
   if (startIndex < 0) return "";
@@ -22,22 +20,17 @@ function extractInstructionBlock(source: string, boundary: InstructionBoundary):
   return source.slice(startIndex, endIndex).trim();
 }
 
-/** Render a labeled Workshop section only when its source block was found. */
 function section(name: string, instruction: string): string {
   return instruction ? `${name}\n${instruction}` : "";
 }
 
-/**
- * Group the complete existing media/effects prompt blocks for inspection.
- * This reads prompt text only; it does not alter the prompt or direct media.
- */
-export function buildChapterEffectsDirection(
+export function buildChapterEffectRules(
   systemInstruction: string,
-  finalChapterInstructions: string,
+  baseUserPrompt: string,
 ): string {
   const sections = [
-    "CHAPTER EFFECTS DIRECTION",
-    "Existing chapter-generation instructions consolidated for Workshop inspection. This view does not select tracks, sounds, voices, or media assets.",
+    "CHAPTER EFFECT RULES",
+    "Permanent chapter-generation rules available to planning and manifestation. Planning selects only the effects appropriate to the current chapter.",
     section(
       "NARRATION AND DIALOGUE METADATA",
       extractInstructionBlock(systemInstruction, {
@@ -82,7 +75,7 @@ export function buildChapterEffectsDirection(
     ),
     section(
       "NARRATIVE CUE PAYLOAD",
-      extractInstructionBlock(finalChapterInstructions, {
+      extractInstructionBlock(baseUserPrompt, {
         start: "Also allow narrative cue payloads to carry normalized story metadata.",
       }),
     ),

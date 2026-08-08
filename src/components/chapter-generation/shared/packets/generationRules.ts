@@ -11,7 +11,6 @@ import { appendChapterWritingStyleInstruction } from "../lib/chapterWritingStyle
 import { buildContextManifestFromOutcomes } from "../lib/contextManifest";
 import { CONTEXT_BUDGET_DEFAULTS } from "../lib/contextBudgeter";
 import { renderCulturalProseInstruction } from "../lib/culturalProse";
-import { getFatePressureBlock } from "../lib/fatePressureBlocks";
 import {
   anchorTextFromBlocks,
   formatMainCharacterState,
@@ -24,28 +23,6 @@ import {
   estimateTokens,
   formatAbilityLedgerForPrompt,
 } from "../lib/helpers";
-import type { ScenePathSelection } from "../lib/sceneRhythm";
-
-export const pacingBlock = (pacingDirective: string) => pacingDirective
-  ? `
-
-=========================================
-AI DIRECTOR PACING INSTRUCTION
-=========================================
-${pacingDirective}
-=========================================`
-  : "";
-
-export const nextSceneDirectionBlock = (selection: ScenePathSelection | undefined) => selection
-  ? `
-
-=========================================
-NEXT SCENE DIRECTION (selected: ${selection.type.toUpperCase()})
-=========================================
-Anchor: "${selection.anchor}"
-Use this as a concrete forward direction for where this chapter's scene(s) should head. Do not simply recreate the previous chapter's scene type or beat.
-=========================================`
-  : "";
 
 export const formatThreadForRouter = (
   thread: { description: string; originChapter: number },
@@ -87,9 +64,6 @@ export interface GenerationRules {
     glossary: typeof formatGlossaryForPrompt;
     writingStyle: typeof appendChapterWritingStyleInstruction;
     culturalProse: typeof renderCulturalProseInstruction;
-    fatePressure: typeof getFatePressureBlock;
-    pacing: typeof pacingBlock;
-    nextSceneDirection: typeof nextSceneDirectionBlock;
     threadForRouter: typeof formatThreadForRouter;
     abilityLedger: typeof formatAbilityLedgerForPrompt;
     pinnedPremise: typeof pinnedPremiseBlock;
@@ -119,9 +93,6 @@ export function buildGenerationRules(): GenerationRules {
       glossary: formatGlossaryForPrompt,
       writingStyle: appendChapterWritingStyleInstruction,
       culturalProse: renderCulturalProseInstruction,
-      fatePressure: getFatePressureBlock,
-      pacing: pacingBlock,
-      nextSceneDirection: nextSceneDirectionBlock,
       threadForRouter: formatThreadForRouter,
       abilityLedger: formatAbilityLedgerForPrompt,
       pinnedPremise: pinnedPremiseBlock,

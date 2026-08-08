@@ -1,229 +1,40 @@
-/**
- * Orchestrates the ported Light-Novels generation-flow modules in exactly
- * the order Light-Novels `src/server/routes/storyRouter.ts`'s
- * `POST /api/generate-chapter-stream` handler runs them (verified against
- * `main`), against safe local mock data instead of a real Story document.
- *
- * No network call, DB write, R2 upload, credit deduction, queue, or
- * notification happens anywhere in this file — the only "generation" output
- * is the hand-authored mock `ChapterContent` returned by
- * `buildMockFinalOutput`, clearly labeled as such in its stage description.
- *
- * This is the single source of truth the Workshop's Chapter Generation
- * Inspector renders from — see
- * `src/workshop/previews/chapter-generation-flow/ChapterGenerationFlowWorkspace.tsx`.
- */
+/** Reference adapter for the shared four-stage Chapter Generation pipeline. */
 import type { ChapterContent, ChapterHandoff, StoryBlock } from "./types";
-import type { GenerationStage } from "./stageTypes";
 import type { MockChapterGenerationScenario } from "./fixtures/mockGenerationData";
 import { SCENARIOS } from "./fixtures/mockGenerationData";
+import { assembleChapterGenerationPacket } from "./packets";
 import {
-  assembleChapterGenerationPacket,
-  assemblePacketContext,
-} from "./packets";
+  assembleChapterPacket,
+  buildWorkshopChapterPlan,
+  buildWorkshopProcessingResult,
+  runChapterPipeline,
+  type ChapterPipelineRun,
+} from "./pipeline";
 
 export type ScenarioId = "opening" | "established";
 
-interface AssembledGeneration {
-  stages: GenerationStage[];
-  finalOutput: ChapterContent;
-}
-
-export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGeneration {
+export function assembleChapterGeneration(scenarioId: ScenarioId): ChapterPipelineRun {
   const scenario = SCENARIOS[scenarioId];
-  const packet = assembleChapterGenerationPacket(scenario);
-  const {
-    storyConstitution,
-    chapterMission,
-    generationRules,
-  } = packet;
-  const currentChapterNum = chapterMission.number;
-  const {
-    chapterContract,
-    budgetedContext,
-    memoryJsonStr,
-    systemInstruction,
-    baseUserPrompt: userPrompt,
-  } = assemblePacketContext(packet);
-
-  // Glossary rules + chapter writing style + pacing + fate pressure, in the
-  // exact append order storyRouter.ts uses.
-  const glossaryRules = generationRules.renderers.glossary(storyConstitution.glossaryEntries);
-  let finalUserPrompt = generationRules.renderers.writingStyle(
-    userPrompt,
-    storyConstitution.accessibilityStyle,
+  const chapterPacket = assembleChapterPacket(
+    assembleChapterGenerationPacket(scenario),
   );
-  if (glossaryRules) {
-    finalUserPrompt = `${glossaryRules}\n\n${finalUserPrompt}`;
-  }
-  finalUserPrompt += generationRules.renderers.pacing(chapterMission.pacingDirective);
-  finalUserPrompt += generationRules.renderers.fatePressure("Balanced");
 
-  // Context manifest — the same real budgeting-outcome summary streamed to
-  // the client as the first SSE event in production.
-  const contextManifest = generationRules.context.buildContextManifestFromOutcomes({
-    route: "generate-chapter-stream",
-    chapterNumber: currentChapterNum,
-    systemInstruction,
-    finalUserPrompt,
-    outcomes: budgetedContext.outcomes,
-    memoryAndHistoryBudgetTokens: budgetedContext.totalBudgetTokens,
+  return runChapterPipeline({
+    chapterPacket,
+    model: {
+      planChapter: buildWorkshopChapterPlan,
+      manifestChapter: () => buildMockManifestedChapter(scenario),
+      processResult: modelInput => buildWorkshopProcessingResult(
+        modelInput,
+        buildMockProcessingHandoff(scenario),
+      ),
+      repairChapter: ({ manifestedChapter }) => manifestedChapter,
+    },
   });
-
-  // ── Stage construction ────────────────────────────────────────────────
-  // Locate the exact context-engine blob inside the real (unmodified)
-  // userPrompt string so "Genre Rules" / "Chapter Instructions" can show the
-  // real surrounding prompt text without duplicating or rewriting it.
-  const blobStart = userPrompt.indexOf(memoryJsonStr);
-  const beforeBlob = blobStart >= 0 ? userPrompt.slice(0, blobStart).trim() : "";
-  const afterBlob = blobStart >= 0 ? userPrompt.slice(blobStart + memoryJsonStr.length).trim() : "";
-
-  const sectionsByKey = (keys: string[]) => budgetedContext.promptSections
-    .filter(section => keys.includes(section.key))
-    .map(section => section.text)
-    .join("\n\n");
-  const outcomeTokens = (keys: string[]) => budgetedContext.outcomes
-    .filter(outcome => keys.includes(outcome.key))
-    .reduce((sum, outcome) => sum + outcome.estimatedTokens, 0);
-  const outcomeIncluded = (keys: string[]) => budgetedContext.outcomes
-    .some(outcome => keys.includes(outcome.key) && outcome.includedItems.length > 0);
-
-  const styleInstructionAddition = generationRules.renderers.writingStyle(
-    "",
-    storyConstitution.accessibilityStyle,
-  ).trim();
-  const chapterInstructionsContent = [
-    afterBlob,
-    styleInstructionAddition,
-    generationRules.renderers.pacing(chapterMission.pacingDirective).trim(),
-    generationRules.renderers.fatePressure("Balanced").trim(),
-  ].filter(Boolean).join("\n\n");
-
-  const genreRulesContent = [glossaryRules.trim(), beforeBlob].filter(Boolean).join("\n\n");
-
-  const requestEnvelope = `=== SYSTEM MESSAGE (PROMPTS.chapter.system) ===\n${systemInstruction}\n\n=== USER MESSAGE (finalUserPrompt) ===\n${finalUserPrompt}`;
-
-  const finalOutput = buildMockFinalOutput(scenario, contextManifest, chapterContract);
-
-  const stage = (
-    key: string,
-    name: string,
-    description: string,
-    content: string,
-    format: GenerationStage["format"],
-    included: boolean,
-    tokenEstimate: number,
-  ): GenerationStage => ({
-    key,
-    name,
-    description,
-    included,
-    tokenEstimate,
-    sizeChars: content.length,
-    format,
-    content,
-  });
-
-  const stages: GenerationStage[] = [
-    stage(
-      "premise",
-      "Premise",
-      "Chapter number, title, goal, genre/style, and core premise.",
-      sectionsByKey(["premise"]),
-      "text",
-      outcomeIncluded(["premise"]),
-      outcomeTokens(["premise"]),
-    ),
-    stage(
-      "story-seed",
-      "Story Seed / World Context",
-      "Pinned main-character state (power stage, ability ledger, destined ending) plus world rules — never budgeted away.",
-      sectionsByKey(["pinnedRules"]),
-      "text",
-      outcomeIncluded(["pinnedRules"]),
-      outcomeTokens(["pinnedRules"]),
-    ),
-    stage(
-      "genre-rules",
-      "Genre Rules",
-      "Reference glossary guidance plus the genre / story-tag / style-bible / trope-rules STYLE DIRECTIVE block.",
-      genreRulesContent,
-      "text",
-      genreRulesContent.length > 0,
-      generationRules.output.estimateTokens(genreRulesContent),
-    ),
-    stage(
-      "current-arc",
-      "Current Arc Context",
-      "Coarse rolling history of the current story arc (arc summaries).",
-      sectionsByKey(["arcSummaries"]),
-      "text",
-      outcomeIncluded(["arcSummaries"]),
-      outcomeTokens(["arcSummaries"]),
-    ),
-    stage(
-      "recent-chapter",
-      "Recent Chapter Context",
-      "Chapter contract (do-not-repeat canon), immediate continuation anchor, most recent chapter(s), and RAG-recovered older memories.",
-      sectionsByKey(["chapterContract", "anchor", "recentChapters", "rag"]),
-      "text",
-      outcomeIncluded(["chapterContract", "anchor", "recentChapters", "rag"]),
-      outcomeTokens(["chapterContract", "anchor", "recentChapters", "rag"]),
-    ),
-    stage(
-      "character-codex",
-      "Character / Codex Context",
-      "Ranked Codex entity cards (characters, factions, locations, artifacts) plus active unresolved plot threads.",
-      sectionsByKey(["entityCards", "threads"]),
-      "text",
-      outcomeIncluded(["entityCards", "threads"]),
-      outcomeTokens(["entityCards", "threads"]),
-    ),
-    stage(
-      "chapter-instructions",
-      "Chapter Instructions",
-      "Author-context authority note, immediate-continuation rule, chapter length/expansion directives, system-panel & cue-payload instructions, chapter writing style, AI Director pacing, and Fate Pressure directive.",
-      chapterInstructionsContent,
-      "text",
-      chapterInstructionsContent.length > 0,
-      generationRules.output.estimateTokens(chapterInstructionsContent),
-    ),
-    stage(
-      "system-prompt",
-      "System Prompt Rules",
-      "The fixed system instruction — genre-sensitive writing directives, NDJSON output-format spec, and content-safety protocols. Identical for every chapter.",
-      systemInstruction,
-      "text",
-      true,
-      generationRules.output.estimateTokens(systemInstruction),
-    ),
-    stage(
-      "final-request",
-      "Final Generation Request",
-      "The exact system + user messages sent for POST /api/generate-chapter-stream (routing preset \"storyMaker\").",
-      requestEnvelope,
-      "text",
-      true,
-      contextManifest.providerInputEstimatedTokens ?? generationRules.output.estimateTokens(requestEnvelope),
-    ),
-    stage(
-      "generated-output",
-      "Generated Chapter Output",
-      "Mock — not a live model call. The exact ChapterContent shape generation streams back and persists.",
-      JSON.stringify(finalOutput, null, 2),
-      "json",
-      true,
-      generationRules.output.estimateTokens(JSON.stringify(finalOutput)),
-    ),
-  ];
-
-  return { stages, finalOutput };
 }
 
-function buildMockFinalOutput(
+function buildMockManifestedChapter(
   scenario: MockChapterGenerationScenario,
-  contextManifest: ChapterContent["contextManifest"],
-  contract: ChapterContent["contract"],
 ): ChapterContent {
   const chapterNumber = scenario.currentChapter.number;
 
@@ -316,66 +127,6 @@ function buildMockFinalOutput(
 
   const generatedContent = blocks.map(block => block.text).join("\n\n");
 
-  const handoff: ChapterHandoff =
-    scenario.id === "opening"
-      ? {
-          version: 1,
-          chapterNumber,
-          endState: {
-            location: "The sealed tomb beneath Azure Bell Peak",
-            timeMarker: "dusk, same day",
-            charactersPresent: ["Wen Shu", "Elder Nan"],
-            mcCondition: "shaken, manual hidden inside his robes",
-            openTension: "Wen Shu now possesses a forbidden item Elder Nan doesn't know about.",
-          },
-          completedEvents: [
-            "Wen Shu found the sealed Ashfall Continuum manual inside the tomb altar.",
-          ],
-          nextImmediateAction: "Wen Shu must decide whether to read the manual in secret.",
-          fingerprints: [
-            {
-              actionType: "discovery",
-              participants: ["Wen Shu"],
-              location: "The sealed tomb beneath Azure Bell Peak",
-              outcome: "Wen Shu found the sealed Ashfall Continuum manual.",
-              chapterNumber,
-            },
-          ],
-        }
-      : {
-          version: 1,
-          chapterNumber,
-          endState: {
-            location: "The collapsed shrine beneath Azure Bell Peak",
-            timeMarker: "moments later, same night",
-            charactersPresent: ["Wen Shu", "Mei Lian"],
-            mcCondition: "meridians raw but intact, Ashfall Draw newly refined to Practiced",
-            openTension: "Elder Nan's patrol bell just rang directly above the shrine.",
-          },
-          completedEvents: [
-            "Something ancient stirred behind the shrine's cracked inner seal.",
-            "Wen Shu refined the Ashfall Draw from Initial to Practiced mastery under pressure.",
-            "Elder Nan's patrol closed to within earshot of the shrine.",
-          ],
-          nextImmediateAction: "Wen Shu and Mei Lian must hide or explain themselves before Elder Nan's patrol reaches the shrine entrance.",
-          fingerprints: [
-            {
-              actionType: "training",
-              participants: ["Wen Shu"],
-              location: "The collapsed shrine beneath Azure Bell Peak",
-              outcome: "Ashfall Draw refined from Initial to Practiced mastery.",
-              chapterNumber,
-            },
-            {
-              actionType: "other",
-              participants: ["Wen Shu", "Mei Lian"],
-              location: "The collapsed shrine beneath Azure Bell Peak",
-              outcome: "Something ancient stirred behind the cracked inner seal.",
-              chapterNumber,
-            },
-          ],
-        };
-
   const now = Date.now();
 
   return {
@@ -398,8 +149,68 @@ function buildMockFinalOutput(
     revisionId: `workshop-mock-rev-${chapterNumber}`,
     syncRevision: `${now}`,
     updatedAt: new Date(now).toISOString(),
-    contextManifest,
-    handoff,
-    contract,
   };
+}
+
+/** Deterministic stand-in for the structured Stage 4 processing response. */
+function buildMockProcessingHandoff(
+  scenario: MockChapterGenerationScenario,
+): ChapterHandoff {
+  const chapterNumber = scenario.currentChapter.number;
+  return scenario.id === "opening"
+    ? {
+        version: 1,
+        chapterNumber,
+        endState: {
+          location: "The sealed tomb beneath Azure Bell Peak",
+          timeMarker: "dusk, same day",
+          charactersPresent: ["Wen Shu", "Elder Nan"],
+          mcCondition: "shaken, manual hidden inside his robes",
+          openTension: "Wen Shu now possesses a forbidden item Elder Nan doesn't know about.",
+        },
+        completedEvents: [
+          "Wen Shu found the sealed Ashfall Continuum manual inside the tomb altar.",
+        ],
+        nextImmediateAction: "Wen Shu must decide whether to read the manual in secret.",
+        fingerprints: [{
+          actionType: "discovery",
+          participants: ["Wen Shu"],
+          location: "The sealed tomb beneath Azure Bell Peak",
+          outcome: "Wen Shu found the sealed Ashfall Continuum manual.",
+          chapterNumber,
+        }],
+      }
+    : {
+        version: 1,
+        chapterNumber,
+        endState: {
+          location: "The collapsed shrine beneath Azure Bell Peak",
+          timeMarker: "moments later, same night",
+          charactersPresent: ["Wen Shu", "Mei Lian"],
+          mcCondition: "meridians raw but intact, Ashfall Draw newly refined to Practiced",
+          openTension: "Elder Nan's patrol bell just rang directly above the shrine.",
+        },
+        completedEvents: [
+          "Something ancient stirred behind the shrine's cracked inner seal.",
+          "Wen Shu refined the Ashfall Draw from Initial to Practiced mastery under pressure.",
+          "Elder Nan's patrol closed to within earshot of the shrine.",
+        ],
+        nextImmediateAction: "Wen Shu and Mei Lian must hide or explain themselves before Elder Nan's patrol reaches the shrine entrance.",
+        fingerprints: [
+          {
+            actionType: "training",
+            participants: ["Wen Shu"],
+            location: "The collapsed shrine beneath Azure Bell Peak",
+            outcome: "Ashfall Draw refined from Initial to Practiced mastery.",
+            chapterNumber,
+          },
+          {
+            actionType: "other",
+            participants: ["Wen Shu", "Mei Lian"],
+            location: "The collapsed shrine beneath Azure Bell Peak",
+            outcome: "Something ancient stirred behind the cracked inner seal.",
+            chapterNumber,
+          },
+        ],
+      };
 }
