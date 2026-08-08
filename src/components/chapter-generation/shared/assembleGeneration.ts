@@ -17,54 +17,12 @@ import type { ChapterContent, ChapterHandoff, StoryBlock } from "./types";
 import type { GenerationStage } from "./stageTypes";
 import type { MockChapterGenerationScenario } from "./fixtures/mockGenerationData";
 import { SCENARIOS } from "./fixtures/mockGenerationData";
-import { CHAPTER_PROMPTS } from "./lib/chapterPrompts";
 import {
-  anchorTextFromBlocks,
-  formatMainCharacterState,
-  latestHistoryText,
-  prepareGenerationContext,
-} from "./lib/generationContext";
-import { buildContextManifestFromOutcomes } from "./lib/contextManifest";
-import { estimateTokens, formatAbilityLedgerForPrompt } from "./lib/helpers";
-import { appendChapterWritingStyleInstruction } from "./lib/chapterWritingStyle";
-import { formatGlossaryForPrompt } from "./lib/glossaryFormatter";
-import { buildChapterContract } from "./lib/chapterHandoff";
+  assembleChapterGenerationPacket,
+  assemblePacketContext,
+} from "./packets";
 
 export type ScenarioId = "opening" | "established";
-
-/**
- * Verbatim from `storyRouter.ts`'s "Balanced" branch — the default fate
- * pressure every scenario here uses. The Relaxed/Hardcore/Dao Master
- * branches are large, genre-tone directives out of scope for this
- * inspection tool; this is the one production always falls back to.
- */
-const BALANCED_FATE_PRESSURE_BLOCK = `
-
-=========================================
-FATE PRESSURE: BALANCED
-=========================================
-The story is operating under BALANCED fate pressure.
-- Deliver standard webnovel stakes: normal progression setbacks, rival friction, and challenging but fully surmountable conflicts.
-- Ensure setbacks feel organic and serve to build tension before the next breakthrough or training arc.
-- Show new pressure, rivals, and consequences through natural story action. When a consequence genuinely earns visible Celestial Library UI treatment (any genre — frequent in System/LitRPG stories, selective elsewhere), render it in this response's visible system-panel format described in the system instructions; never put a bracketed alert inside paragraph or dialogue text.
-=========================================`;
-
-const pacingBlock = (pacingDirective: string) => pacingDirective
-  ? `
-
-=========================================
-AI DIRECTOR PACING INSTRUCTION
-=========================================
-${pacingDirective}
-=========================================`
-  : "";
-
-const formatThreadForRouter = (thread: { description: string; originChapter: number }, currentChapterNum: number) => {
-  const age = currentChapterNum - thread.originChapter;
-  return age >= 1
-    ? `${thread.description} (Thread open for ${age} chapter${age > 1 ? "s" : ""} — pay it off or deepen it!)`
-    : thread.description;
-};
 
 interface AssembledGeneration {
   stages: GenerationStage[];
@@ -73,103 +31,37 @@ interface AssembledGeneration {
 
 export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGeneration {
   const scenario = SCENARIOS[scenarioId];
-  const { mcName, genre, storyTags, customPremise, styleBible, tropeRules, memory, currentChapter, contextBlocks } = scenario;
-  const currentChapterNum = currentChapter.number;
-
-  // 1. Mirror storyRouter.ts's thread-aging pass.
-  const formattedThreads = memory.unresolvedPlotThreads.map(t => formatThreadForRouter(t, currentChapterNum));
-
-  // 2. Mirror storyRouter.ts's baseMemory construction.
-  const baseMemory = {
-    powerSystem: memory.powerSystem,
-    currentPowerStage: memory.currentPowerStage,
-    worldRules: memory.worldRules,
-    abilities: formatAbilityLedgerForPrompt(memory.abilities),
-    unresolvedPlotThreads: formattedThreads,
-  };
-
-  // 3. Chapter Contract (Context Engine 2.5) — deterministic, client-built in
-  // production before the request is even sent; reproduced here the same way.
-  const chapterContract = buildChapterContract({
-    chapterNumber: currentChapterNum,
-    premise: currentChapter.premise,
-    previousHandoff: scenario.previousHandoff,
-    recentFingerprints: scenario.recentFingerprints,
-  });
-
-  const lastSummary = latestHistoryText(contextBlocks);
-
-  // 4. Real context assembly + token budgeting (prepareGenerationContext ->
-  // assembleContext), exactly as storyRouter.ts calls it.
-  const preparedContext = prepareGenerationContext({
-    engine: "v2",
-    memory,
-    baseMemory,
-    blocks: contextBlocks,
-    legacyPastSummaries: [],
-    fallbackSummary: "This is the very first chapter of the story arc! Set the scene dramatically.",
-    threads: formattedThreads,
-    worldRules: baseMemory.worldRules,
-    pinned: {
-      premise: [
-        `Chapter ${currentChapterNum}: ${currentChapter.title || ""}`,
-        `Goal: ${currentChapter.premise || ""}`,
-        genre ? `Genre/style: ${genre}` : "",
-        customPremise ? `Core premise: ${customPremise}` : "",
-      ].filter(Boolean).join("\n"),
-      mcStateCard: formatMainCharacterState({
-        mcName,
-        powerSystem: baseMemory.powerSystem,
-        currentPowerStage: baseMemory.currentPowerStage,
-        abilities: memory.abilities,
-        destinedEnding: memory.destinedEnding,
-        resolvedPlotThreads: memory.resolvedPlotThreads,
-      }),
-    },
+  const packet = assembleChapterGenerationPacket(scenario);
+  const {
+    storyConstitution,
+    chapterMission,
+    generationRules,
+  } = packet;
+  const currentChapterNum = chapterMission.number;
+  const {
     chapterContract,
-    ranking: {
-      mcName,
-      lastSummary,
-      currentContext: currentChapter.premise || "",
-      bonusContexts: [memory.unresolvedPlotThreads.map(t => t.description).join(" "), customPremise],
-      anchorText: anchorTextFromBlocks(contextBlocks),
-    },
-  });
-
-  const budgetedContext = preparedContext.budgetedContext!;
-  const { memoryJsonStr } = preparedContext;
-
-  // 5. System instruction (fixed) + user prompt (real PROMPTS.chapter.userPrompt).
-  const systemInstruction = CHAPTER_PROMPTS.system;
-  const userPrompt = CHAPTER_PROMPTS.userPrompt(
-    currentChapter.number,
-    currentChapter.title,
-    currentChapter.premise,
-    mcName,
-    genre,
-    customPremise,
+    budgetedContext,
     memoryJsonStr,
-    "",
-    true,
-    styleBible,
-    tropeRules,
-    storyTags,
-    "v2",
-  );
+    systemInstruction,
+    baseUserPrompt: userPrompt,
+  } = assemblePacketContext(packet);
 
-  // 6. Glossary rules + chapter writing style + pacing + fate pressure, in the
+  // Glossary rules + chapter writing style + pacing + fate pressure, in the
   // exact append order storyRouter.ts uses.
-  const glossaryRules = formatGlossaryForPrompt(scenario.glossaryEntries);
-  let finalUserPrompt = appendChapterWritingStyleInstruction(userPrompt, scenario.chapterWritingStyle);
+  const glossaryRules = generationRules.renderers.glossary(storyConstitution.glossaryEntries);
+  let finalUserPrompt = generationRules.renderers.writingStyle(
+    userPrompt,
+    storyConstitution.accessibilityStyle,
+  );
   if (glossaryRules) {
     finalUserPrompt = `${glossaryRules}\n\n${finalUserPrompt}`;
   }
-  finalUserPrompt += pacingBlock(scenario.pacingDirective);
-  finalUserPrompt += BALANCED_FATE_PRESSURE_BLOCK;
+  finalUserPrompt += generationRules.renderers.pacing(chapterMission.pacingDirective);
+  finalUserPrompt += generationRules.renderers.fatePressure("Balanced");
 
-  // 7. Context manifest — the same real budgeting-outcome summary streamed to
+  // Context manifest — the same real budgeting-outcome summary streamed to
   // the client as the first SSE event in production.
-  const contextManifest = buildContextManifestFromOutcomes({
+  const contextManifest = generationRules.context.buildContextManifestFromOutcomes({
     route: "generate-chapter-stream",
     chapterNumber: currentChapterNum,
     systemInstruction,
@@ -196,12 +88,15 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
   const outcomeIncluded = (keys: string[]) => budgetedContext.outcomes
     .some(outcome => keys.includes(outcome.key) && outcome.includedItems.length > 0);
 
-  const styleInstructionAddition = appendChapterWritingStyleInstruction("", scenario.chapterWritingStyle).trim();
+  const styleInstructionAddition = generationRules.renderers.writingStyle(
+    "",
+    storyConstitution.accessibilityStyle,
+  ).trim();
   const chapterInstructionsContent = [
     afterBlob,
     styleInstructionAddition,
-    pacingBlock(scenario.pacingDirective).trim(),
-    BALANCED_FATE_PRESSURE_BLOCK.trim(),
+    generationRules.renderers.pacing(chapterMission.pacingDirective).trim(),
+    generationRules.renderers.fatePressure("Balanced").trim(),
   ].filter(Boolean).join("\n\n");
 
   const genreRulesContent = [glossaryRules.trim(), beforeBlob].filter(Boolean).join("\n\n");
@@ -255,7 +150,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
       genreRulesContent,
       "text",
       genreRulesContent.length > 0,
-      estimateTokens(genreRulesContent),
+      generationRules.output.estimateTokens(genreRulesContent),
     ),
     stage(
       "current-arc",
@@ -291,7 +186,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
       chapterInstructionsContent,
       "text",
       chapterInstructionsContent.length > 0,
-      estimateTokens(chapterInstructionsContent),
+      generationRules.output.estimateTokens(chapterInstructionsContent),
     ),
     stage(
       "system-prompt",
@@ -300,7 +195,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
       systemInstruction,
       "text",
       true,
-      estimateTokens(systemInstruction),
+      generationRules.output.estimateTokens(systemInstruction),
     ),
     stage(
       "final-request",
@@ -309,7 +204,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
       requestEnvelope,
       "text",
       true,
-      contextManifest.providerInputEstimatedTokens ?? estimateTokens(requestEnvelope),
+      contextManifest.providerInputEstimatedTokens ?? generationRules.output.estimateTokens(requestEnvelope),
     ),
     stage(
       "generated-output",
@@ -318,7 +213,7 @@ export function assembleChapterGeneration(scenarioId: ScenarioId): AssembledGene
       JSON.stringify(finalOutput, null, 2),
       "json",
       true,
-      estimateTokens(JSON.stringify(finalOutput)),
+      generationRules.output.estimateTokens(JSON.stringify(finalOutput)),
     ),
   ];
 

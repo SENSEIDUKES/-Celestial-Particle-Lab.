@@ -1,0 +1,135 @@
+/**
+ * Generation Rules — permanent, generator-owned instructions and renderers.
+ *
+ * This package owns references and small shared wrappers only. It deliberately
+ * does not retype prompt text: fixed prompts and block bodies remain in their
+ * existing ported modules so their exact output stays unchanged.
+ */
+import { CHAPTER_PROMPTS } from "../lib/chapterPrompts";
+import { buildChapterContract } from "../lib/chapterHandoff";
+import { appendChapterWritingStyleInstruction } from "../lib/chapterWritingStyle";
+import { buildContextManifestFromOutcomes } from "../lib/contextManifest";
+import { CONTEXT_BUDGET_DEFAULTS } from "../lib/contextBudgeter";
+import { renderCulturalProseInstruction } from "../lib/culturalProse";
+import { getFatePressureBlock } from "../lib/fatePressureBlocks";
+import {
+  anchorTextFromBlocks,
+  formatMainCharacterState,
+  latestHistoryText,
+  prepareGenerationContext,
+} from "../lib/generationContext";
+import { formatGlossaryForPrompt } from "../lib/glossaryFormatter";
+import {
+  cleanChapterResponse,
+  estimateTokens,
+  formatAbilityLedgerForPrompt,
+} from "../lib/helpers";
+import type { ScenePathSelection } from "../lib/sceneRhythm";
+
+export const pacingBlock = (pacingDirective: string) => pacingDirective
+  ? `
+
+=========================================
+AI DIRECTOR PACING INSTRUCTION
+=========================================
+${pacingDirective}
+=========================================`
+  : "";
+
+export const nextSceneDirectionBlock = (selection: ScenePathSelection | undefined) => selection
+  ? `
+
+=========================================
+NEXT SCENE DIRECTION (selected: ${selection.type.toUpperCase()})
+=========================================
+Anchor: "${selection.anchor}"
+Use this as a concrete forward direction for where this chapter's scene(s) should head. Do not simply recreate the previous chapter's scene type or beat.
+=========================================`
+  : "";
+
+export const formatThreadForRouter = (
+  thread: { description: string; originChapter: number },
+  currentChapterNum: number,
+) => {
+  const age = currentChapterNum - thread.originChapter;
+  return age >= 1
+    ? `${thread.description} (Thread open for ${age} chapter${age > 1 ? "s" : ""} — pay it off or deepen it!)`
+    : thread.description;
+};
+
+export const pinnedPremiseBlock = (input: {
+  chapterNumber: number;
+  title: string;
+  premise: string;
+  genre: string;
+  corePremise: string;
+}) => [
+  `Chapter ${input.chapterNumber}: ${input.title || ""}`,
+  `Goal: ${input.premise || ""}`,
+  input.genre ? `Genre/style: ${input.genre}` : "",
+  input.corePremise ? `Core premise: ${input.corePremise}` : "",
+].filter(Boolean).join("\n");
+
+export interface GenerationRules {
+  prompts: {
+    system: string;
+    userPrompt: typeof CHAPTER_PROMPTS.userPrompt;
+  };
+  context: {
+    budgetDefaults: typeof CONTEXT_BUDGET_DEFAULTS;
+    buildChapterContract: typeof buildChapterContract;
+    prepareGenerationContext: typeof prepareGenerationContext;
+    buildContextManifestFromOutcomes: typeof buildContextManifestFromOutcomes;
+    latestHistoryText: typeof latestHistoryText;
+    anchorTextFromBlocks: typeof anchorTextFromBlocks;
+  };
+  renderers: {
+    glossary: typeof formatGlossaryForPrompt;
+    writingStyle: typeof appendChapterWritingStyleInstruction;
+    culturalProse: typeof renderCulturalProseInstruction;
+    fatePressure: typeof getFatePressureBlock;
+    pacing: typeof pacingBlock;
+    nextSceneDirection: typeof nextSceneDirectionBlock;
+    threadForRouter: typeof formatThreadForRouter;
+    abilityLedger: typeof formatAbilityLedgerForPrompt;
+    pinnedPremise: typeof pinnedPremiseBlock;
+    mainCharacterState: typeof formatMainCharacterState;
+  };
+  output: {
+    estimateTokens: typeof estimateTokens;
+    cleanChapterResponse: typeof cleanChapterResponse;
+  };
+}
+
+export function buildGenerationRules(): GenerationRules {
+  return {
+    prompts: {
+      system: CHAPTER_PROMPTS.system,
+      userPrompt: CHAPTER_PROMPTS.userPrompt,
+    },
+    context: {
+      budgetDefaults: CONTEXT_BUDGET_DEFAULTS,
+      buildChapterContract,
+      prepareGenerationContext,
+      buildContextManifestFromOutcomes,
+      latestHistoryText,
+      anchorTextFromBlocks,
+    },
+    renderers: {
+      glossary: formatGlossaryForPrompt,
+      writingStyle: appendChapterWritingStyleInstruction,
+      culturalProse: renderCulturalProseInstruction,
+      fatePressure: getFatePressureBlock,
+      pacing: pacingBlock,
+      nextSceneDirection: nextSceneDirectionBlock,
+      threadForRouter: formatThreadForRouter,
+      abilityLedger: formatAbilityLedgerForPrompt,
+      pinnedPremise: pinnedPremiseBlock,
+      mainCharacterState: formatMainCharacterState,
+    },
+    output: {
+      estimateTokens,
+      cleanChapterResponse,
+    },
+  };
+}
