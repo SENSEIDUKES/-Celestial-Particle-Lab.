@@ -190,8 +190,12 @@ export const LibraryHelpMenu = ({
   }, [releaseAudio, stopAudio]);
 
   const clearActiveItem = useCallback(() => {
-    revealItem(null);
-  }, [revealItem]);
+    // Modal closure and visibility changes are hard audio boundaries. Stop
+    // explicitly even if selection state was already cleared by another event.
+    stopAudio();
+    activeIdRef.current = null;
+    setActiveId(null);
+  }, [stopAudio]);
 
   const handleClose = useCallback(() => {
     clearActiveItem();
@@ -379,7 +383,12 @@ export const LibraryHelpMenu = ({
                             // pointerType keeps this a true desktop hover —
                             // touch taps only ever toggle through onClick.
                             onPointerEnter={event => {
-                              if (event.pointerType === 'mouse') revealItem(item.id);
+                              const supportsDesktopHover = window.matchMedia(
+                                '(hover: hover) and (pointer: fine)',
+                              ).matches;
+                              if (event.pointerType === 'mouse' && supportsDesktopHover) {
+                                revealItem(item.id);
+                              }
                             }}
                             onClick={() => toggleItem(item.id)}
                             className={cn(
