@@ -4,7 +4,7 @@
 - **Source location:** `src/components/CreationModal.tsx` (default export `CreationModal`)
 - **Workshop preview:** `?preview=story-seed` (`&state=<scenario-id>` deep-links a state)
 - **Replica created:** 2026-08-01
-- **Last Workshop update:** 2026-08-07
+- **Last Workshop update:** 2026-08-08
 - **Last source comparison:** 2026-08-06
 - **Lifecycle status:** finalized Workshop feature; refactored, optimized, and ready for production transfer
 
@@ -194,6 +194,12 @@ harness:
 
 ## Concise Workshop history
 
+- **2026-08-08:** Expanded Help into the shared 20-topic Library guidance
+  system while keeping Story Seed topics prioritized in its creation flow.
+  Applied the finalized main-tip and Library Lines audio contracts, preserved
+  written-only quick tips and search coverage, and made modal closure an
+  unconditional audio stop/reset boundary. Restricted hover activation to
+  fine-pointer devices so touch accordions expand and collapse reliably.
 - **2026-08-07:** Completed the dedicated measured optimization pass over the
   finalized foundation. Deferred Workshop previews and secondary Story Seed
   experiences, removed eager Story Bank reads and heavyweight remote auth

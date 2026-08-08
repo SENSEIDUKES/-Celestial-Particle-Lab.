@@ -1,6 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { Lightbulb } from 'lucide-react';
-import { getLibraryHelpItems, type StorySeedHelpItem } from './storySeedHelp';
+import {
+  STORY_SEED_HELP_ITEMS,
+  getLibraryHelpItems,
+  type StorySeedHelpItem,
+} from './storySeedHelp';
+
+const helpLinesBase = 'https://lines.seihouse.org/LIBRARY/Lines/SYSTEM/SYSTEM/HELP%20LINES';
+
+const expectedLibraryTopics = [
+  ['Story Seed', 'Your Story Seed is the first spark of the novel. Give the Library enough information for it to create your universe.', `${helpLinesBase}/STORY%20SEED%20ENG.mp3`, ['story-seed']],
+  ['Style', 'Style controls the flavor of the writing, not the plot itself, cultivator', `${helpLinesBase}/STYLE%20ENG.mp3`, ['story-seed']],
+  ['Premise', 'The premise tells the Library what your story is really about, scholar.', `${helpLinesBase}/PREMISE%20ENG.mp3`, ['story-seed']],
+  ['Genre', 'Genre tells the Library what kind of story this should feel like.', `${helpLinesBase}/GENRE%20ENG.mp3`, ['story-seed']],
+  ['Story Tags', 'Story Tags are powerful signals. For the best results, use a few strong ones instead of flooding the story.', `${helpLinesBase}/STORY%20TAGS%20ENG.mp3`, ['story-seed']],
+  ['World', 'World details shape the setting, powers, factions, and rules around your story, Choose wisely disciple.', `${helpLinesBase}/WORLD%20ENG.mp3`, ['story-seed']],
+  ['ARC', 'ARC guides the path of the story, including plot, tropes, even Face-Slaps, Use ARC to shape the Novels Destiny.', `${helpLinesBase}/ARC%20ENG.mp3`, ['story-seed']],
+  ['Origin', 'Origin holds the required heart of your story, the title, premise, genre, style and tags.', `${helpLinesBase}/ORIGIN%20ENG.mp3`, ['story-seed']],
+  ['Fate Survival', 'Fate Survival is a narrative pressure system layered on top of any genre.', `${helpLinesBase}/Fate%20Survival%20Eng.mp3`, ['story-seed', 'fate']],
+  ['Mind Palace', 'Mind Palace is the temporary clue-tracking system used during a Fate Event.', `${helpLinesBase}/Mind%20Palace%20Eng.mp3`, ['fate']],
+  ['Alter Fate', 'The ability for a reader to change the outcome of the next scenes narrative', `${helpLinesBase}/Alter%20Fate%20-%20Eng.mp3`, ['reader', 'fate']],
+  ['Fate Event', 'A Fate Event is a Mechanic in which after a series of chapters fate forces  a decision to be made.', `${helpLinesBase}/Fate%20event%20eng.mp3`, ['fate']],
+  ['Manifest', 'Manifesting is the act of generating chapters, images, audio, rewards, and videos in the the celestial library', `${helpLinesBase}/Manifest%20-%20Eng.mp3`, ['library', 'story-seed', 'reader']],
+  ['Seed Bank', 'The storage bank for a Readers Story Seeds and world blueprints', `${helpLinesBase}/Seed%20Bank%20-%20ENG.mp3`, ['story-seed', 'seed-bank']],
+  ['World Blueprint', 'A World Blueprint is the final overview of a novel before it is manifested from the seed.', `${helpLinesBase}/World%20Blueprint%20-%20Eng.mp3`, ['story-seed', 'seed-bank']],
+  ['Energy', 'Energy is the currency used for manifesting inside of the celestial library', `${helpLinesBase}/Energy%20-%20Eng.mp3`, ['library', 'story-seed']],
+  ['SEN', 'SEIHouse Expanded Novels, is a narrative engine designed by, and for the library', `${helpLinesBase}/SEN%20-%20ENG.mp3`, ['library']],
+  ['Celestial Library', 'The Celestial Library is home for Narration, illustration, Animation, video games and wandering scholars from around the universe.', `${helpLinesBase}/Celestial%20Library%20-%20Eng.mp3`, ['library']],
+  ['Relics', 'Items lost by the Library that a cultivator can return for a reward', `${helpLinesBase}/Relics%20-%20Eng.mp3`, ['library', 'relics']],
+  ['Pressure', 'Pressure is how much influence the Library exerts over a scholars story', `${helpLinesBase}/Pressure%20-%20eng.mp3`, ['story-seed', 'fate']],
+] as const;
 
 const topics: StorySeedHelpItem[] = [
   {
@@ -14,6 +43,27 @@ const topics: StorySeedHelpItem[] = [
 ];
 
 describe('Library guidance topics', () => {
+  it('keeps the exact Library topic copy, audio sources, and contexts', () => {
+    expect(STORY_SEED_HELP_ITEMS.map(item => {
+      const translation = item.translations.en;
+      return [item.label, translation?.line, translation?.audioUrl, item.contexts];
+    })).toEqual(expectedLibraryTopics);
+
+    const audioUrls = STORY_SEED_HELP_ITEMS.map(item => item.translations.en?.audioUrl);
+    expect(new Set(audioUrls).size).toBe(audioUrls.length);
+  });
+
+  it('keeps Story Seed-relevant Library topics first on the Story Seed page', () => {
+    expect(getLibraryHelpItems(STORY_SEED_HELP_ITEMS, 'en', 'story-seed', '')
+      .slice(0, 14)
+      .map(item => item.label))
+      .toEqual([
+        'Story Seed', 'Style', 'Premise', 'Genre', 'Story Tags', 'World', 'ARC',
+        'Origin', 'Fate Survival', 'Manifest', 'Seed Bank', 'World Blueprint',
+        'Energy', 'Pressure',
+      ]);
+  });
+
   it('prioritizes topics for the current page without mutating the source order', () => {
     const originalOrder = topics.map(item => item.id);
 
