@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Bookmark, Check, CircleHelp, Settings, Vault } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
 import {
@@ -7,10 +7,9 @@ import {
   LibraryPanel,
 } from '../../library';
 import type { SeedUpdate } from './seedState';
-import { StorySeedSettings } from './StorySeedSettings';
+import { haveSameStorySeedSettings, StorySeedSettings } from './StorySeedSettings';
 
-const CELESTIAL_LIBRARY_EMBLEM_URL =
-  'https://pub-e482c2dbbb984c3c87ecdd8ae3a92183.r2.dev/LIBRARY/images/CELESTIAL%20LIBRARY%20ICON.jpg';
+const CELESTIAL_LIBRARY_EMBLEM_URL = '/favicon.jpg';
 
 interface StorySeedHeaderProps {
   seed: StorySeedInput;
@@ -21,10 +20,14 @@ interface StorySeedHeaderProps {
   onSaveDraft: () => void;
   onToggleStoryBank: () => void;
   onOpenHelp: () => void;
+  /** Optional warm-up for the deferred Story Bank chunk before activation. */
+  onStoryBankIntent?: () => void;
+  /** Optional warm-up for the deferred Help chunk before activation. */
+  onHelpIntent?: () => void;
 }
 
 /** Desktop identity and utility actions for the finalized Story Seed shell. */
-export const StorySeedHeader = ({
+const StorySeedHeaderComponent = ({
   seed,
   updateSeed,
   isGenerating,
@@ -33,6 +36,8 @@ export const StorySeedHeader = ({
   onSaveDraft,
   onToggleStoryBank,
   onOpenHelp,
+  onStoryBankIntent,
+  onHelpIntent,
 }: StorySeedHeaderProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -103,6 +108,8 @@ export const StorySeedHeader = ({
             variant={showStoryBank ? 'secondary' : 'ghost'}
             size="sm"
             onClick={onToggleStoryBank}
+            onPointerEnter={onStoryBankIntent}
+            onFocus={onStoryBankIntent}
             icon={Vault}
             aria-pressed={showStoryBank}
             title="Open the Story Bank — saved Story Seeds and their World Blueprints"
@@ -115,6 +122,8 @@ export const StorySeedHeader = ({
           variant="ghost"
           size="sm"
           onClick={onOpenHelp}
+          onPointerEnter={onHelpIntent}
+          onFocus={onHelpIntent}
           icon={CircleHelp}
           title="Story Seed Help — guidance for every section"
         >
@@ -124,3 +133,17 @@ export const StorySeedHeader = ({
     </header>
   );
 };
+
+export const StorySeedHeader = memo(
+  StorySeedHeaderComponent,
+  (previous, next) => previous.updateSeed === next.updateSeed
+    && previous.isGenerating === next.isGenerating
+    && previous.savedFeedback === next.savedFeedback
+    && previous.showStoryBank === next.showStoryBank
+    && previous.onSaveDraft === next.onSaveDraft
+    && previous.onToggleStoryBank === next.onToggleStoryBank
+    && previous.onOpenHelp === next.onOpenHelp
+    && previous.onStoryBankIntent === next.onStoryBankIntent
+    && previous.onHelpIntent === next.onHelpIntent
+    && haveSameStorySeedSettings(previous.seed, next.seed),
+);

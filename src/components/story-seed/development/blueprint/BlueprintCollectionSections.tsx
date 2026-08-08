@@ -1,16 +1,22 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { memo, type Dispatch, type SetStateAction } from 'react';
 import { GitBranch, HelpCircle, Shield, Users } from 'lucide-react';
 import type { WorldBlueprint } from '../../shared/types';
 import { LibraryPanel, LibraryTextArea } from '../../../library';
 import { BlueprintSectionHeading, EditableChip } from './BlueprintDossierPrimitives';
 
 interface BlueprintCollectionSectionsProps {
-  blueprint: WorldBlueprint;
+  initialCharacters?: WorldBlueprint['initialCharacters'];
+  majorFactions?: WorldBlueprint['majorFactions'];
+  majorMysteries?: WorldBlueprint['majorMysteries'];
+  unresolvedPlotThreads?: WorldBlueprint['unresolvedPlotThreads'];
   setBlueprint: Dispatch<SetStateAction<WorldBlueprint>>;
 }
 
-export const BlueprintCollectionSections = ({
-  blueprint,
+export const BlueprintCollectionSections = memo(({
+  initialCharacters,
+  majorFactions,
+  majorMysteries,
+  unresolvedPlotThreads,
   setBlueprint,
 }: BlueprintCollectionSectionsProps) => (
   <>
@@ -28,7 +34,7 @@ export const BlueprintCollectionSections = ({
           label="Side Characters (One per line)"
           rightElement={<EditableChip />}
           icon={Users}
-          value={blueprint.initialCharacters?.join('\n') || ''}
+          value={initialCharacters?.join('\n') || ''}
           onChange={value => setBlueprint(current => ({ ...current, initialCharacters: value.split('\n') }))}
           rows={6}
           className="font-mono"
@@ -51,7 +57,7 @@ export const BlueprintCollectionSections = ({
           label="Major Factions (One per line)"
           rightElement={<EditableChip />}
           icon={Shield}
-          value={blueprint.majorFactions?.join('\n') || ''}
+          value={majorFactions?.join('\n') || ''}
           onChange={value => setBlueprint(current => ({ ...current, majorFactions: value.split('\n') }))}
           rows={6}
           className="font-mono"
@@ -74,7 +80,7 @@ export const BlueprintCollectionSections = ({
           label="Major Mysteries (One per line)"
           rightElement={<EditableChip />}
           icon={HelpCircle}
-          value={blueprint.majorMysteries?.join('\n') || ''}
+          value={majorMysteries?.join('\n') || ''}
           onChange={value => setBlueprint(current => ({ ...current, majorMysteries: value.split('\n') }))}
           rows={6}
           className="font-mono"
@@ -85,7 +91,7 @@ export const BlueprintCollectionSections = ({
           label="Unresolved Plot Threads (One per line)"
           rightElement={<EditableChip />}
           icon={GitBranch}
-          value={blueprint.unresolvedPlotThreads?.join('\n') || ''}
+          value={unresolvedPlotThreads?.join('\n') || ''}
           onChange={value => setBlueprint(current => ({ ...current, unresolvedPlotThreads: value.split('\n') }))}
           rows={6}
           className="font-mono"
@@ -94,4 +100,6 @@ export const BlueprintCollectionSections = ({
       </div>
     </LibraryPanel>
   </>
-);
+));
+
+BlueprintCollectionSections.displayName = 'BlueprintCollectionSections';

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Check, ChevronRight, Sparkles } from 'lucide-react';
 import type { StorySeedInput } from '../shared/storySeedSchema';
 import {
@@ -10,6 +11,7 @@ import {
 import {
   FAMILY_ICONS,
   FAMILY_SECTIONS,
+  haveSameSeedSectionState,
   SEED_FAMILIES,
   type SeedFamily,
   type SeedSection,
@@ -119,10 +121,18 @@ export function buildStorySeedDrawerSections(
  * CreationModal). Pure section navigation — profile access lives in the
  * bottom navigation's Profile tab, not here.
  */
-export const StorySeedSelector = ({ seed, activeSection, onSelect, equippedTitle }: StorySeedSelectorProps) => (
+const StorySeedSelectorComponent = ({ seed, activeSection, onSelect, equippedTitle }: StorySeedSelectorProps) => (
   <LibraryNavigationDrawerPanel
     aria-label="Story Seed sections"
     profile={storySeedDrawerProfile(equippedTitle)}
     sections={buildStorySeedDrawerSections(seed, activeSection, onSelect)}
   />
+);
+
+export const StorySeedSelector = memo(
+  StorySeedSelectorComponent,
+  (previous, next) => previous.activeSection === next.activeSection
+    && previous.equippedTitle === next.equippedTitle
+    && previous.onSelect === next.onSelect
+    && haveSameSeedSectionState(previous.seed, next.seed),
 );

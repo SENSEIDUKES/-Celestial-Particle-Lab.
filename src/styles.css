@@ -285,6 +285,13 @@ body {
   }
 }
 
+@media (pointer: coarse) {
+  .workshop-touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 .preview-stage {
   --celestial-accent: #f5b942;
   position: fixed;

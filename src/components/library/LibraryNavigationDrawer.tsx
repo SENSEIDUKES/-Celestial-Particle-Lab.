@@ -176,7 +176,7 @@ export function LibraryNavigationDrawerPanel({
   return (
     <div className={cn('flex h-full min-h-0 flex-col bg-[radial-gradient(22rem_16rem_at_12%_0%,rgba(124,58,237,0.16),transparent_62%),radial-gradient(20rem_14rem_at_100%_18%,rgba(4,172,255,0.1),transparent_66%),linear-gradient(180deg,rgba(10,13,30,0.96),rgba(4,7,18,0.98))]', className)}>
       {showHeader ? (
-        <div className="relative flex items-center gap-3 border-b border-white/10 px-4 py-4 shadow-[inset_0_-1px_0_rgba(205,178,113,0.08)]">
+        <div className="relative flex items-center gap-3 border-b border-white/10 pb-4 pl-[max(1rem,env(safe-area-inset-left))] pr-4 pt-[max(1rem,env(safe-area-inset-top))] shadow-[inset_0_-1px_0_rgba(205,178,113,0.08)]">
           {profile ? (
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {profile.emblem ?? (
@@ -221,7 +221,7 @@ export function LibraryNavigationDrawerPanel({
 
       <nav
         aria-label={ariaLabel}
-        className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        className="min-h-0 flex-1 overscroll-contain overflow-y-auto py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-3"
       >
         <div className="space-y-5">
           {sections.map(section => (
@@ -324,7 +324,7 @@ export function LibraryNavigationDrawer({
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.2 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="library-overlay-scrim absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
           <motion.div
             initial={{ x: '-100%' }}
@@ -335,7 +335,7 @@ export function LibraryNavigationDrawer({
             aria-modal="true"
             aria-label={panelProps['aria-label']}
             className={cn(
-              'absolute inset-y-0 left-0 w-[85vw] max-w-xs overflow-hidden border-r border-white/15 bg-neutral-950/95 backdrop-blur-xl',
+              'absolute inset-y-0 left-0 w-[85vw] max-w-xs overflow-hidden border-r border-white/15 bg-neutral-950/95',
               'shadow-[0_40px_120px_rgba(0,0,0,0.55)]',
               className,
             )}

@@ -176,6 +176,14 @@ export const getSeedSection = (id: SeedSectionId): SeedSection => {
 export const missingRequiredSections = (seed: StorySeedInput): RequiredStoryInput[] =>
   REQUIRED_STORY_SECTIONS.filter(section => !section.isFilled(seed));
 
+/** Compares only the completion state rendered by Story Seed navigation. */
+export const haveSameSeedSectionState = (
+  previous: StorySeedInput,
+  next: StorySeedInput,
+): boolean => SEED_SECTIONS.every(
+  section => section.isFilled(previous) === section.isFilled(next),
+);
+
 export const FAMILY_ICONS: Record<SeedFamily, LucideIcon> = {
   story: BookOpen,
   world: Globe,

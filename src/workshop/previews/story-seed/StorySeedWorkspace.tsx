@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import ReferenceCreationModal from '../../../components/story-seed/reference/CreationModal';
+import { lazy, useCallback, useEffect, useState } from 'react';
 import DevelopmentCreationModal from '../../../components/story-seed/development/CreationModal';
 import {
   resetMockSeeds,
@@ -27,6 +26,22 @@ import {
   scenariosInCategory,
 } from './previewStates';
 import { createStoryBankPreviewRepository } from './previewStorySeedRepository';
+import { DeferredWorkspace } from '../../DeferredWorkspace';
+
+type ReferenceCreationModalModule = typeof import('../../../components/story-seed/reference/CreationModal');
+
+let referenceCreationModalPromise: Promise<ReferenceCreationModalModule> | null = null;
+
+const loadReferenceCreationModal = (): Promise<ReferenceCreationModalModule> => {
+  referenceCreationModalPromise ??= import('../../../components/story-seed/reference/CreationModal');
+  return referenceCreationModalPromise;
+};
+
+const preloadReferenceCreationModal = () => {
+  void loadReferenceCreationModal().catch(() => undefined);
+};
+
+const ReferenceCreationModal = lazy(loadReferenceCreationModal);
 
 // ─── DOM-driven scenario scripting ───────────────────────────────────────────
 // CreationModal owns `intake`, `stage`, and `showImportPanel` as internal
@@ -64,6 +79,20 @@ function clickByText(root: Element, selector: string, pattern: RegExp) {
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(selector));
   const target = nodes.find(node => pattern.test(node.textContent?.trim() ?? ''));
   target?.click();
+  return Boolean(target);
+}
+
+async function clickWhenAvailable(
+  pane: PaneKind,
+  selector: string,
+  pattern: RegExp,
+  timeoutMs = 3000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (getRoots(pane).some(root => clickByText(root, selector, pattern))) return;
+    await wait(50);
+  }
 }
 
 /** Reference pane: fills the locked Phase 1 accordion replica (unchanged steps). */
@@ -290,17 +319,15 @@ export function StorySeedWorkspace() {
         // Development keeps import inside the Story Bank: open the bank
         // through its real navigation control, then its Import button.
         getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
-        await wait(150);
-        getRoots('development').forEach(root => clickByText(root, 'button', /^Import$/));
+        await clickWhenAvailable('development', 'button', /^Import$/);
       } else if (scenario.uiAction === 'open-story-bank') {
         getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
       } else if (scenario.uiAction === 'use-first-seed') {
         // Development reaches a banked seed through the Story Bank; the
         // locked reference fork still renders its own always-visible panel.
         getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
-        await wait(150);
         getRoots('reference').forEach(root => clickByText(root, 'button', /^Use Seed$/));
-        getRoots('development').forEach(root => clickByText(root, 'button', /^Use Seed$/));
+        await clickWhenAvailable('development', 'button', /^Use Seed$/);
       } else if (scenario.uiAction === 'fill-intake') {
         await runReferenceFillScenario();
         await runDevelopmentFillScenario();
@@ -396,10 +423,16 @@ export function StorySeedWorkspace() {
       entry={entry}
       controls={controls}
       allowCompare
+      onReferenceIntent={preloadReferenceCreationModal}
       renderReference={() => (
-        <div key={`reference-${activeState}`} data-story-seed-pane="reference" className="min-h-screen bg-void py-10 px-4">
-          <ReferenceCreationModal {...chamberProps} />
-        </div>
+        <DeferredWorkspace
+          loadingLabel="Loading Original Reference"
+          className="min-h-screen bg-void"
+        >
+          <div key={`reference-${activeState}`} data-story-seed-pane="reference" className="min-h-screen bg-void py-10 px-4">
+            <ReferenceCreationModal {...chamberProps} />
+          </div>
+        </DeferredWorkspace>
       )}
       renderDevelopment={() => (
         <div key={`development-${activeState}`} data-story-seed-pane="development" className="min-h-screen bg-void py-10 px-4">

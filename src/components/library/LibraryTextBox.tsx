@@ -164,7 +164,7 @@ export const LibraryTextBox = forwardRef<HTMLInputElement, LibraryTextBoxProps>(
             aria-describedby={describedBy}
             data-complete={complete || undefined}
             data-invalid={isInvalid || undefined}
-            className={`glass-field ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${trailingElement ? (compact ? 'pr-8' : 'pr-10') : ''} ${className}`}
+            className={`glass-field ${compact ? 'library-compact-field' : ''} ${sizeClasses[size]} ${Icon ? (compact ? 'pl-8' : 'pl-10') : ''} ${trailingElement ? (compact ? 'pr-8' : 'pr-10') : ''} ${className}`}
             {...rest}
           />
           {trailingElement && (

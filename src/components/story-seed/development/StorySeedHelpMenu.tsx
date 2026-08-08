@@ -68,6 +68,15 @@ const resetAudioElement = (audio: HTMLAudioElement) => {
   } catch {
     // Some failed or not-yet-loaded media cannot seek; it is still detached.
   }
+
+  // Detaching the source and resetting the media pipeline releases buffered
+  // data and aborts an obsolete request when a reader changes topics quickly.
+  try {
+    audio.removeAttribute('src');
+    audio.load();
+  } catch {
+    // The element is already unreachable even if a browser rejects reset.
+  }
 };
 
 /**
@@ -272,7 +281,7 @@ export const LibraryHelpMenu = ({
             type="button"
             onClick={() => toggleAudio(item, translation)}
             aria-pressed={playing}
-            className="mt-3.5 inline-flex min-h-[2.5rem] items-center gap-2 rounded-full border border-portal/40 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-[0.16em] text-portal transition-colors hover:border-portal hover:bg-portal/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+            className="mt-3.5 inline-flex min-h-11 items-center gap-2 rounded-full border border-portal/40 bg-portal/10 px-4 py-2 font-sc text-[10px] font-bold uppercase tracking-[0.16em] text-portal transition-colors hover:border-portal hover:bg-portal/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-portal/70 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             {playing ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
             {playing ? 'Pause' : 'Listen'} · English
@@ -303,7 +312,7 @@ export const LibraryHelpMenu = ({
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.2 }}
             onClick={handleClose}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="story-seed-overlay-scrim absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
           <motion.div
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 32 }}
@@ -317,7 +326,7 @@ export const LibraryHelpMenu = ({
           >
             <LibraryPanel
               padding="none"
-              className="flex max-h-[85vh] flex-col pb-[env(safe-area-inset-bottom)] max-lg:rounded-b-none max-lg:border-x-0 max-lg:border-b-0 lg:pb-0"
+              className="story-seed-overlay-panel flex max-h-[85dvh] flex-col pb-[env(safe-area-inset-bottom)] max-lg:rounded-b-none max-lg:border-x-0 max-lg:border-b-0 max-lg:[padding-left:env(safe-area-inset-left)] max-lg:[padding-right:env(safe-area-inset-right)] lg:pb-0"
             >
               <div className="flex items-start justify-between gap-3 px-4 pt-4 sm:px-6 sm:pt-5">
                 <div>
@@ -352,11 +361,11 @@ export const LibraryHelpMenu = ({
                   onChange={event => setQuery(event.target.value)}
                   placeholder="Search Library guidance…"
                   aria-label="Search Library guidance"
-                  className="min-h-11 w-full rounded-xl border border-neutral-800/80 bg-[#0d1126]/65 py-2.5 pl-10 pr-3 font-sans text-sm text-[#F3EDE0] outline-none placeholder:text-neutral-600 focus:border-[rgba(205,178,113,0.5)] focus:ring-2 focus:ring-portal/30"
+                  className="min-h-11 w-full rounded-xl border border-neutral-800/80 bg-[#0d1126]/65 py-2.5 pl-10 pr-3 font-sans text-base text-[#F3EDE0] outline-none placeholder:text-neutral-600 focus:border-[rgba(205,178,113,0.5)] focus:ring-2 focus:ring-portal/30 lg:text-sm"
                 />
               </div>
 
-              <div className="mt-4 overflow-y-auto px-4 pb-5 sm:px-6 sm:pb-6">
+              <div className="mt-4 min-h-0 overscroll-contain overflow-y-auto px-4 pb-5 sm:px-6 sm:pb-6">
                 <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-5">
                   <ul className="space-y-2">
                     {visibleItems.map(item => {

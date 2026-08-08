@@ -76,7 +76,7 @@ const StoryBankCard = ({
     : updatedAt.toLocaleDateString();
 
   return (
-    <article className="flex flex-col rounded-xl border border-[rgba(172,166,214,0.16)] bg-[rgba(11,14,30,0.55)] p-4 shadow-[inset_0_1px_0_rgba(226,220,200,0.05),0_14px_32px_-18px_rgba(1,3,10,0.95)] sm:p-5">
+    <article className="story-bank-card flex flex-col rounded-xl border border-[rgba(172,166,214,0.16)] bg-[rgba(11,14,30,0.55)] p-4 shadow-[inset_0_1px_0_rgba(226,220,200,0.05),0_14px_32px_-18px_rgba(1,3,10,0.95)] sm:p-5">
       <h3 className="break-words font-display text-sm font-bold uppercase tracking-[0.12em] text-[#F3EDE0]">
         {record.title}
       </h3>
@@ -208,7 +208,7 @@ export const StoryBank = ({
   onExportSeed,
   onManifest,
 }: StoryBankProps) => (
-  <LibraryPanel as="section" aria-labelledby="story-bank-title" padding="none" className="mt-6">
+  <LibraryPanel as="section" aria-labelledby="story-bank-title" padding="none" className="story-bank-surface mt-6">
     {/* The same restrained celestial ambience the creation workspaces float over. */}
     <div aria-hidden="true" className="seed-workspace-ambience" />
 

@@ -14,6 +14,19 @@ interface StorySeedSettingsProps {
   updateSeed: (update: SeedUpdate) => void;
 }
 
+/** The complete seed subset rendered by the shared Settings body. */
+export const haveSameStorySeedSettings = (
+  previous: StorySeedInput,
+  next: StorySeedInput,
+): boolean => {
+  const previousOptional = previous.story.optional;
+  const nextOptional = next.story.optional;
+  return previousOptional.intendedForMatureAudiences === nextOptional.intendedForMatureAudiences
+    && previousOptional.fateSurvival.enabled === nextOptional.fateSurvival.enabled
+    && previousOptional.fateSurvival.visibility === nextOptional.fateSurvival.visibility
+    && previousOptional.fateSurvival.pressure === nextOptional.fateSurvival.pressure;
+};
+
 const FATE_VISIBILITY_OPTIONS: Array<{
   value: StorySeedFateVisibility;
   label: string;
@@ -115,14 +128,14 @@ const FateSurvivalSetting = ({ settings, onChange }: FateSurvivalSettingProps) =
           aria-checked={settings.enabled}
           aria-label="Fate Survival"
           onClick={() => onChange({ enabled: !settings.enabled })}
-          className={`flex w-full shrink-0 items-center justify-between gap-2 rounded-full border px-3 py-2 transition-colors sm:w-auto sm:px-2.5 sm:py-1.5 ${settings.enabled
+          className={`story-seed-touch-target flex w-full shrink-0 items-center justify-between gap-2 rounded-full border px-3 py-2 transition-colors motion-reduce:transition-none sm:w-auto sm:px-2.5 sm:py-1.5 ${settings.enabled
             ? 'border-portal/60 bg-portal/10 text-portal'
             : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
           }`}
         >
           <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Fate Survival</span>
-          <span aria-hidden="true" className={`relative h-4 w-7 rounded-full transition-colors ${settings.enabled ? 'bg-portal/70' : 'bg-neutral-700'}`}>
-            <span className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${settings.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+          <span aria-hidden="true" className={`relative h-4 w-7 rounded-full transition-colors motion-reduce:transition-none ${settings.enabled ? 'bg-portal/70' : 'bg-neutral-700'}`}>
+            <span className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${settings.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
           </span>
         </button>
       </div>
@@ -158,7 +171,7 @@ const MatureAudienceSetting = ({ checked, onChange }: MatureAudienceSettingProps
       aria-checked={checked}
       aria-label="Rated 18+"
       onClick={() => onChange(!checked)}
-      className={`flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors ${checked
+      className={`story-seed-touch-target flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors motion-reduce:transition-none ${checked
         ? 'border-gold-accent/60 bg-gold-accent/10 text-gold-accent'
         : 'border-neutral-700 bg-black/30 text-neutral-400 hover:border-neutral-600 hover:text-signal'
       }`}
@@ -166,10 +179,10 @@ const MatureAudienceSetting = ({ checked, onChange }: MatureAudienceSettingProps
       <span className="font-sc text-[10px] font-bold uppercase tracking-[0.12em]">Rated 18+</span>
       <span
         aria-hidden="true"
-        className={`relative h-4 w-7 rounded-full transition-colors ${checked ? 'bg-gold-accent/70' : 'bg-neutral-700'}`}
+        className={`relative h-4 w-7 rounded-full transition-colors motion-reduce:transition-none ${checked ? 'bg-gold-accent/70' : 'bg-neutral-700'}`}
       >
         <span
-          className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+          className={`absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
         />
       </span>
     </button>
