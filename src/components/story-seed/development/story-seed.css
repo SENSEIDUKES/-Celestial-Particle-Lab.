@@ -242,6 +242,22 @@
     min-height: 2.75rem;
   }
 
+  /* Compact text/icon actions keep their chip and flex-row footprint while a
+     generated hit layer supplies the full coarse-pointer target. */
+  #creation-portal-root .story-seed-compact-hit-target {
+    position: relative;
+  }
+
+  #creation-portal-root .story-seed-compact-hit-target::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    content: '';
+    transform: translate(-50%, -50%);
+  }
+
   /* The static speaking halo still marks the active guidance line; removing
      its large animated box-shadow avoids repainting the full card each frame. */
   .seed-help-speaking {

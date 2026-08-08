@@ -150,17 +150,19 @@ const buildStyleSuggestions = (style: StoryStyle | undefined): StoryTagMetadata[
 
 const findGhostSuggestion = (premise: string, storyTags: string[]): string | null => {
   if (!premise.trim() || storyTags.length >= TAG_LIMIT) return null;
+  const selectedTags = new Set(storyTags.map(tag => tag.toLowerCase()));
+  const isSelected = (tag: string) => selectedTags.has(tag.toLowerCase());
   const lastWord = premise.split(/[\s,.;!?]+/).filter(Boolean).pop();
   const prefixMatch = lastWord && lastWord.length >= 2
-    ? TAG_PRESETS.find(tag => tag.toLowerCase().startsWith(lastWord.toLowerCase()) && !storyTags.includes(tag))
+    ? TAG_PRESETS.find(tag => tag.toLowerCase().startsWith(lastWord.toLowerCase()) && !isSelected(tag))
     : undefined;
   if (prefixMatch) return prefixMatch;
   const lowerPremise = premise.toLowerCase();
   const semanticMatch = SEMANTIC_TAGS.find(({ keywords, tag }) =>
-    !storyTags.includes(tag) && keywords.some(keyword => lowerPremise.includes(keyword)))?.tag;
+    !isSelected(tag) && keywords.some(keyword => lowerPremise.includes(keyword)))?.tag;
   return semanticMatch && TAG_PRESETS.includes(semanticMatch)
     ? semanticMatch
-    : TAG_PRESETS.find(tag => lowerPremise.includes(tag.toLowerCase()) && !storyTags.includes(tag)) ?? null;
+    : TAG_PRESETS.find(tag => lowerPremise.includes(tag.toLowerCase()) && !isSelected(tag)) ?? null;
 };
 
 interface OriginPremiseAndTagsProps {
@@ -202,13 +204,14 @@ export const OriginPremiseAndTags = ({
   useEffect(() => setDismissedGhostKey(null), [storyTags]);
 
   const addTag = useCallback((tag: string) => {
-    if (storyTags.some(existing => existing.toLowerCase() === tag.toLowerCase())) return;
+    if (storyTags.some(existing => existing.toLowerCase() === tag.toLowerCase())) return false;
     if (storyTags.length >= TAG_LIMIT) {
       setTagLimitError(TAG_LIMIT_MESSAGE);
-      return;
+      return false;
     }
     setTagLimitError(null);
     updateSeed(updateStoryTags(previous => [...previous, tag]));
+    return true;
   }, [storyTags, updateSeed]);
 
   return (
@@ -233,8 +236,7 @@ export const OriginPremiseAndTags = ({
           }
           if (ghostSuggestion) {
             event.preventDefault();
-            addTag(ghostSuggestion);
-            setDismissedGhostKey(ghostSuggestionKey);
+            if (addTag(ghostSuggestion)) setDismissedGhostKey(ghostSuggestionKey);
           }
         }}
         rows={6}
@@ -260,8 +262,7 @@ export const OriginPremiseAndTags = ({
               initial={{ opacity: 0, scale: 0.95, y: 2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 2 }}
               transition={{ duration: 0.2 }}
               onClick={() => {
-                addTag(ghostSuggestion);
-                setDismissedGhostKey(ghostSuggestionKey);
+                if (addTag(ghostSuggestion)) setDismissedGhostKey(ghostSuggestionKey);
               }}
               title="Click or press Tab to weave this tag into your Story Tags"
               className="story-seed-touch-target absolute bottom-2.5 right-2.5 flex min-w-0 max-w-[80%] items-center gap-1.5 rounded-lg border border-portal/40 bg-[#0b0e1e]/90 px-2.5 py-1 font-mono text-[10px] tracking-wider text-portal shadow-[0_0_12px_rgba(4,172,255,0.15)] transition-all hover:border-portal hover:text-signal sm:max-w-full"
@@ -291,7 +292,7 @@ interface OriginTagEditorProps {
   storyTags: string[];
   selectedStyle?: StoryStyle;
   updateSeed: UpdateSeed;
-  addTag: (tag: string) => void;
+  addTag: (tag: string) => boolean;
   tagLimitError: string | null;
   setTagLimitError: Dispatch<SetStateAction<string | null>>;
 }
@@ -321,19 +322,14 @@ const OriginTagEditor = memo(({
   const addCustomTag = () => {
     const tag = customTagInput.replace(/^\s*,|,\s*$/g, '').trim();
     if (!tag) return;
-    if (storyTags.length >= TAG_LIMIT) {
-      setTagLimitError(TAG_LIMIT_MESSAGE);
-      return;
-    }
-    addTag(tag);
-    setCustomTagInput('');
+    if (addTag(tag)) setCustomTagInput('');
   };
 
-  const familyEntries = activeTagFamily
+  const familyEntries = useMemo(() => activeTagFamily
     ? Array.from(new Set(CATEGORIZED_TAGS[activeTagFamily] || []))
         .map(tag => getTagMetadata(tag))
         .filter((entry): entry is StoryTagMetadata => Boolean(entry))
-    : [];
+    : [], [activeTagFamily]);
 
   return (
       <section className="glass-panel space-y-4 p-4 sm:p-5" aria-labelledby="origin-tags-title">
@@ -421,7 +417,7 @@ const OriginTagEditor = memo(({
           <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className={workspaceCompactLabelClass}>Your tags ({storyTags.length} / {TAG_LIMIT})</p>
             <span className="font-sans text-[11px] text-neutral-500">{TAG_RECOMMENDED_COPY}</span>
-            {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="story-seed-touch-target font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
+            {storyTags.length > 0 && <button type="button" onClick={() => updateSeed(updateStoryTags(() => []))} className="story-seed-compact-hit-target font-sc text-[10px] uppercase tracking-widest text-neutral-500 transition-colors hover:text-red-400">Clear all</button>}
           </div>
           {storyTags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -431,7 +427,7 @@ const OriginTagEditor = memo(({
                   <span key={tag} className="glass-chip animate-fadeIn px-2.5 py-1 font-sans text-xs">
                     {metadata && <CategoryColorDot color={metadata.color} />}
                     <span className="font-semibold">{tag}</span>
-                    <button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="story-seed-touch-target text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button>
+                    <button type="button" onClick={() => toggleTag(tag)} aria-label={`Remove tag ${tag}`} className="story-seed-compact-hit-target text-neutral-500 transition-colors hover:text-signal"><X size={12} /></button>
                   </span>
                 );
               })}

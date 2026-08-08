@@ -10,7 +10,7 @@ import {
   resetStorySeedRepository,
   setStorySeedRepository,
 } from '../../../components/story-seed/shared/storySeedRepository';
-import { FeatureWorkspace } from '../../FeatureWorkspace';
+import { FeatureWorkspace, type WorkspaceView } from '../../FeatureWorkspace';
 import { workshopEntries } from '../../manifest';
 import {
   createMockBlueprint,
@@ -33,7 +33,11 @@ type ReferenceCreationModalModule = typeof import('../../../components/story-see
 let referenceCreationModalPromise: Promise<ReferenceCreationModalModule> | null = null;
 
 const loadReferenceCreationModal = (): Promise<ReferenceCreationModalModule> => {
-  referenceCreationModalPromise ??= import('../../../components/story-seed/reference/CreationModal');
+  referenceCreationModalPromise ??= import('../../../components/story-seed/reference/CreationModal')
+    .catch(error => {
+      referenceCreationModalPromise = null;
+      throw error;
+    });
   return referenceCreationModalPromise;
 };
 
@@ -57,6 +61,7 @@ const ReferenceCreationModal = lazy(loadReferenceCreationModal);
 // so each scenario script can drive each fork through its own real controls.
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const SCENARIO_ACTION_TIMEOUT_MS = 10_000;
 
 type PaneKind = 'reference' | 'development';
 
@@ -82,22 +87,56 @@ function clickByText(root: Element, selector: string, pattern: RegExp) {
   return Boolean(target);
 }
 
+async function waitUnlessCancelled(ms: number, isCancelled: () => boolean) {
+  await wait(ms);
+  return !isCancelled();
+}
+
+function mutateRoots(
+  pane: PaneKind,
+  isCancelled: () => boolean,
+  mutate: (root: Element) => void,
+) {
+  if (isCancelled()) return false;
+  getRoots(pane).forEach(mutate);
+  return true;
+}
+
+async function waitForRoots(
+  pane: PaneKind,
+  timeoutMs = SCENARIO_ACTION_TIMEOUT_MS,
+  isCancelled: () => boolean = () => false,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (isCancelled()) return false;
+    if (getRoots(pane).length > 0) return true;
+    await wait(50);
+  }
+  return false;
+}
+
 async function clickWhenAvailable(
   pane: PaneKind,
   selector: string,
   pattern: RegExp,
-  timeoutMs = 3000,
+  timeoutMs = SCENARIO_ACTION_TIMEOUT_MS,
+  isCancelled: () => boolean = () => false,
 ) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (getRoots(pane).some(root => clickByText(root, selector, pattern))) return;
+    if (isCancelled()) return;
+    const clicked = getRoots(pane).map(root => clickByText(root, selector, pattern));
+    if (clicked.some(Boolean)) return;
     await wait(50);
   }
 }
 
 /** Reference pane: fills the locked Phase 1 accordion replica (unchanged steps). */
-async function runReferenceFillScenario() {
-  getRoots('reference').forEach(root => {
+async function runReferenceFillScenario(isCancelled: () => boolean) {
+  if (!await waitForRoots('reference', SCENARIO_ACTION_TIMEOUT_MS, isCancelled)) return;
+
+  if (!mutateRoots('reference', isCancelled, root => {
     setFieldValue(root, 'a11y-control-v2xlbs8', 'Ashes of the Ninth Meridian');
     setFieldValue(root, 'a11y-control-7b2mqtu', 'Ye Chen');
     setFieldValue(
@@ -105,27 +144,27 @@ async function runReferenceFillScenario() {
       'core-premise-input',
       'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
     );
-  });
-  await wait(80);
-  getRoots('reference').forEach(root => {
+  })) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => {
     clickByText(root, 'button', /^\+ death flags$/);
     clickByText(root, 'button', /^\+ sect politics$/);
-  });
+  })) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /2\. World Setting/));
-  await wait(120);
-  getRoots('reference').forEach(root => {
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /2\. World Setting/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => {
     setFieldValue(root, 'world-type-input', 'Ancient sect world with a collapsing celestial court');
     setFieldValue(root, 'society-structure-input', 'Sect-led feudal hierarchy');
     setFieldValue(root, 'danger-level-input', 'Cutthroat, grimdark, mystical');
     setFieldValue(root, 'starting-location-input', 'Outer sect labor quarry inside a volcanic rift.');
-  });
+  })) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /3\. Main Character Setup/));
-  await wait(120);
-  getRoots('reference').forEach(root => {
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /3\. Main Character Setup/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => {
     setFieldValue(root, 'mc-starting-identity-input', 'Crippled young master');
     setFieldValue(root, 'mc-personality-input', 'Ruthless but protective, chaotic neutral');
     setFieldValue(root, 'mc-secret-advantage-input', 'Foreknowledge of seven doomed timelines');
@@ -135,87 +174,87 @@ async function runReferenceFillScenario() {
       'mc-bio-input',
       'Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective.',
     );
-  });
+  })) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /3\.5\. Character Intake/));
-  await wait(120);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /\+ Add Character/));
-  await wait(80);
-  getRoots('reference').forEach(root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'));
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /3\.5\. Character Intake/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /\+ Add Character/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'))) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /3\.8\. Faction\/Sect Intake/));
-  await wait(120);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /\+ Add Faction/));
-  await wait(80);
-  getRoots('reference').forEach(root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'));
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /3\.8\. Faction\/Sect Intake/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /\+ Add Faction/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'))) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /4\. Power System Seed/));
-  await wait(120);
-  getRoots('reference').forEach(root => {
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /4\. Power System Seed/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => {
     setFieldValue(root, 'a11y-control-itgsjgw', 'Qi Condensation Tier 1');
     setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist');
-  });
+  })) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /5\. Plot & Trope Control/));
-  await wait(120);
-  getRoots('reference').forEach(root => {
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /5\. Plot & Trope Control/))) return;
+  if (!await waitUnlessCancelled(120, isCancelled)) return;
+  if (!mutateRoots('reference', isCancelled, root => {
     setFieldValue(root, 'a11y-control-jolpc3b', 'Shatter the fated assassination timeline');
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
-  });
+  })) return;
 
-  await wait(80);
-  getRoots('reference').forEach(root => clickByText(root, 'button', /1\. Core Seed/));
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  mutateRoots('reference', isCancelled, root => clickByText(root, 'button', /1\. Core Seed/));
 }
 
 /** Development pane: fills the compact Origin flow through its real controls
  *  before continuing through the remaining Story and World workspaces. */
-async function runDevelopmentFillScenario() {
+async function runDevelopmentFillScenario(isCancelled: () => boolean) {
   const selectSection = async (pattern: RegExp) => {
-    getRoots('development').forEach(root => clickByText(root, 'button', pattern));
-    await wait(150);
+    if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', pattern))) return false;
+    return waitUnlessCancelled(150, isCancelled);
   };
 
   // Origin is the single home for the four core story ingredients.
-  await selectSection(/^Origin/);
-  getRoots('development').forEach(root =>
-    (root.querySelector('[id="story-style-chinese"]') as HTMLElement | null)?.click());
+  if (!await selectSection(/^Origin/)) return;
+  if (!mutateRoots('development', isCancelled, root =>
+    (root.querySelector('[id="story-style-chinese"]') as HTMLElement | null)?.click())) return;
 
   // Genre presets remain available through the compact path picker.
-  getRoots('development').forEach(root => clickByText(root, 'button', /^Pick a path/));
-  await wait(80);
-  getRoots('development').forEach(root => clickByText(root, 'button', /Xianxia/));
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Pick a path/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /Xianxia/))) return;
 
   // Premise remains the dominant Origin field.
-  getRoots('development').forEach(root => setFieldValue(
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(
     root,
     'core-premise-input',
     'In seven chapters, the prince will be assassinated. Every timeline says he dies. Can you change fate before it happens?',
-  ));
-  getRoots('development').forEach(root => setFieldValue(root, 'origin-story-title-input', 'Ashes of the Ninth Meridian'));
+  ))) return;
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(root, 'origin-story-title-input', 'Ashes of the Ninth Meridian'))) return;
 
   // Catalog children remain invisible until their parent family is opened.
-  getRoots('development').forEach(root => clickByText(root, 'button', /^Fate & Destiny/));
-  await wait(80);
-  getRoots('development').forEach(root => clickByText(root, 'button', /^\+ death flags$/));
-  getRoots('development').forEach(root => clickByText(root, 'button', /^Politics & War/));
-  await wait(80);
-  getRoots('development').forEach(root => clickByText(root, 'button', /^\+ sect politics$/));
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Fate & Destiny/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^\+ death flags$/))) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Politics & War/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^\+ sect politics$/))) return;
 
   // World Identity
-  await selectSection(/^World Identity$/);
-  getRoots('development').forEach(root => {
+  if (!await selectSection(/^World Identity$/)) return;
+  if (!mutateRoots('development', isCancelled, root => {
     setFieldValue(root, 'world-type-input', 'Ancient sect world with a collapsing celestial court');
     setFieldValue(root, 'society-structure-input', 'Sect-led feudal hierarchy');
     setFieldValue(root, 'starting-location-input', 'Outer sect labor quarry inside a volcanic rift.');
-  });
+  })) return;
 
   // Characters (main character + one additional character)
-  await selectSection(/^Characters$/);
-  getRoots('development').forEach(root => {
+  if (!await selectSection(/^Characters$/)) return;
+  if (!mutateRoots('development', isCancelled, root => {
     setFieldValue(root, 'a11y-control-7b2mqtu', 'Ye Chen');
     setFieldValue(root, 'mc-starting-identity-input', 'Crippled young master');
     setFieldValue(root, 'mc-personality-input', 'Ruthless but protective, chaotic neutral');
@@ -226,29 +265,29 @@ async function runDevelopmentFillScenario() {
       'mc-bio-input',
       'Born as the son of a fallen patriarch, carrying the blood of a Primordial dragon, extremely lazy but protective.',
     );
-  });
-  await wait(80);
-  getRoots('development').forEach(root => clickByText(root, 'button', /\+ Add Character/));
-  await wait(80);
-  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'));
+  })) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /\+ Add Character/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(root, 'a11y-control-boqy7nd', 'Elder Qin'))) return;
 
   // Factions
-  await selectSection(/^Factions$/);
-  getRoots('development').forEach(root => clickByText(root, 'button', /\+ Add Faction/));
-  await wait(80);
-  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'));
+  if (!await selectSection(/^Factions$/)) return;
+  if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /\+ Add Faction/))) return;
+  if (!await waitUnlessCancelled(80, isCancelled)) return;
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(root, 'a11y-control-xhc59yh', 'Heavenly Sword Sect'))) return;
 
   // Abilities
-  await selectSection(/^Abilities$/);
-  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-itgsjgw', 'Qi Condensation Tier 1'));
+  if (!await selectSection(/^Abilities$/)) return;
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(root, 'a11y-control-itgsjgw', 'Qi Condensation Tier 1'))) return;
 
   // Power System
-  await selectSection(/^Power System$/);
-  getRoots('development').forEach(root => setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist'));
+  if (!await selectSection(/^Power System$/)) return;
+  if (!mutateRoots('development', isCancelled, root => setFieldValue(root, 'a11y-control-kytc0oh', 'Martial arts, Daoist'))) return;
 
   // ARC combines plot direction with the story's intended destination.
-  await selectSection(/^ARC$/);
-  getRoots('development').forEach(root => {
+  if (!await selectSection(/^ARC$/)) return;
+  if (!mutateRoots('development', isCancelled, root => {
     (root.querySelector('[id="arc-face-slap-high"]') as HTMLElement | null)?.click();
     (root.querySelector('[id="arc-plot-armor-low"]') as HTMLElement | null)?.click();
     (root.querySelector('[id="arc-recognition-high"]') as HTMLElement | null)?.click();
@@ -256,7 +295,7 @@ async function runDevelopmentFillScenario() {
     setFieldValue(root, 'a11y-control-6a6tmbf', 'Sect tournament that reveals the first assassination attempt');
     setFieldValue(root, 'destined-ending-input', 'The prince survives and severs the celestial court from fate.');
     setFieldValue(root, 'make-it-work-instruction-input', 'The weakest bloodline is secretly the only one heaven fears.');
-  });
+  })) return;
 
   // Land back on Origin.
   await selectSection(/^Origin/);
@@ -266,6 +305,7 @@ export function StorySeedWorkspace() {
   const entry = workshopEntries.find(e => e.id === 'story-seed')!;
   const [activeState, setActiveState] = useState<PreviewState>('empty-intake');
   const [activeCategory, setActiveCategory] = useState<PreviewCategory>('intake');
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('development');
   const currentUser = useAppStore(state => state.currentUser);
 
   const applyScenario = useCallback((
@@ -311,32 +351,52 @@ export function StorySeedWorkspace() {
     const scenario = scenarios.find(s => s.id === activeState);
     if (!scenario?.uiAction) return;
     let cancelled = false;
+    const isCancelled = () => cancelled;
     (async () => {
-      await wait(220);
-      if (cancelled) return;
+      if (!await waitUnlessCancelled(220, isCancelled)) return;
       if (scenario.uiAction === 'open-import-panel') {
-        getRoots('reference').forEach(root => clickByText(root, 'button', /Import (?:World Seed \/ Blueprint|Story Seed)/));
+        const referenceAction = clickWhenAvailable(
+          'reference',
+          'button',
+          /Import (?:World Seed \/ Blueprint|Story Seed)/,
+          SCENARIO_ACTION_TIMEOUT_MS,
+          isCancelled,
+        );
         // Development keeps import inside the Story Bank: open the bank
         // through its real navigation control, then its Import button.
-        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
-        await clickWhenAvailable('development', 'button', /^Import$/);
+        if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Story Bank$/))) return;
+        await Promise.all([
+          referenceAction,
+          clickWhenAvailable('development', 'button', /^Import$/, SCENARIO_ACTION_TIMEOUT_MS, isCancelled),
+        ]);
       } else if (scenario.uiAction === 'open-story-bank') {
-        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
+        mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Story Bank$/));
       } else if (scenario.uiAction === 'use-first-seed') {
         // Development reaches a banked seed through the Story Bank; the
         // locked reference fork still renders its own always-visible panel.
-        getRoots('development').forEach(root => clickByText(root, 'button', /^Story Bank$/));
-        getRoots('reference').forEach(root => clickByText(root, 'button', /^Use Seed$/));
-        await clickWhenAvailable('development', 'button', /^Use Seed$/);
+        const referenceAction = clickWhenAvailable(
+          'reference',
+          'button',
+          /^Use Seed$/,
+          SCENARIO_ACTION_TIMEOUT_MS,
+          isCancelled,
+        );
+        if (!mutateRoots('development', isCancelled, root => clickByText(root, 'button', /^Story Bank$/))) return;
+        await Promise.all([
+          referenceAction,
+          clickWhenAvailable('development', 'button', /^Use Seed$/, SCENARIO_ACTION_TIMEOUT_MS, isCancelled),
+        ]);
       } else if (scenario.uiAction === 'fill-intake') {
-        await runReferenceFillScenario();
-        await runDevelopmentFillScenario();
+        await Promise.all([
+          runReferenceFillScenario(isCancelled),
+          runDevelopmentFillScenario(isCancelled),
+        ]);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [activeState]);
+  }, [activeState, workspaceView]);
 
   const activeScenario = scenarios.find(s => s.id === activeState);
 
@@ -424,6 +484,7 @@ export function StorySeedWorkspace() {
       controls={controls}
       allowCompare
       onReferenceIntent={preloadReferenceCreationModal}
+      onViewChange={setWorkspaceView}
       renderReference={() => (
         <DeferredWorkspace
           loadingLabel="Loading Original Reference"

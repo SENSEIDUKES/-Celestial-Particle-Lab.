@@ -179,8 +179,8 @@ Measured against the merged refactor baseline on the same production build
 harness:
 
 - Initial Story Seed JavaScript fell from 1,320,541 raw / 356,819 gzip bytes
-  to a 577,079 raw / 176,293 gzip byte direct static closure (56.30% raw and
-  50.59% gzip reductions). The old large-chunk warning is gone; the largest
+  to a 577,518 raw / 176,559 gzip byte direct static closure (56.27% raw and
+  50.52% gzip reductions). The old large-chunk warning is gone; the largest
   emitted chunk is 319.10 kB.
 - Slow-4G plus 4x-CPU DOMContentLoaded averaged 2,489.7 ms before and
   1,146.3 ms after (53.96% faster).

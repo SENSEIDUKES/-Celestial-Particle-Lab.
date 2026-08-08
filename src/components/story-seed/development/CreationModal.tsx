@@ -84,7 +84,9 @@ const useLatestCallback = <Args extends unknown[], Result>(
   callback: (...args: Args) => Result,
 ) => {
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
   return useCallback((...args: Args) => callbackRef.current(...args), []);
 };
 

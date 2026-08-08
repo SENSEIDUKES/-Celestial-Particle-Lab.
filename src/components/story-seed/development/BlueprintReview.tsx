@@ -50,6 +50,7 @@ export const BlueprintReview = ({
 }: BlueprintReviewProps) => {
   const activeAgentId = useAppStore(state => state.activeAgentId);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [tagLimitError, setTagLimitError] = useState<string | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
@@ -73,7 +74,10 @@ export const BlueprintReview = ({
     blueprint.mcProfile,
   ]);
   const copyPayloadRef = useRef({ blueprint, origin, mainCharacter });
-  copyPayloadRef.current = { blueprint, origin, mainCharacter };
+
+  useEffect(() => {
+    copyPayloadRef.current = { blueprint, origin, mainCharacter };
+  }, [blueprint, mainCharacter, origin]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -127,12 +131,31 @@ export const BlueprintReview = ({
     });
   }, [setBlueprint]);
 
-  const handleCopyBlueprint = useCallback(() => {
+  const handleCopyBlueprint = useCallback(async () => {
     const { blueprint: currentBlueprint, origin: currentOrigin, mainCharacter: currentMainCharacter } = copyPayloadRef.current;
-    navigator.clipboard.writeText(
-      createBlueprintMarkdown(currentBlueprint, currentOrigin, currentMainCharacter),
-    ).then(() => {
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+
+    const showCopyError = () => {
       if (!isMountedRef.current) return;
+      if (copiedTimerRef.current !== null) {
+        window.clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+      setCopied(false);
+      setCopyError('The Blueprint could not be copied. Please try again.');
+    };
+
+    if (!clipboard || typeof clipboard.writeText !== 'function') {
+      showCopyError();
+      return;
+    }
+
+    try {
+      await clipboard.writeText(
+        createBlueprintMarkdown(currentBlueprint, currentOrigin, currentMainCharacter),
+      );
+      if (!isMountedRef.current) return;
+      setCopyError(null);
       setCopied(true);
       if (copiedTimerRef.current !== null) {
         window.clearTimeout(copiedTimerRef.current);
@@ -141,7 +164,9 @@ export const BlueprintReview = ({
         copiedTimerRef.current = null;
         setCopied(false);
       }, 2000);
-    });
+    } catch {
+      showCopyError();
+    }
   }, []);
 
   return (
@@ -241,16 +266,28 @@ export const BlueprintReview = ({
                   : 'Manifest Story'}
               </ManifestButton>
 
-              <LibraryButton
-                variant="secondary"
-                size="lg"
-                fullWidth
-                className="sm:w-auto"
-                icon={copied ? Check : Copy}
-                onClick={handleCopyBlueprint}
-              >
-                {copied ? 'Copied Blueprint' : 'Copy Blueprint'}
-              </LibraryButton>
+              <div className="flex flex-col items-stretch gap-1 sm:items-center">
+                <LibraryButton
+                  variant="secondary"
+                  size="lg"
+                  fullWidth
+                  className="sm:w-auto"
+                  icon={copied ? Check : Copy}
+                  onClick={handleCopyBlueprint}
+                  aria-describedby={copyError ? 'blueprint-copy-error' : undefined}
+                >
+                  {copied ? 'Copied Blueprint' : 'Copy Blueprint'}
+                </LibraryButton>
+                {copyError && (
+                  <p
+                    id="blueprint-copy-error"
+                    role="alert"
+                    className="max-w-52 text-center font-sans text-[11px] leading-snug text-red-300"
+                  >
+                    {copyError}
+                  </p>
+                )}
+              </div>
 
               <LibraryButton
                 variant="ghost"

@@ -16,6 +16,8 @@ export interface FeatureWorkspaceProps {
   allowCompare?: boolean;
   /** Optional preload used by deferred reference panes before Reference or Compare is selected. */
   onReferenceIntent?: () => void;
+  /** Optional notification for previews whose scripted state must follow pane remounts. */
+  onViewChange?: (view: WorkspaceView) => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export function FeatureWorkspace({
   controls,
   allowCompare = true,
   onReferenceIntent,
+  onViewChange,
 }: FeatureWorkspaceProps) {
   const [view, setView] = useState<WorkspaceView>('development');
   const [mobilePane, setMobilePane] = useState<'reference' | 'development'>('development');
@@ -56,6 +59,7 @@ export function FeatureWorkspace({
             onClick={() => {
               onReferenceIntent?.();
               setView('reference');
+              onViewChange?.('reference');
             }}
             className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'reference' ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
@@ -65,7 +69,10 @@ export function FeatureWorkspace({
           </button>
           <button
             type="button"
-            onClick={() => setView('development')}
+            onClick={() => {
+              setView('development');
+              onViewChange?.('development');
+            }}
             className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
               view === 'development' ? 'bg-cyan-500/20 text-cyan-100' : 'text-white/50 hover:text-white/80'
             }`}
@@ -81,6 +88,7 @@ export function FeatureWorkspace({
               onClick={() => {
                 onReferenceIntent?.();
                 setView('compare');
+                onViewChange?.('compare');
               }}
               className={`workshop-touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors sm:px-4 ${
                 view === 'compare' ? 'bg-violet-500/20 text-violet-100' : 'text-white/50 hover:text-white/80'
